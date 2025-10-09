@@ -4,4 +4,4 @@ uploads
 src/firebaseSDK.json
 
 #sensitive file
-/.env
+.env
