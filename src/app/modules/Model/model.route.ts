@@ -27,4 +27,4 @@ router.route("/:id")
         carModelsController.deletecarModels
     );
 
-export const SubCategoryRoutes = router
+export const carModelsRoutes = router

@@ -19,6 +19,7 @@ import { ReservationRoutes } from '../modules/reservation/reservation.routes';
 import { ReportRoutes } from '../modules/report/report.routes';
 import { PaymentRoutes } from '../modules/payment/payment.routes';
 import { OfferRoutes } from '../modules/offer/offer.routes';
+import { carModelsRoutes } from '../modules/Model/model.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -28,6 +29,7 @@ const apiRoutes = [
     { path: "/bookmark", route: BookmarkRoutes },
     { path: "/category", route: CategoryRoutes },
     { path: "/subCategory", route: SubCategoryRoutes },
+    { path: "/models", route: carModelsRoutes },
     { path: "/rule", route: RuleRoutes },
     { path: "/faq", route: FaqRoutes },
     { path: "/chat", route: ChatRoutes },
