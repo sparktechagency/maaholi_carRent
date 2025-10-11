@@ -11,7 +11,7 @@ const createSubCategory = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Sub Category create successfully',
+        message: 'brand create successfully',
         data: result
     })
 })
@@ -22,7 +22,7 @@ const getSubCategories = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Sub Category retrieved successfully',
+        message: 'brand retrieved successfully',
         data: result
     })
 })
@@ -35,7 +35,7 @@ const updateSubCategory = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Sub Category updated successfully',
+        message: 'brand updated successfully',
         data: result
     })
 })
@@ -47,7 +47,7 @@ const deleteSubCategory = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Sub Category delete successfully',
+        message: 'brand delete successfully',
         data: result
     })
 })

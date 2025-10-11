@@ -28,7 +28,7 @@ const apiRoutes = [
     { path: "/admin", route: AdminRoutes },
     { path: "/bookmark", route: BookmarkRoutes },
     { path: "/category", route: CategoryRoutes },
-    { path: "/subCategory", route: SubCategoryRoutes },
+    { path: "/brand", route: SubCategoryRoutes },
     { path: "/models", route: carModelsRoutes },
     { path: "/rule", route: RuleRoutes },
     { path: "/faq", route: FaqRoutes },

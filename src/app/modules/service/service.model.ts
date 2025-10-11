@@ -6,7 +6,11 @@ const serviceSchema = new Schema<IService, ServiceModel>(
   {
     basicInformation: {
       vehicleName: { type: String, required: false },
-      model: { type: String, required: false },
+      model: { 
+            type: Schema.Types.ObjectId,
+            ref: "CarModel",
+            required: true 
+          },
       deviceId: { type: String, required: false },
       vinNo: { type: String, required: false },
       year: { type: Number, required: false }, // use Number for year
