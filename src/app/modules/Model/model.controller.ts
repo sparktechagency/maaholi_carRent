@@ -2,22 +2,22 @@ import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import catchAsync from '../../../shared/catchAsync'
 import sendResponse from '../../../shared/sendResponse'
-import { SubCategoryService } from './subCategory.service'
+import { CarModelService } from './models.service'
 
 const createSubCategory = catchAsync(async (req: Request, res: Response) => {
     const categoryData = req.body;
-    const result = await SubCategoryService.createSubCategoryToDB(categoryData)
+    const result = await CarModelService.createModelTDB(categoryData)
 
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Sub Category create successfully',
+        message: 'Models create successfully',
         data: result
     })
 })
 
 const getSubCategories = catchAsync(async (req: Request, res: Response) => {
-    const result = await SubCategoryService.getSubCategoriesFromDB();
+    const result = await CarModelService.getmodelFromDb();
 
     sendResponse(res, {
         success: true,
@@ -30,7 +30,7 @@ const getSubCategories = catchAsync(async (req: Request, res: Response) => {
 const updateSubCategory = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
     const updateCategoryData = req.body;
-    const result = await SubCategoryService.updateSubCategoryToDB(id, updateCategoryData)
+    const result = await CarModelService.updateModelToDB(id, updateCategoryData)
 
     sendResponse(res, {
         success: true,
@@ -42,7 +42,7 @@ const updateSubCategory = catchAsync(async (req: Request, res: Response) => {
 
 const deleteSubCategory = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
-    const result = await SubCategoryService.deleteSubCategoryToDB(id)
+    const result = await CarModelService.deleteModelToDB(id)
 
     sendResponse(res, {
         success: true,

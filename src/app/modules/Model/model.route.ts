@@ -2,8 +2,8 @@ import express from 'express';
 import { USER_ROLES } from '../../../enums/user'
 import auth from '../../middlewares/auth'
 import validateRequest from '../../middlewares/validateRequest';
-import { SubCategoryValidation } from './subCategory.validation';
-import { SubCategoryController } from './subCategory.controller';
+import { SubCategoryValidation } from './models.validation';
+import { SubCategoryController } from './model.controller';
 const router = express.Router()
 
 router.route("/")
