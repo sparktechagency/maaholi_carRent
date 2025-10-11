@@ -9,19 +9,19 @@ const createModelTDB = async (payload: ICarModel) => {
   const isExistName = await CarModel.findOne({ title: title })
 
   if (isExistName) {
-    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This Category Name Already Exist");
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This carModels Name Already Exist");
   }
 
   const createCategory: any = await CarModel.create(payload)
   if (!createCategory) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Category')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create carModels')
   }
 
   return createCategory
 }
 
 const getmodelFromDb = async (): Promise<ICarModel[]> => {
-  const result = await CarModel.find({}).populate("category", "name image")
+  const result = await CarModel.find({}).populate("brand", "name image")
   return result;
 }
 
@@ -29,7 +29,7 @@ const updateModelToDB = async (id: string, payload: ICarModel) => {
   const isExistCategory: any = await CarModel.findById(id);
 
   if (!isExistCategory) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Category doesn't exist");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "carModels doesn't exist");
   }
 
   const updateCategory = await CarModel.findOneAndUpdate(
@@ -44,7 +44,7 @@ const updateModelToDB = async (id: string, payload: ICarModel) => {
 const deleteModelToDB = async (id: string): Promise<ICarModel | null> => {
   const deleteCategory = await CarModel.findByIdAndDelete(id)
   if (!deleteCategory) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Category doesn't exist")
+    throw new ApiError(StatusCodes.BAD_REQUEST, "carModels doesn't exist")
   }
   return deleteCategory
 }

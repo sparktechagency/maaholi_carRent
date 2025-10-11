@@ -3,28 +3,28 @@ import { USER_ROLES } from '../../../enums/user'
 import auth from '../../middlewares/auth'
 import validateRequest from '../../middlewares/validateRequest';
 import { SubCategoryValidation } from './models.validation';
-import { SubCategoryController } from './model.controller';
+import { carModelsController } from './model.controller';
 const router = express.Router()
 
 router.route("/")
     .post(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
         validateRequest(SubCategoryValidation.createSubCategoryZodSchema),
-        SubCategoryController.createSubCategory
+        carModelsController.createcarModels
     )
     .get(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
-        SubCategoryController.getSubCategories
+        carModelsController.getcarModels
     );
 
 router.route("/:id")
     .patch(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
-        SubCategoryController.updateSubCategory
+        carModelsController.updatecarModels
     )
     .delete(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
-        SubCategoryController.deleteSubCategory
+        carModelsController.deletecarModels
     );
 
 export const SubCategoryRoutes = router
