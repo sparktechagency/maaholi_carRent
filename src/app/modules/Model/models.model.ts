@@ -8,7 +8,7 @@ const CarModelSchema = new Schema<ICarModel, CarModelI>(
       ref: 'brand', 
       required: true,
     },
-    title: {
+    model: {
       type: String,
       required: true,
       unique: true,

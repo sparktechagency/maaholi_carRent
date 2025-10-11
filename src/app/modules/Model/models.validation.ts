@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import { objectIdZodSchema } from '../../../helpers/checkObjectIdZodSchemaHelper'
+import { brand } from '../subCategory-Brand/subCategory.model'
+import { model } from 'mongoose'
 
 const createSubCategoryZodSchema = z.object({
     body: z.object({
-        category : objectIdZodSchema("Category Id"),
-        title: z.string({ required_error: 'Sub Category is required' })
+        brand : objectIdZodSchema("brand Id"),
+        model: z.string({ required_error: 'model is required' })
     })
 })
 
