@@ -35,9 +35,16 @@ const fileUploadHandler = () => {
                 case 'proofOwnerId':
                     uploadDir = path.join(baseUploadDir, 'proofOwnerId');
                 break;
-                case 'sallonPhoto':
-                    uploadDir = path.join(baseUploadDir, 'sallonPhoto');
+                // case 'productImage':
+                //     uploadDir = path.join(baseUploadDir, 'productImage');
+                // break;
+                case 'productImage':
+                case 'basicInformation[productImage]': // New: Handle nested for service
+                    uploadDir = path.join(baseUploadDir, 'productImage');
                 break;
+                case 'basicInformation[insuranceProof]': // New: Handle nested for service
+          uploadDir = path.join(baseUploadDir, 'insuranceProof'); // Or reuse 'productImage'
+          break;
                 default:
                     throw new ApiError(StatusCodes.BAD_REQUEST, 'File is not supported');
             }
@@ -63,7 +70,7 @@ const fileUploadHandler = () => {
     const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
 
         // console.log("file handler",file)
-        if (file.fieldname === 'image' || file.fieldname === 'tradeLicences' || file.fieldname === 'proofOwnerId' || file.fieldname === 'sallonPhoto') {
+        if (file.fieldname === 'image' || file.fieldname === 'tradeLicences' || file.fieldname === 'proofOwnerId' || file.fieldname === 'productImage' ||file.fieldname === 'basicInformation[productImage]' || file.fieldname === 'basicInformation[insuranceProof]') {
             if (
                 file.mimetype === 'image/jpeg' ||
                 file.mimetype === 'image/png' ||
@@ -83,7 +90,9 @@ const fileUploadHandler = () => {
         { name: 'image', maxCount: 30 },
         { name: 'tradeLicences', maxCount: 15 },
         { name: 'proofOwnerId', maxCount: 15 },
-        { name: 'sallonPhoto', maxCount: 15 },
+        { name: 'productImage', maxCount: 15 },
+        { name: 'basicInformation[productImage]', maxCount: 1 }, // Single image
+      { name: 'basicInformation[insuranceProof]', maxCount: 5 },
 
      ]);
     return upload;

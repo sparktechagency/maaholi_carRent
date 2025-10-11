@@ -4,7 +4,7 @@ import catchAsync from '../../../shared/catchAsync'
 import sendResponse from '../../../shared/sendResponse'
 import { CategoryService } from './category.service'
 import { logger } from '../../../shared/logger'
-import { SubCategoryService } from '../subCategory/subCategory.service'
+import { SubCategoryService } from '../subCategory-Brand/subCategory.service'
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
     const categoryData = req.body;

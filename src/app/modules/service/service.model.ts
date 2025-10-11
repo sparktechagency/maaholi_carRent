@@ -4,14 +4,13 @@ import { carStatus } from '../../../enums/car-status'
 
 const serviceSchema = new Schema<IService, ServiceModel>(
   {
-    // Category: Basic Information
     basicInformation: {
-      make: { type: String, required: false },
+      vehicleName: { type: String, required: false },
       model: { type: String, required: false },
       deviceId: { type: String, required: false },
-      deviceName: { type: String, required: false },
+      vinNo: { type: String, required: false },
       year: { type: Number, required: false }, // use Number for year
-      image: { type: String, required: true },
+      productImage: { type: String, required: false },
       insuranceProof: { type: [String], required: false },
       color: { type: String, required: false },
       vin: { type: String, required: false },
@@ -87,7 +86,6 @@ const serviceSchema = new Schema<IService, ServiceModel>(
     user: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     service: { type: Schema.Types.ObjectId, ref: 'Service', required: false },
 
-    assignedUsers: [{ type: Types.ObjectId, ref: 'User' }],
 
     status: {
       type: String,

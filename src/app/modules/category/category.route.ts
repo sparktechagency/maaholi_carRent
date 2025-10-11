@@ -9,7 +9,7 @@ const router = express.Router()
 
 router.route("/")
     .post(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
         fileUploadHandler(),
         async (req: Request, res: Response, next: NextFunction) => {
             try {

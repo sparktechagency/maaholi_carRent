@@ -1,192 +1,157 @@
-import { NextFunction, Request, Response } from 'express';
-import httpStatus from 'http-status-codes';
-import catchAsync from '../../../shared/catchAsync';
-import { ServiceService } from './service.service';
-import {createServiceToDB} from './service.service'
-import fileUploadHandler from '../../middlewares/fileUploaderHandler';
-import ApiError from '../../../errors/ApiError';
-import { logger } from '../../../shared/logger';
-import { IService } from './service.interface';
+import { Request, Response, NextFunction } from 'express'
+import { StatusCodes } from 'http-status-codes'
+import catchAsync from '../../../shared/catchAsync'
+import ServiceService from './service.service'
+import sendResponse from '../../../shared/sendResponse'
 
-// Create a new service with image upload
-// const createService = catchAsync(async (req: Request, res: Response) => {
-//   logger.info('Starting createService request');
-//   const user = req.user?.id;
-//   logger.info(`Barber ID from token: ${user}`);
 
-//   if (!user) {
-//     logger.error('Barber ID missing in token');
-//     throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required: user ID not found in token');
-//   }
+const createService = catchAsync(async(req: Request, res: Response) => {
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+  const serviceData = req.body
 
-//   const upload = fileUploadHandler();
-//   upload(req, res, async (err) => {
-//     if (err) {
-//       logger.error(`File upload error: ${err.message}`);
-//       return res.status(httpStatus.BAD_REQUEST).json({
-//         success: false,
-//         message: err.message,
-//       });
-//     }
+  console.log('=== CREATE SERVICE DEBUG ===')
+  console.log('Body:', JSON.stringify(serviceData, null, 2))
+  console.log('Files:', files ? Object.keys(files) : 'No files')
+  console.log('User:', req.user)
 
-//     logger.info('File upload completed, preparing service data');
-//     logger.debug(`Request body: ${JSON.stringify(req.body)}`);
-//     logger.debug(`Uploaded files: ${JSON.stringify(req.files)}`);
+  const result = await ServiceService.createServiceToDB(req, serviceData, files)
 
-//     // const serviceData = {
-//     //   ...req.body,
-//     //   barber, // Add barber ID from req.user
-//     //   image: req.files && 'image' in req.files && req.files['image'][0]
-//     //     ? `/uploads/images/${req.files['image'][0].filename}`
-//     //     : undefined,
-//     // };
-// let parsedDailySchedule: any = undefined;
-// if (req.body?.dailySchedule && typeof req.body.dailySchedule === 'string') {
-//   try {
-//     parsedDailySchedule = JSON.parse(req.body.dailySchedule);
-//   } catch (err) {
-//     logger.error(`Invalid dailySchedule JSON: ${(err as Error).message}`);
-//     return res.status(httpStatus.BAD_REQUEST).json({
-//       success: false,
-//       message: 'Invalid dailySchedule JSON format',
-//     });
-//   }
-// }
-
-// const serviceData = {
-//   ...req.body,
-//   // prefer parsed JSON if provided
-//   dailySchedule: parsedDailySchedule ?? req.body.dailySchedule,
-//   user,
-//   image: req.files && 'image' in req.files && req.files['image'][0]
-//     ? `/uploads/images/${req.files['image'][0].filename}`
-//     : undefined,
-// };
-//     try {
-//       logger.info('Calling ServiceService.createServiceToDB');
-//       const service = await ServiceService.createServiceToDB(serviceData);
-//       logger.info('Service created successfully');
-//       res.status(httpStatus.CREATED).json({
-//         success: true,
-//         message: 'Service created successfully',
-//         data: service,
-//       });
-//     } catch (error) {
-//       logger.error(`Error creating service: ${error}`);
-//       throw error; // Let catchAsync handle the error
-//     }
-//   });
-// });
-const createService = catchAsync(async (req: Request, res: Response) => {
-  const user = req.user?.id
-  if (!user) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, 'Authentication required: user ID not found in token')
-  }
-
-  // Ensure basicInformation exists
-  const basicInformation = req.body.basicInformation || {}
-
-  // Map uploaded files
-  if (req.files && (req.files as any)['basicInformation.image']?.[0]) {
-    basicInformation.image = (req.files as any)['basicInformation.image'][0].path
-  }
-
-  if (req.files && (req.files as any)['basicInformation.insuranceProof']) {
-    basicInformation.insuranceProof = (req.files as any)['basicInformation.insuranceProof'].map(
-      (f: any) => f.path
-    )
-  }
-
-  // Build final payload
-  const payload = {
-    ...req.body,
-    basicInformation,
-    user,
-  }
-
-  // Call service layer to create the service
-  const service = await createServiceToDB(payload)
-
-  res.status(httpStatus.CREATED).json({
+  sendResponse(res, {
     success: true,
+    statusCode: StatusCodes.CREATED,
     message: 'Service created successfully',
-    data: service,
+    data: result
   })
 })
 
-// Get all services
-const getAllServices = catchAsync(async (req: Request, res: Response) => {
-  const services = await ServiceService.getAllServices( { page: 1, totalPage: 0, limit: 10, total: 0 });
-  res.status(httpStatus.OK).json({
+
+const getAllServices = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const query = req.query
+
+  const result = await ServiceService.getAllServicesFromDB(query)
+
+  sendResponse(res, {
     success: true,
+    statusCode: StatusCodes.OK,
     message: 'Services retrieved successfully',
-    data: services,
-    
-  });
-});
+    data: result.data,
+    meta: result.meta
+  })
+})
 
-const getAllServicesbarber = catchAsync(async (req: Request, res: Response) => {
-  const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.limit as string) || 10;
-  const total = 0; 
-  const totalPage = 0; 
-  const services = await ServiceService.getAllServices({ page, totalPage, limit, total });
-  res.status(httpStatus.OK).json({
+const getSingleService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+
+  const result = await ServiceService.getSingleServiceFromDB(id)
+
+  sendResponse(res, {
     success: true,
-    message: 'Services retrieved successfully',
-    data: services,
-    
-  });
-});
+    statusCode: StatusCodes.OK,
+    message: 'Service retrieved successfully',
+    data: result
+  })
+})
 
-// Update a service with image upload
-const updateService = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const upload = fileUploadHandler();
-  upload(req, res, async (err) => {
-    if (err) {
-      return res.status(httpStatus.BAD_REQUEST).json({
-        success: false,
-        message: err.message,
-      });
-    }
+const updateService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+  const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+  const updateData = req.body
 
-    // Validate barber field if provided
-    if (req.body.barber && !req.body.barber.match(/^[0-9a-fA-F]{24}$/)) {
-      throw new ApiError(httpStatus.BAD_REQUEST, 'Invalid barber ID format');
-    }
+  const result = await ServiceService.updateServiceInDB(id, updateData, files)
 
-    const serviceData = {
-      ...req.body,
-      image: req.files && 'image' in req.files && req.files['image'][0]
-        ? `/uploads/images/${req.files['image'][0].filename}`
-        : undefined,
-    };
-
-    const service = await ServiceService.updateService(id, serviceData);
-    res.status(httpStatus.OK).json({
-      success: true,
-      message: 'Service updated successfully',
-      data: service,
-    });
-  });
-});
-
-// Delete a service
-const deleteService = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await ServiceService.deleteService(id);
-  res.status(httpStatus.OK).json({
+  sendResponse(res, {
     success: true,
-    message: 'Service deleted successfully',
-    data: null,
-  });
-});
+    statusCode: StatusCodes.OK,
+    message: 'Service updated successfully',
+    data: result
+  })
+})
+
+const updateServiceMiles = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+  const { miles } = req.body
+
+  const result = await ServiceService.updateServiceMilesInDB(id, miles)
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Service miles updated successfully',
+    data: result
+  })
+})
+
+const deleteService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+
+  await ServiceService.deleteServiceFromDB(id)
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Service deleted successfully'
+  })
+})
+
+const permanentDeleteService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+
+  await ServiceService.permanentDeleteServiceFromDB(id)
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Service permanently deleted'
+  })
+})
+
+const restoreService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+
+  const result = await ServiceService.restoreServiceInDB(id)
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Service restored successfully',
+    data: result
+  })
+})
+
+const assignUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params
+  const { userIds } = req.body
+
+  const result = await ServiceService.assignUsersToService(id, userIds)
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Users assigned successfully',
+    data: result
+  })
+})
+
+const getServiceStats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const result = await ServiceService.getServiceStatsFromDB()
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'Service statistics retrieved successfully',
+    data: result
+  })
+})
 
 export const ServiceController = {
   createService,
   getAllServices,
-  getAllServicesbarber,
+  getSingleService,
   updateService,
+  updateServiceMiles,
   deleteService,
-};
+  permanentDeleteService,
+  restoreService,
+  assignUsers,
+  getServiceStats
+}

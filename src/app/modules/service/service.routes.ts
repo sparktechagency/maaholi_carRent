@@ -1,19 +1,39 @@
-import express, { NextFunction, Request, Response } from 'express';
+import { Router } from 'express'
+import { ServiceController } from './service.controller'
+import fileUploadHandler from '../../middlewares/fileUploaderHandler'
 import auth from "../../middlewares/auth";
-import { USER_ROLES } from "../../../enums/user";
-import { ServiceController } from "./service.controller";
-import validateRequest from "../../middlewares/validateRequest";
-import { ServiceValidation } from "./service.validation";
-import fileUploadHandler from '../../middlewares/fileUploaderHandler';
-import multer from 'multer';
+import { USER_ROLES } from '../../../enums/user'
 
-const router = express.Router();
+const router = Router()
 
+// Get service statistics (before /:id routes)
+router.get('/stats', ServiceController.getServiceStats)
 
-router.post('/',auth(USER_ROLES.BARBER) ,ServiceController.createService); 
-router.get('/',auth(USER_ROLES.BARBER) ,ServiceController.getAllServicesbarber);
-router.get('/all' ,ServiceController.getAllServices);
-router.patch('/:id',auth(USER_ROLES.BARBER), ServiceController.updateService);
-router.delete('/:id',auth(USER_ROLES.BARBER), ServiceController.deleteService);
+// Create service with file upload
+router.post('/' ,auth(USER_ROLES.USER),fileUploadHandler(), ServiceController.createService)
 
-export const ServiceRoutes = router;
+// Get all services
+router.get('/', ServiceController.getAllServices)
+
+// Get single service
+router.get('/:id', ServiceController.getSingleService)
+
+// Update service with file upload
+router.put('/:id', fileUploadHandler(), ServiceController.updateService)
+
+// Update miles only
+router.patch('/:id/miles', ServiceController.updateServiceMiles)
+
+// Soft delete
+router.delete('/:id', ServiceController.deleteService)
+
+// Permanent delete
+router.delete('/:id/permanent', ServiceController.permanentDeleteService)
+
+// Restore service
+router.patch('/:id/restore', ServiceController.restoreService)
+
+// Assign users
+router.post('/:id/assign-users', ServiceController.assignUsers)
+
+export const ServiceRoutes = router

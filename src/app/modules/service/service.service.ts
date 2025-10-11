@@ -1,222 +1,341 @@
-import httpStatus, { StatusCodes } from 'http-status-codes';
-import { IService } from './service.interface';
-import { ServiceModelInstance } from './service.model';
-import ApiError from '../../../errors/ApiError';
-import fs from 'fs';
-import { User } from '../user/user.model';
-import path from 'path';
-import { logger } from '../../../shared/logger';
-import { SubCategory } from '../subCategory/subCategory.model';
-import { Day } from '../../../enums/day';
-import { isValidDay, to24Hour } from '../../../helpers/find.offer';
-import unlinkFile from '../../../shared/unlinkFile';
+import { StatusCodes } from 'http-status-codes'
+import { Request, Response } from 'express';
+import { Types } from 'mongoose'
+import { ServiceModelInstance } from './service.model'
+import { IService } from './service.interface'
+import ApiError from '../../../errors/ApiError'
+import { parseFormData } from '../../../helpers/nestedObject.helper'
 
-interface PaginationOptions {
-  page: number;
-  limit: number;
-  searchTerm: string;
-  barberId: string;
-}
 
-interface PaginatedResult {
-  services: IService[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPage: number;
-  };
-}
 
-const unlinkFiles = (files: string[] | string | undefined) => {
-  if (!files) return
-  if (Array.isArray(files)) {
-    files.forEach(f => f && unlinkFile(f))
-  } else {
-    unlinkFile(files)
-  }
-}
+// const createServiceToDB = async ( req: Request,
+//   payload: any,
+//   files?: { [fieldname: string]: Express.Multer.File[] }
+// ): Promise<IService> => {
+//  const user = req.user.id;
+//   const parsedData = parseFormData(payload, files)
 
-/**
- * Create service in DB
- */
- export const createServiceToDB = async (payload: Partial<IService>) => {
-  const basicInformation = payload.basicInformation
+//   // Validate required fields
+//   if (!user.createdBy) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'createdBy is required')
+//   }
 
-  if (!basicInformation?.image) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'basicInformation.image is required')
-  }
+//   // Create service
+//   const service = await ServiceModelInstance.create(parsedData)
+//   if (!service) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service')
+//   }
 
-  // Build uniqueness filter: VIN > tagNumber > make+model+year
-  const uniquenessFilters: any[] = []
-  if (basicInformation?.vin) uniquenessFilters.push({ 'basicInformation.vin': basicInformation.vin })
-  if (basicInformation?.tagNumber)
-    uniquenessFilters.push({ 'basicInformation.tagNumber': basicInformation.tagNumber })
-  if (basicInformation?.make || basicInformation?.model || basicInformation?.year) {
-    const partial: any = {}
-    if (basicInformation.make) partial['basicInformation.make'] = basicInformation.make
-    if (basicInformation.model) partial['basicInformation.model'] = basicInformation.model
-    if (basicInformation.year) partial['basicInformation.year'] = basicInformation.year
-    if (Object.keys(partial).length) uniquenessFilters.push(partial)
+//   // Populate relationships
+//   await service.populate([
+//     { path: 'user', select: 'name email' },
+//     { path: 'createdBy', select: 'name email' },
+//     { path: 'assignedUsers', select: 'name email' }
+//   ])
+
+//   return service
+// }
+const createServiceToDB = async (
+  req: Request,
+  payload: any,
+  files?: { [fieldname: string]: Express.Multer.File[] }
+): Promise<IService> => {
+  // Parse form data and files
+  const parsedData = parseFormData(payload, files)
+  
+  console.log('Parsed Data:', JSON.stringify(parsedData, null, 2))
+
+  // Get user from request (assuming you have auth middleware)
+  const userId = (req as any).user?.id || (req as any).user?._id
+
+  if (!userId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated')
   }
 
-  try {
-    if (uniquenessFilters.length) {
-      const exists = await ServiceModelInstance.findOne({ $or: uniquenessFilters }).lean()
-      if (exists) {
-        unlinkFiles(basicInformation.image)
-        unlinkFiles(basicInformation.insuranceProof)
-        throw new ApiError(StatusCodes.NOT_ACCEPTABLE, 'Service already exists')
-      }
-    }
+  // Add createdBy to parsed data
+  parsedData.createdBy = userId
 
-    const created = await ServiceModelInstance.create(payload)
-    if (!created) {
-      unlinkFiles(basicInformation.image)
-      unlinkFiles(basicInformation.insuranceProof)
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service')
-    }
-
-    return created.populate({
-      path: 'createdBy',
-      select: 'firstName lastName profile role status',
-    })
-  } catch (err) {
-    unlinkFiles(basicInformation.image)
-    unlinkFiles(basicInformation.insuranceProof)
-    throw err
+  // Create service
+  const service = await ServiceModelInstance.create(parsedData)
+  if (!service) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service')
   }
+
+  // Populate relationships
+  await service.populate([
+    { path: 'user', select: 'name email' },
+    { path: 'createdBy', select: 'name email' },
+  ])
+
+  return service
 }
 
+const getAllServicesFromDB = async (query: any) => {
+  const {
+    page = 1,
+    limit = 10,
+    sort = '-createdAt',
+    search = '',
+    status,
+    userId,
+    city,
+    country
+  } = query
 
-const getAllServices = async (pagination: { page: number, totalPage: number, limit: number, total: number }): Promise<{ services: IService[], pagination: { page: number, limit: number, total: number, totalPage: number } }> => {
-  const services = await ServiceModelInstance.find()
-    .populate('category')
-    .populate('title')
-    .populate('barber');
-
-  // Use the pagination values from the argument
-  const { page, limit, total, totalPage } = pagination;
-
-  return {
-    services,
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPage,
-    },
-  };
-};
-
-
-// Get all services with pagination and search
-const getAllServicesbarber = async ({ page, limit, searchTerm, barberId }: PaginationOptions): Promise<PaginatedResult> => {
-  logger.info(`Starting getAllServices: page=${page}, limit=${limit}, searchTerm=${searchTerm}, barberId=${barberId}`);
+  const pageNum = parseInt(page as string)
+  const limitNum = parseInt(limit as string)
+  const skip = (pageNum - 1) * limitNum
 
   // Build query
-  const query: any = { barber: barberId }; // Filter by authenticated barber
-  if (searchTerm) {
-    const subCategoryIds = await SubCategory.find({
-      title: { $regex: searchTerm, $options: 'i' }
-    }).select('_id');
-    
-    query.$or = [
-      { serviceType: { $regex: searchTerm, $options: 'i' } },
-      { description: { $regex: searchTerm, $options: 'i' } },
-      { title: { $in: subCategoryIds } },
-    ];
+  const searchQuery: any = { isDeleted: false }
+
+  // Search across multiple fields
+  if (search) {
+    searchQuery.$or = [
+      { 'basicInformation.make': { $regex: search, $options: 'i' } },
+      { 'basicInformation.model': { $regex: search, $options: 'i' } },
+      { 'basicInformation.vin': { $regex: search, $options: 'i' } },
+      { 'basicInformation.tagNumber': { $regex: search, $options: 'i' } },
+      { 'location.address': { $regex: search, $options: 'i' } }
+    ]
   }
 
-  try {
-    // Calculate pagination
-    const total = await ServiceModelInstance.countDocuments(query);
-    const totalPage = Math.ceil(total / limit);
-    const skip = (page - 1) * limit;
+  // Filters
+  if (status) searchQuery.status = status
+  if (userId) searchQuery.user = new Types.ObjectId(userId as string)
+  if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' }
+  if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' }
 
-    // Fetch services
-    const services = await ServiceModelInstance.find(query)
-      .populate('category')
-      .populate('title')
-      .populate('barber')
+  // Execute query
+  const [services, total] = await Promise.all([
+    ServiceModelInstance
+      .find(searchQuery)
+      .populate('user', 'name email')
+      .populate('assignedUsers', 'name email')
+      .populate('createdBy', 'name email')
+      .sort(sort as string)
       .skip(skip)
-      .limit(limit)
-      .sort({ createdAt: -1 }); // Sort by newest first
+      .limit(limitNum)
+      .lean(),
+    ServiceModelInstance.countDocuments(searchQuery)
+  ])
 
-    logger.info(`Retrieved ${services.length} services, total: ${total}`);
-    return {
-      services,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPage,
-      },
-    };
-  } catch (error) {
-    logger.error(`Database error retrieving services: ${error}`);
-    throw error;
+  return {
+    data: services,
+    meta: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
+    }
   }
-};
+}
 
-// Update a service
-const updateService = async (id: string, payload: Partial<IService>): Promise<IService | null> => {
-  const service = await ServiceModelInstance.findById(id);
+const getSingleServiceFromDB = async (id: string): Promise<IService> => {
+  // Validate ObjectId
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  const service = await ServiceModelInstance
+    .findOne({ _id: id, isDeleted: false })
+    .populate('user', 'name email')
+    .populate('assignedUsers', 'name email')
+    .populate('createdBy', 'name email')
+    .lean()
+
   if (!service) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Service not found');
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
   }
 
-  // Validate barber if provided
-  if (payload) {
-    const barberExists = await User.findById(payload);
-    if (!barberExists) {
-      throw new ApiError(httpStatus.NOT_FOUND, 'Barber not found');
-    }
+  return service as IService
+}
+
+const updateServiceInDB = async (
+  id: string,
+  payload: any,
+  files?: { [fieldname: string]: Express.Multer.File[] }
+): Promise<IService> => {
+  // Validate ObjectId
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
   }
 
-  // If updating with new image, delete old image
-  if (payload.image && service.image && service.image !== payload.image) {
-    const oldImagePath = path.join(process.cwd(), service.image.toString());
-    if (fs.existsSync(oldImagePath)) {
-      fs.unlinkSync(oldImagePath);
-    }
-  }
+  // Parse form data and files
+  const parsedData = parseFormData(payload, files)
 
-  const updatedService = await ServiceModelInstance.findByIdAndUpdate(id, payload, {
-    new: true,
-    runValidators: true,
-  })
-    .populate('category')
-    .populate('title')
-    .populate('barber');
+  // Remove fields that shouldn't be updated
+  delete parsedData._id
+  delete parsedData.createdAt
+  delete parsedData.createdBy
+  delete parsedData.isDeleted
 
-  return updatedService;
-};
+  // Update service
+  const service = await ServiceModelInstance.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { $set: parsedData },
+    { new: true, runValidators: true }
+  )
+    .populate('user', 'name email')
+    .populate('assignedUsers', 'name email')
+    .populate('createdBy', 'name email')
 
-// Delete a service
-const deleteService = async (id: string): Promise<void> => {
-  const service = await ServiceModelInstance.findById(id);
   if (!service) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Service not found');
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
   }
 
-  // Delete associated image
-  if (service.image) {
-    const imagePath = path.join(process.cwd(), service.image.toString());
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
+  return service
+}
+
+const updateServiceMilesInDB = async (id: string, miles: number) => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  if (miles === undefined || miles < 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Valid miles value is required')
+  }
+
+  const service = await ServiceModelInstance.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { $set: { miles: Number(miles) } },
+    { new: true }
+  ).select('miles totalMiles')
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+  }
+
+  return {
+    miles: service.miles,
+    totalMiles: service.totalMiles
+  }
+}
+
+const deleteServiceFromDB = async (id: string): Promise<void> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  const service = await ServiceModelInstance.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { $set: { isDeleted: true } },
+    { new: true }
+  )
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+  }
+}
+
+const permanentDeleteServiceFromDB = async (id: string): Promise<void> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  const service = await ServiceModelInstance.findByIdAndDelete(id)
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+  }
+}
+
+const restoreServiceInDB = async (id: string): Promise<IService> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  const service = await ServiceModelInstance.findOneAndUpdate(
+    { _id: id, isDeleted: true },
+    { $set: { isDeleted: false } },
+    { new: true }
+  )
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found or already active')
+  }
+
+  return service
+}
+
+const assignUsersToService = async (id: string, userIds: string[]): Promise<IService> => {
+  if (!Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+  }
+
+  if (!Array.isArray(userIds) || userIds.length === 0) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'userIds must be a non-empty array')
+  }
+
+  // Validate all user IDs
+  const validUserIds = userIds.filter(uid => Types.ObjectId.isValid(uid))
+  if (validUserIds.length !== userIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'One or more invalid user IDs')
+  }
+
+  const service = await ServiceModelInstance.findOneAndUpdate(
+    { _id: id, isDeleted: false },
+    { $addToSet: { assignedUsers: { $each: validUserIds } } },
+    { new: true }
+  ).populate('assignedUsers', 'name email')
+
+  if (!service) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+  }
+
+  return service
+}
+
+const getServiceStatsFromDB = async () => {
+  const stats = await ServiceModelInstance.aggregate([
+    { $match: { isDeleted: false } },
+    {
+      $group: {
+        _id: null,
+        totalServices: { $sum: 1 },
+        totalMiles: { $sum: '$totalMiles' },
+        averageMiles: { $avg: '$totalMiles' }
+      }
+    },
+    {
+      $project: {
+        _id: 0,
+        totalServices: 1,
+        totalMiles: 1,
+        averageMiles: { $round: ['$averageMiles', 2] }
+      }
     }
+  ])
+
+  // Count by status
+  const statusCounts = await ServiceModelInstance.aggregate([
+    { $match: { isDeleted: false } },
+    {
+      $group: {
+        _id: '$status',
+        count: { $sum: 1 }
+      }
+    }
+  ])
+
+  return {
+    summary: stats[0] || {},
+    byStatus: statusCounts
   }
-
-  await ServiceModelInstance.findByIdAndDelete(id);
-};
+}
 
 
-export const ServiceService = {
+const ServiceService = {
   createServiceToDB,
-  getAllServices,
-  updateService,
-  deleteService,
-  getAllServicesbarber,
-};
+  getAllServicesFromDB,
+  getSingleServiceFromDB,
+  updateServiceInDB,
+  updateServiceMilesInDB,
+  deleteServiceFromDB,
+  permanentDeleteServiceFromDB,
+  restoreServiceInDB,
+  assignUsersToService,
+  getServiceStatsFromDB
+}
 
+export default ServiceService

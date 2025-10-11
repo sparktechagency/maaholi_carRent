@@ -49,27 +49,7 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-//  const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//   try {
-//     const { mobileNumber, fcmToken, deviceId, role, deviceType } = req.body;
 
-//     if (!mobileNumber) {
-//       throw new AppError("Mobile number is required", 400);
-//     }
-
-//     // Call the service method for login or registration
-//     const result = await AuthService.loginService(mobileNumber, fcmToken, deviceId, role, deviceType);
-
-//     res.status(200).json({
-//       status: "success",
-//       message: result.message,
-//       userId: result.userId
-//     });
-
-//   } catch (error) {
-//     next(error);
-//   }
-// };
 const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { mobileNumber, deviceToken, deviceId, role, deviceType } = req.body;
@@ -125,7 +105,6 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
     const email = req.body.email;
     const result = await AuthService.forgetPasswordToDB(email);
-
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,

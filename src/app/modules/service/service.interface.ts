@@ -7,7 +7,7 @@ export interface IBasicInformation {
   deviceId?: string
   deviceName?: string
   year?: number
-  image: string
+  productImage?: string
   insuranceProof?: string[]
   color?: string
   vin?: string

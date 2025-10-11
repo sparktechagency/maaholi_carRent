@@ -1,4 +1,4 @@
-import { ISubCategory } from "../app/modules/subCategory/subCategory.interface";
+import { ISubCategory } from "../app/modules/subCategory-Brand/subCategory.interface";
 
 interface PaginationOptions {
   page: number;
