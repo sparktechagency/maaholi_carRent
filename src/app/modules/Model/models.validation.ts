@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { objectIdZodSchema } from '../../../helpers/checkObjectIdZodSchemaHelper'
-import { brand } from '../subCategory-Brand/subCategory.model'
 import { model } from 'mongoose'
 
 const createSubCategoryZodSchema = z.object({

@@ -1,20 +1,23 @@
 import { model, Schema } from 'mongoose'
-import { BrandsI, IBrand, } from './subCategory.interface'
+import { BrandsI, IBrand } from './subCategory.interface' 
 
-const BrandScheme = new Schema<IBrand, IBrand>(
-    {
-        category: {
-            type: Schema.Types.ObjectId,
-            ref: "Category",
-            required: true
-        },
-        title: {
-            type: String,
-            required: true,
-            unique: true
-        }
+const BrandSchema = new Schema<IBrand, BrandsI>(
+  {
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Category',
+      required: true
     },
-    { timestamps: true },
+    brand: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      lowercase: true 
+    }
+  },
+  { timestamps: true }
 )
 
-export const brand = model<IBrand,BrandsI >('brand', BrandScheme)
+
+export const BrandModel = model<IBrand, BrandsI>('Brand', BrandSchema)

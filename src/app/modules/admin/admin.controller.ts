@@ -50,6 +50,16 @@ const countSummary = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const counttotalCar = catchAsync(async (req: Request, res: Response) => {
+    const result = await AdminService.totalserviceInCar();
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'total car Retrieved Successfully',
+        data: result
+    });
+});
+
 const userStatistics = catchAsync(async (req: Request, res: Response) => {
     const result = await AdminService.userStatisticsFromDB();
     sendResponse(res, {
@@ -98,5 +108,6 @@ export const AdminController = {
     revenueStatistics,
     countSummary,
     userList,
-    reservationList
+    reservationList,
+    counttotalCar
 };

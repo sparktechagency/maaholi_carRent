@@ -3,7 +3,8 @@ import { carStatus } from '../../../enums/car-status'
 
 export interface IBasicInformation {
   make?: string
-  model?: string
+  model?: Types.ObjectId,
+  Category: Types.ObjectId,
   deviceId?: string
   deviceName?: string
   year?: number

@@ -5,8 +5,8 @@ import { CarModel } from './models.model';
 
 
 const createModelTDB = async (payload: ICarModel) => {
-  const { title } = payload;
-  const isExistName = await CarModel.findOne({ title: title })
+  const { model } = payload;
+  const isExistName = await CarModel.findOne({ model: model })
 
   if (isExistName) {
     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This carModels Name Already Exist");
@@ -21,7 +21,7 @@ const createModelTDB = async (payload: ICarModel) => {
 }
 
 const getmodelFromDb = async (): Promise<ICarModel[]> => {
-  const result = await CarModel.find({}).populate("brand", "name image")
+  const result = await CarModel.find({}).populate("model", "image")
   return result;
 }
 

@@ -111,7 +111,7 @@ const getAllServicesFromDB = async (query: any) => {
     ServiceModelInstance
       .find(searchQuery)
       .populate('user', 'name email')
-      .populate('assignedUsers', 'name email')
+      // .populate('assignedUsers', 'name email')
       .populate('createdBy', 'name email')
       .sort(sort as string)
       .skip(skip)

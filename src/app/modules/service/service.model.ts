@@ -1,3 +1,4 @@
+import { Category } from './../category/category.model';
 import { HydratedDocument, Model, model, Schema, Types } from 'mongoose'
 import { IService, ServiceModel } from './service.interface'
 import { carStatus } from '../../../enums/car-status'
@@ -11,6 +12,11 @@ const serviceSchema = new Schema<IService, ServiceModel>(
             ref: "CarModel",
             required: true 
           },
+      Category: {
+            type: Schema.Types.ObjectId,
+            ref: "Category",
+            required: true 
+      },
       deviceId: { type: String, required: false },
       vinNo: { type: String, required: false },
       year: { type: Number, required: false }, // use Number for year

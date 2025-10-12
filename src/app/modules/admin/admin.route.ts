@@ -32,6 +32,10 @@ router.get('/count-summary',
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
     AdminController.countSummary
 );
+router.get('/numberofCar',
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN,USER_ROLES.USER),
+    AdminController.counttotalCar
+);
 
 router.get('/user-list',
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),

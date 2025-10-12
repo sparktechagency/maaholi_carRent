@@ -35,7 +35,6 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
     statusCode: StatusCodes.OK,
     message: 'Services retrieved successfully',
     data: result.data,
-    meta: result.meta
   })
 })
 

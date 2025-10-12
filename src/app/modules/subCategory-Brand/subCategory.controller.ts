@@ -2,11 +2,11 @@ import { Request, Response } from 'express'
 import { StatusCodes } from 'http-status-codes'
 import catchAsync from '../../../shared/catchAsync'
 import sendResponse from '../../../shared/sendResponse'
-import { SubCategoryService } from './subCategory.service'
+import { BrandService } from './subCategory.service'
 
-const createSubCategory = catchAsync(async (req: Request, res: Response) => {
+const createBrand = catchAsync(async (req: Request, res: Response) => {
     const categoryData = req.body;
-    const result = await SubCategoryService.createSubCategoryToDB(categoryData)
+    const result = await BrandService.createBrandToDB(categoryData)
 
     sendResponse(res, {
         success: true,
@@ -16,8 +16,8 @@ const createSubCategory = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
-const getSubCategories = catchAsync(async (req: Request, res: Response) => {
-    const result = await SubCategoryService.getSubCategoriesFromDB();
+const getBrand = catchAsync(async (req: Request, res: Response) => {
+    const result = await BrandService.getBrandsFromDB();
 
     sendResponse(res, {
         success: true,
@@ -27,10 +27,10 @@ const getSubCategories = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
-const updateSubCategory = catchAsync(async (req: Request, res: Response) => {
+const updateBrand = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
     const updateCategoryData = req.body;
-    const result = await SubCategoryService.updateSubCategoryToDB(id, updateCategoryData)
+    const result = await BrandService.updateBrandToDB(id, updateCategoryData)
 
     sendResponse(res, {
         success: true,
@@ -40,9 +40,9 @@ const updateSubCategory = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
-const deleteSubCategory = catchAsync(async (req: Request, res: Response) => {
+const deleteBrand = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
-    const result = await SubCategoryService.deleteSubCategoryToDB(id)
+    const result = await BrandService.deleteBrandToDB(id)
 
     sendResponse(res, {
         success: true,
@@ -53,9 +53,9 @@ const deleteSubCategory = catchAsync(async (req: Request, res: Response) => {
 })
 
 
-export const SubCategoryController = {
-    createSubCategory,
-    getSubCategories,
-    updateSubCategory,
-    deleteSubCategory
+export const BrandController = {
+    createBrand,
+    getBrand,
+    updateBrand,
+    deleteBrand
 }

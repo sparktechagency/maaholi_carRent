@@ -4,6 +4,7 @@ import { IUser } from '../user/user.interface';
 import { User } from '../user/user.model';
 import { Reservation } from '../reservation/reservation.model';
 import QueryBuilder from '../../../shared/apiFeature';
+import { ServiceModelInstance } from '../service/service.model';
 
 const createAdminToDB = async (payload: IUser): Promise<IUser> => {
     const createAdmin: any = await User.create(payload);
@@ -217,6 +218,58 @@ const reservationListFromDB = async (query: Record<string, any>) => {
     return { reservations, pagination };
 };
 
+//total service
+const totalserviceInCar = async () => {
+
+    const totalcar = await ServiceModelInstance.countDocuments({
+
+    });
+
+
+    // const totalRevenue = await Reservation.aggregate([
+    //     {
+    //         $match: {
+    //             status: "Completed",
+    //             paymentStatus: "Paid"
+    //         }
+    //     },
+    //     {
+    //         $group: {
+    //             _id: null,
+    //             total: { $sum: "$price" }
+    //         }
+    //     }
+    // ]);
+
+    // const totalIncome = await Reservation.aggregate([
+    //     {
+    //         $match: {
+    //             status: "Completed",
+    //             paymentStatus: "Paid"
+    //         }
+    //     },
+    //     {
+    //         $group: {
+    //             _id: null,
+    //             total: { $sum: "$price" }
+    //         }
+    //     },
+    //     {
+    //         $project: {
+    //             _id: 0,
+    //             totalAfterDeduction: { $multiply: ["$total", 0.1] }
+    //         }
+    //     }
+    // ]);
+
+    return {
+        totalcar,
+        // totalBarbers,
+        // totalRevenue: totalRevenue[0]?.total || 0,
+        // totalIncome: totalIncome[0]?.totalAfterDeduction || 0
+    };
+
+}
 export const AdminService = {
     createAdminToDB,
     deleteAdminFromDB,
@@ -225,5 +278,6 @@ export const AdminService = {
     userStatisticsFromDB,
     revenueStatisticsFromDB,
     userListFromDB,
-    reservationListFromDB
+    reservationListFromDB,
+    totalserviceInCar
 };
