@@ -219,57 +219,75 @@ const reservationListFromDB = async (query: Record<string, any>) => {
 };
 
 //total service
+// const totalserviceInCar = async () => {
+
+//     const totalcar = await ServiceModelInstance.countDocuments({
+
+//     });
+
+
+//     const totaldeactive = await ServiceModelInstance.aggregate([
+//         {
+//             $match: {
+//                 isDeleted:true,
+//                 // paymentStatus: "Paid"
+//             }
+//         },
+//         {
+//             $group: {
+//                 _id: null,
+//                 total: { $sum: "$isDeleted" }
+//             }
+//         }
+//     ]);
+
+//     const totalActive = await ServiceModelInstance.aggregate([
+//         {
+//             $match: {
+//                 isDeleted:true
+//                 // paymentStatus: "Paid"
+//             }
+//         },
+//         {
+//             $group: {
+//                 _id: null,
+//                 total: { $sum: "$isDeleted" }
+//             }
+//         },
+//         // {
+//         //     $project: {
+//         //         _id: 0,
+//         //         totalAfterDeduction: { $multiply: ["$total", 0.1] }
+//         //     }
+//         // }
+//     ]);
+
+//     return {
+//         totalcar,
+//         totaldeactive,
+//         totalActive
+//         // totalRevenue: totalRevenue[0]?.total || 0,
+//         // totalIncome: totalIncome[0]?.totalAfterDeduction || 0
+//     };
+
+
+// }
+
 const totalserviceInCar = async () => {
+  // run independent DB ops in parallel
+  const [totalcar, totalDeactiveCount, totalActiveCount] = await Promise.all([
+    ServiceModelInstance.countDocuments({}),                 // total docs
+    ServiceModelInstance.countDocuments({ isDeleted: true }),  // deactivated
+    ServiceModelInstance.countDocuments({ isDeleted: false }), // active
+  ]);
 
-    const totalcar = await ServiceModelInstance.countDocuments({
+  return {
+    totalcar,
+    totalDeactive: totalDeactiveCount,
+    totalActive: totalActiveCount,
+  };
+};
 
-    });
-
-
-    // const totalRevenue = await Reservation.aggregate([
-    //     {
-    //         $match: {
-    //             status: "Completed",
-    //             paymentStatus: "Paid"
-    //         }
-    //     },
-    //     {
-    //         $group: {
-    //             _id: null,
-    //             total: { $sum: "$price" }
-    //         }
-    //     }
-    // ]);
-
-    // const totalIncome = await Reservation.aggregate([
-    //     {
-    //         $match: {
-    //             status: "Completed",
-    //             paymentStatus: "Paid"
-    //         }
-    //     },
-    //     {
-    //         $group: {
-    //             _id: null,
-    //             total: { $sum: "$price" }
-    //         }
-    //     },
-    //     {
-    //         $project: {
-    //             _id: 0,
-    //             totalAfterDeduction: { $multiply: ["$total", 0.1] }
-    //         }
-    //     }
-    // ]);
-
-    return {
-        totalcar,
-        // totalBarbers,
-        // totalRevenue: totalRevenue[0]?.total || 0,
-        // totalIncome: totalIncome[0]?.totalAfterDeduction || 0
-    };
-
-}
 export const AdminService = {
     createAdminToDB,
     deleteAdminFromDB,
