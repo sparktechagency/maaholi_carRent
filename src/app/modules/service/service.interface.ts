@@ -9,7 +9,7 @@ export interface IBasicInformation {
   Category: Types.ObjectId,
   vinNo?: string,
   year?: number
-  productImage?: string
+  productImage?: string[]
   insuranceProof?: string[]
   RegularPrice?: number
   OfferPrice?: number

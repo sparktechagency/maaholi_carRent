@@ -24,8 +24,8 @@ const serviceSchema = new Schema<IService, ServiceModel>(
             required: true 
       },
       vinNo: { type: String, required: false },
-      year: { type: Number, required: false }, // use Number for year
-      productImage: { type: String, required: false },
+      year: { type: Number, required: false },
+      productImage: { type: [String], required: false },
       RegularPrice: { type: Number, required: true},
       OfferPrice: { type: Number, required: true},
       leasingRate: {type: String, required: false},

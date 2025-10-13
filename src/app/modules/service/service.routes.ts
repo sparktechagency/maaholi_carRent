@@ -14,6 +14,7 @@ router.post('/' ,auth(USER_ROLES.USER),fileUploadHandler(), ServiceController.cr
 
 // Get all services
 router.get('/', ServiceController.getAllServices)
+router.get('/filter', ServiceController.  getAllFilter)
 
 // Get single service
 router.get('/:id', ServiceController.getSingleService)
