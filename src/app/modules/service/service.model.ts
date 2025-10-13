@@ -7,6 +7,12 @@ const serviceSchema = new Schema<IService, ServiceModel>(
   {
     basicInformation: {
       vehicleName: { type: String, required: false },
+         
+      brand: { 
+            type: Schema.Types.ObjectId,
+            ref: "BrandModel",
+            required: true 
+          },
       model: { 
             type: Schema.Types.ObjectId,
             ref: "CarModel",
@@ -17,22 +23,30 @@ const serviceSchema = new Schema<IService, ServiceModel>(
             ref: "Category",
             required: true 
       },
-      deviceId: { type: String, required: false },
       vinNo: { type: String, required: false },
       year: { type: Number, required: false }, // use Number for year
       productImage: { type: String, required: false },
-      insuranceProof: { type: [String], required: false },
-      color: { type: String, required: false },
-      vin: { type: String, required: false },
-      tagNumber: { type: String, required: false },
-      insurancePolicyNumber: { type: String, required: false },
+      RegularPrice: { type: Number, required: true},
+      OfferPrice: { type: Number, required: true},
+      leasingRate: {type: String, required: false},
+      condition: { type: String, required: false },
+      miles: { type: Number, default: 0 },
+      MfkWarranty: { type: String, required:false},
+      AccidentVehicle: {type: String, required: false},
+      BodyType: {type: String, required: false},
+      insuranceProof:{type: String, required: false}
     },
 
     // Category: Technical Information
     technicalInformation: {
+      fuelType:{type: String, required: false},
+      driveType: {type: String, required: false},
+      transmission: {type: String, required: false},
       engineType: { type: String, required: false },
-      transmission: { type: String, required: false },
-      // add other technical fields here...
+      performance: { type: String, required: false },
+      engineDisplacement: { type: String, required: false },
+      cylinders: { type: String, required: false },
+
     },
 
     // Category: Electric & Hybrid Specific
@@ -40,25 +54,51 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       batteryCapacityKWh: { type: Number, required: false },
       chargingTimeHours: { type: Number, required: false },
       rangeKm: { type: Number, required: false },
-      // add other EV-specific fields...
+      towingCapacity:  { type: Number, required: false },
+      totalWeight:  { type: Number, required: false },
+      curbWeight:  { type: Number, required: false },
     },
 
-    // Category: Equipment
-    equipment: {
-      hasNavigation: { type: Boolean, default: false },
-      hasCruiseControl: { type: Boolean, default: false },
-      // add equipment flags...
+equipment: {
+   ABS: { type: Boolean, default: false },
+  Camera: { type: Boolean, default: false },
+  AdaptiveCruiseControl: { type: Boolean, default: false },
+  AlarmSystem: { type: Boolean, default: false },
+  ElectricSeatAdjustment: { type: Boolean, default: false },
+  Towbar: { type: Boolean, default: false },
+  LeatherAlcantaraFabricSeats: { type: Boolean, default: false },
+  HeatedVentilatedSeats: { type: Boolean, default: false },
+  SunroofPanoramicRoof: { type: Boolean, default: false },
+  AndroidAuto: { type: Boolean, default: false },
+  NavigationSystem: { type: Boolean, default: false },
+  ParkingSensors: { type: Boolean, default: false },
+  HeadUpDisplay: { type: Boolean, default: false },
+  XenonLEDHeadlights: { type: Boolean, default: false },
+  KeylessEntryStart: { type: Boolean, default: false },
+  Isofix: { type: Boolean, default: false },
+  StartStopSystem: { type: Boolean, default: false },
+  TheftProtection: { type: Boolean, default: false },
+  ClimateControl: { type: Boolean, default: false },
+  SportsSeats: { type: Boolean, default: false },
+  SpeedLimiter: { type: Boolean, default: false },
+  StabilityControlESP: { type: Boolean, default: false },
+  SoundSystem: { type: Boolean, default: false },
     },
 
     // Category: Extras
     extras: {
-      roofRack: { type: Boolean, default: false },
-      towBar: { type: Boolean, default: false },
-      // add extras...
+      tires:{ type: String, required: false},
+      season:{ type: String, required: false},
+      handicapAccessible:{ type: String, required: false},
+      raceCar:{ type: String, required: false},
+      tuning:{ type: String, required: false},
+
+
     },
 
-    // Category: Colour (kept separate in case you have multiple color fields)
+  
     colour: {
+      metallic: {type: String, required: false},
       exterior: { type: String, required: false },
       interior: { type: String, required: false },
     },
@@ -103,8 +143,6 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       enum: Object.values(carStatus),
     },
 
-    miles: { type: Number, default: 0 },
-    totalMiles: { type: Number, default: 0 },
 
     isDeleted: { type: Boolean, default: false },
 

@@ -1,17 +1,24 @@
+import { Stripe } from 'stripe';
 import { Document, Model, Types } from 'mongoose'
 import { carStatus } from '../../../enums/car-status'
 
 export interface IBasicInformation {
-  make?: string
+  vehicleName: string
+  brand?: Types.ObjectId,
   model?: Types.ObjectId,
   Category: Types.ObjectId,
-  deviceId?: string
-  deviceName?: string
+  vinNo?: string,
   year?: number
   productImage?: string
   insuranceProof?: string[]
-  color?: string
-  vin?: string
+  RegularPrice?: number
+  OfferPrice?: number
+  leasingRate?: string
+  condition?: string
+  miles?:number
+  MfkWarranty?: string
+  AccidentVehicle?: string
+  BodyType?: string
   tagNumber?: string
   insurancePolicyNumber?: string
 }
@@ -19,28 +26,59 @@ export interface IBasicInformation {
 export interface ITechnicalInformation {
   engineType?: string
   transmission?: string
-  // add other fields as needed
+  fuelType?: string
+  driveType?: string
+  performance?: string
+  engineDisplacement?: string
+  cylinders?: string
 }
 
 export interface IElectricHybrid {
   batteryCapacityKWh?: number
   chargingTimeHours?: number
   rangeKm?: number
+  towingCapacity?: number
+  totalWeight?: number
+  curbWeight?: number
 }
 
 export interface IEquipment {
-  hasNavigation?: boolean
-  hasCruiseControl?: boolean
-  // add more equipment flags
+ABS: { type: Boolean, default: false };
+  Camera: { type: Boolean, default: false };
+  AdaptiveCruiseControl: { type: Boolean, default: false };
+  AlarmSystem: { type: Boolean, default: false };
+  ElectricSeatAdjustment: { type: Boolean, default: false };
+  Towbar: { type: Boolean, default: false };
+  LeatherAlcantaraFabricSeats: { type: Boolean, default: false };
+  HeatedVentilatedSeats: { type: Boolean, default: false };
+  SunroofPanoramicRoof: { type: Boolean, default: false };
+  AndroidAuto: { type: Boolean, default: false };
+  NavigationSystem: { type: Boolean, default: false };
+  ParkingSensors: { type: Boolean, default: false };
+  HeadUpDisplay: { type: Boolean, default: false };
+  XenonLEDHeadlights: { type: Boolean, default: false };
+  KeylessEntryStart: { type: Boolean, default: false };
+  Isofix: { type: Boolean, default: false };
+  StartStopSystem: { type: Boolean, default: false };
+  TheftProtection: { type: Boolean, default: false };
+  ClimateControl: { type: Boolean, default: false };
+  SportsSeats: { type: Boolean, default: false };
+  SpeedLimiter: { type: Boolean, default: false };
+  StabilityControlESP: { type: Boolean, default: false };
+  SoundSystem: { type: Boolean, default: false };
 }
 
 export interface IExtras {
-  roofRack?: boolean
-  towBar?: boolean
+ tuning?: string
+ raceCar?: string
+ handicapAccessible?: string
+ season?: string
+ tires?: string
 }
 
 export interface IColour {
   exterior?: string
+  metallic?: string
   interior?: string
 }
 
@@ -50,12 +88,16 @@ export interface ISeatsAndDoors {
 }
 
 export interface IEnergyAndEnvironment {
-  co2EmissionGPerKm?: number
-  fuelType?: string
+fuelConsumption?: string
+coEmissions?: string
+energyEfficiencyClass?: string
+
 }
 
 export interface IEuroStandard {
-  euroClass?: string
+  fuelType?: string,
+  transmission?: string,
+
 }
 
 export interface ILocation {
@@ -79,6 +121,7 @@ export interface IService extends Document {
   energyAndEnvironment?: IEnergyAndEnvironment
   euroStandard?: IEuroStandard
   location?: ILocation
+  description?: string
 
   user?: Types.ObjectId
   service?: Types.ObjectId
@@ -87,6 +130,7 @@ export interface IService extends Document {
   status: keyof typeof carStatus
   miles: number
   totalMiles: number
+  price: number
   isDeleted: boolean
 
   createdBy: Types.ObjectId
