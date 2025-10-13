@@ -40,12 +40,10 @@ const createServiceToDB = async (
   payload: any,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
-  // Parse form data and files
   const parsedData = parseFormData(payload, files)
   
   console.log('Parsed Data:', JSON.stringify(parsedData, null, 2))
 
-  // Get user from request (assuming you have auth middleware)
   const userId = (req as any).user?.id || (req as any).user?._id
 
   if (!userId) {

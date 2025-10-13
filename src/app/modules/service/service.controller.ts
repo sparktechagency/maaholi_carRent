@@ -38,6 +38,7 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
   })
 })
 
+
 const getSingleService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params
 
@@ -50,6 +51,7 @@ const getSingleService = catchAsync(async (req: Request, res: Response, next: Ne
     data: result
   })
 })
+
 
 const updateService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params
@@ -65,6 +67,7 @@ const updateService = catchAsync(async (req: Request, res: Response, next: NextF
     data: result
   })
 })
+
 
 const updateServiceMiles = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params

@@ -28,7 +28,9 @@ const updateServiceZodSchema = z.object({
 
 })
 
+
 export const ServiceValidation = {
     createServiceZodSchema,
     updateServiceZodSchema
 }
+
