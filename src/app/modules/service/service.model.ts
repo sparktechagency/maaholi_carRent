@@ -111,17 +111,18 @@ equipment: {
 
     // Category: Energy & Environment
     energyAndEnvironment: {
-      co2EmissionGPerKm: { type: Number, required: false },
-      fuelType: { type: String, required: false },
-      // etc.
+      fuelConsumption:{ type: String,  required: false},
+      coEmissions:{ type: String,  required: false},
+      energyEfficiencyClass:{ type: String,  required: false},
+      
     },
 
     // Category: Euro Standard
     euroStandard: {
-      euroClass: { type: String, required: false },
+      fuelType:{type:String, required: false},
+      transmission:{type:String, required: false},
     },
 
-    // Category: Location
     location: {
       address: { type: String, required: false },
       city: { type: String, required: false },
@@ -142,8 +143,7 @@ equipment: {
       default: 'PENDING',
       enum: Object.values(carStatus),
     },
-
-
+    description: {type:String, required:false},
     isDeleted: { type: Boolean, default: false },
 
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
