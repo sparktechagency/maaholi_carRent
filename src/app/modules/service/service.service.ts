@@ -148,9 +148,7 @@ const getAllFilterFromDB = async (requestData: any) => {
   const isValidObjectId = (id: string): boolean => {
     return mongoose.Types.ObjectId.isValid(id) && /^[0-9a-fA-F]{24}$/.test(id);
   };
-
-  // Base query - ALWAYS filters out deleted items
-  // If no filters provided, this returns ALL non-deleted services
+  
   const searchQuery: any = { isDeleted: false };
 
   // Free-text search
