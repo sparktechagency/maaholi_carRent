@@ -5,7 +5,7 @@ import { BarberController } from './barber.controller';
 const router = express.Router();
 
 router.post('/discount',
-    auth(USER_ROLES.BARBER),
+    auth(USER_ROLES.SELLER),
     async (req: Request, res:Response, next: NextFunction) => {
         try {
             req.body = { discount: Number(req.body.discount) };
@@ -18,7 +18,7 @@ router.post('/discount',
 );
 
 router.get('/profile',
-    auth(USER_ROLES.BARBER),
+    auth(USER_ROLES.SELLER),
     BarberController.barberDetails
 );
 
@@ -40,7 +40,7 @@ router.get('/customer/:id',
 );
 
 router.get('/:id',
-    auth(USER_ROLES.BARBER),
+    auth(USER_ROLES.SELLER),
     BarberController.getCustomerProfile
 );
 

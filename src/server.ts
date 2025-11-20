@@ -6,32 +6,52 @@ import colors from 'colors';
 import { socketHelper } from "./helpers/socketHelper";
 import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
+import { setupCluster } from "./app/modules/cluster/node.cluster";
+import cluster from 'cluster';
+import { setupSecurity } from "./app/modules/cluster/setup.security";
 
 //uncaught exception
-process.on('uncaughtException', error => {
-    errorLogger.error('uncaughtException Detected', error);
-    process.exit(1);
-});
+// process.on('uncaughtException', error => {
+//     errorLogger.error('uncaughtException Detected', error);
+//     process.exit(1);
+// });
 
 
-let server: any;
+if (cluster.isPrimary) {
+    process.on('uncaughtException', error => {
+        errorLogger.error('Master uncaughtException Detected', error);
+        process.exit(1);
+    });
 
-async function main() {
+    process.on('unhandledRejection', error => {
+        errorLogger.error('Master unhandledRejection Detected', error);
+        process.exit(1);
+    });
+}
+
+// Main function - only runs in worker processes
+export async function main() {
     try {
+        // Connect to database
+        await mongoose.connect(config.database_url as string);
+        logger.info(colors.bgYellow('🚀 Database connected successfully'));
 
-        // create super admin
-        seedSuperAdmin();
+        // Seed super admin
+        await seedSuperAdmin();
 
+        // Start cron jobs ONLY in the first worker
+        // if (cluster.worker && cluster.worker.id === 1) {
+        //     startInAppCron();
+        //     logger.info(colors.cyan('📅 Cron jobs started in worker 1'));
+        // }
 
-        mongoose.connect(config.database_url as string);
-        logger.info(colors.green('🚀 Database connected successfully'));
-  
+        // Start HTTP server
         const port = typeof config.port === 'number' ? config.port : Number(config.port);
-        server = app.listen(port, config.ip_address as string, () => {
-            logger.info(colors.yellow(`♻️  Application listening on port:${config.port}`));
+        const server = app.listen(port, config.ip_address as string, () => {
+            logger.info(colors.yellow(`♻️ Worker ${process.pid} listening on ${config.ip_address}:${config.port}`));
         });
-  
-        //socket
+
+        // Setup Socket.IO
         const io = new Server(server, {
             pingTimeout: 60000,
             cors: {
@@ -40,32 +60,43 @@ async function main() {
         });
 
         socketHelper.socket(io);
-        //@ts-ignore
-        global.io = io;
+
+        // Store in global for graceful shutdown
+        global.httpServer = server;
+        global.socketServer = io;
+
+        // Notify master that worker is ready
+        if (cluster.worker) {
+            process.send?.('ready');
+        }
+
+        return server;
 
     } catch (error) {
-        errorLogger.error(colors.red('🤢 Failed to connect Database'));
+        errorLogger.error(colors.red('🤢 Failed to start worker:'), error);
+        throw error;
     }
-  
-    //handle unhandledRejection
-    process.on('unhandledRejection', error => {
-        if (server) {
-            server.close(() => {
-                errorLogger.error('UnhandledRejection Detected', error);
-                process.exit(1);
-            });
-        } else {
-            process.exit(1);
-        }
-    });
 }
 
-main();
+// Bootstrap function - runs on startup
+async function bootstrap() {
+    try {
+        setupSecurity();
+        if (config.node_env === 'production') {
+            setupCluster();
+        } else {
 
-//SIGTERM
-process.on('SIGTERM', () => {
-    logger.info('SIGTERM IS RECEIVE');
-    if (server) {
-        server.close();
+            logger.info(colors.bgBlue.white('\n='.repeat(2)));
+            logger.info(colors.bgBlue.white('  DEVELOPMENT MODE - SINGLE PROCESS  '));
+            logger.info(colors.bgBlue.white('='.repeat(60) + '\n'));
+
+            await main();
+        }
+    } catch (error) {
+        errorLogger.error(colors.red('🤢 Failed to bootstrap application:'), error);
+        process.exit(1);
     }
-});  
+}
+
+// Start the application
+bootstrap();

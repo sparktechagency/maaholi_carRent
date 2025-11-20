@@ -6,16 +6,11 @@ const router = express.Router();
 
 router.route("/")
     .post(
-        auth(USER_ROLES.CUSTOMER),
+        auth(USER_ROLES.BUYER),
         async (req: Request, res: Response, next: NextFunction) => {
             try {
-                const { price, travelFee, appCharge, ...othersPayload } = req.body;
+                const { appCharge, ...othersPayload } = req.body;
 
-                if (price > 0) {
-                    othersPayload.price = Number(price);
-                    othersPayload.travelFee = Number(travelFee);
-                    othersPayload.appCharge = Number(appCharge);
-                }
 
                 req.body = { ...othersPayload, customer: req.user.id };
                 next();
@@ -27,36 +22,36 @@ router.route("/")
         ReservationController.createReservation
     )
     .get(
-        auth(USER_ROLES.CUSTOMER), 
+        auth(USER_ROLES.BUYER), 
         ReservationController.customerReservation
     );
 
 router.get("/barber",
-    auth(USER_ROLES.BARBER),
+    auth(USER_ROLES.SELLER),
     ReservationController.barberReservation
 );
 
 router.get("/barber-summery",
-    auth(USER_ROLES.BARBER),
+    auth(USER_ROLES.SELLER),
     ReservationController.reservationSummerForBarber
 );
 
 router.patch("/confirm/:id",
-    auth(USER_ROLES.CUSTOMER),
+    auth(USER_ROLES.BUYER),
     ReservationController.confirmReservation
 )
 
 router.route("/:id")
     .get(
-        auth(USER_ROLES.BARBER),
+        auth(USER_ROLES.SELLER),
         ReservationController.reservationDetails
     )
     .patch(
-        auth(USER_ROLES.BARBER),
+        auth(USER_ROLES.SELLER),
         ReservationController.respondedReservation
     )
     .delete(
-        auth(USER_ROLES.CUSTOMER),
+        auth(USER_ROLES.SELLER),
         ReservationController.cancelReservation
     );
 

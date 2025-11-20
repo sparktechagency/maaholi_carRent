@@ -34,7 +34,8 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       MfkWarranty: { type: String, required:false},
       AccidentVehicle: {type: String, required: false},
       BodyType: {type: String, required: false},
-      insuranceProof:{type: String, required: false}
+      insuranceProof:{type: [String], required: false},
+      tradeLicences:{type: [String], required: false}
     },
 
     // Category: Technical Information
@@ -134,7 +135,7 @@ equipment: {
     },
 
     // Relationships and other top-level fields
-    seller: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     service: { type: Schema.Types.ObjectId, ref: 'Service', required: false },
 
 

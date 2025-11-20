@@ -11,6 +11,7 @@ export interface IBasicInformation {
   year?: number
   productImage?: string[]
   insuranceProof?: string[]
+  tradeLicences?: string[]
   RegularPrice?: number
   OfferPrice?: number
   leasingRate?: string
@@ -123,7 +124,7 @@ export interface IService extends Document {
   location?: ILocation
   description?: string
 
-  seller?: Types.ObjectId
+  user?: Types.ObjectId
   service?: Types.ObjectId
   assignedUsers?: Types.ObjectId[]
 

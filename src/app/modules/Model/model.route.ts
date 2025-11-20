@@ -8,12 +8,12 @@ const router = express.Router()
 
 router.route("/")
     .post(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.SELLER),
         validateRequest(SubCategoryValidation.createSubCategoryZodSchema),
         carModelsController.createcarModels
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.USER),
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.SELLER),
         carModelsController.getcarModels
     );
 

@@ -74,9 +74,9 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
 
-    const holderStatus = await ServiceModelInstance.findOne({ seller: user.id, status: "Inactive" });
+    const holderStatus = await ServiceModelInstance.findOne({ user: user.id, status: "Inactive" });
 
-    const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed", paymentStatus: "Paid" });
+    const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed"});
 
     const totalSpend = await Reservation.aggregate([
         {

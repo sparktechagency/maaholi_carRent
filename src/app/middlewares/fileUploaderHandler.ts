@@ -29,22 +29,27 @@ const fileUploadHandler = () => {
                 case 'image':
                     uploadDir = path.join(baseUploadDir, 'images');
                 break;
+
                 case 'tradeLicences':
+                case 'basicInformation[tradeLicences]':
                     uploadDir = path.join(baseUploadDir, 'tradeLicences');
                 break;
+
                 case 'proofOwnerId':
+                case 'basicInformation[proofOwnerId]':
                     uploadDir = path.join(baseUploadDir, 'proofOwnerId');
                 break;
                 // case 'productImage':
                 //     uploadDir = path.join(baseUploadDir, 'productImage');
                 // break;
                 case 'productImage':
-                case 'basicInformation[productImage]': // New: Handle nested for service
+                case 'basicInformation[productImage]':
                     uploadDir = path.join(baseUploadDir, 'productImage');
                 break;
-                case 'basicInformation[insuranceProof]': // New: Handle nested for service
-          uploadDir = path.join(baseUploadDir, 'insuranceProof'); // Or reuse 'productImage'
-          break;
+                case 'insuranceProof':
+                case 'basicInformation[insuranceProof]': 
+                    uploadDir = path.join(baseUploadDir, 'insuranceProof'); 
+                break;
                 default:
                     throw new ApiError(StatusCodes.BAD_REQUEST, 'File is not supported');
             }

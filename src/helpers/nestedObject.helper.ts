@@ -71,9 +71,8 @@ export  const parseFormData = (body: any, files?: { [fieldname: string]: Express
     // Handle insuranceProof (multiple files)
     if (files['basicInformation[insuranceProof]']) {
       parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.insuranceProof = files['basicInformation[insuranceProof]'].map(
-        file => `/uploads/insuranceProof/${file.filename}`
-      )
+      parsedBody.basicInformation.insuranceProof = `/uploads/insuranceProof/${files['basicInformation[insuranceProof]'][0].filename}`
+      
     }
 
     // Handle other image fields

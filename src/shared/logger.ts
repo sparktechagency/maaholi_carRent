@@ -22,7 +22,7 @@ const myFormat = printf(({level, message, label, timestamp }: IMessageProps) => 
 
 const logger = createLogger({
     level: 'info',
-    format: combine(label({ label: 'BARBER-ME' }), timestamp(), myFormat),
+    format: combine(label({ label: 'car-Rent Mahooli' }), timestamp(), myFormat),
     transports: [
         new transports.Console(),
         new DailyRotateFile({
@@ -36,7 +36,7 @@ const logger = createLogger({
 
 const errorLogger = createLogger({
     level: 'error',
-    format: combine(label({ label: 'BARBER-ME' }), timestamp(), myFormat),
+    format: combine(label({ label: 'car-Rent Mahooli' }), timestamp(), myFormat),
     transports: [
         new transports.Console(),
         new DailyRotateFile({

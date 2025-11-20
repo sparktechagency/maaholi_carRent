@@ -12,7 +12,7 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Please check your Phone Number to verify your account. We have sent you an OTP to complete the registration process.',
+        message: 'Please check your email verify your account. We have sent you an OTP to complete the registration process.',
     })
 });
 

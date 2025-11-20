@@ -1,4 +1,4 @@
-import { ISubCategory } from "../app/modules/subCategory-Brand/subCategory.interface";
+import { BrandsI } from "../app/modules/subCategory-Brand-Model/subCategory.interface";
 
 interface PaginationOptions {
   page: number;
@@ -8,7 +8,7 @@ interface PaginationOptions {
 }
 
 interface PaginatedResult {
-  subCategories: ISubCategory[];
+  subCategories: BrandsI[];
   pagination: {
     page: number;
     limit: number;

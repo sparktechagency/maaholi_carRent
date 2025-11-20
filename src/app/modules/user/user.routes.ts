@@ -9,12 +9,12 @@ const router = express.Router();
 
 router.get(
     '/profile',
-    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.BARBER, USER_ROLES.CUSTOMER),
+    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
     UserController.getUserProfile
 );
 
 router.patch('/update-location',
-    auth(USER_ROLES.BARBER, USER_ROLES.CUSTOMER),
+    auth(USER_ROLES.SELLER, USER_ROLES.BUYER),
     UserController.updateLocation
   );
   
@@ -30,7 +30,7 @@ router
         UserController.createUser
     )
     .patch(
-        auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.BARBER, USER_ROLES.CUSTOMER),
+        auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
         fileUploadHandler(),
         UserController.updateProfile
     );

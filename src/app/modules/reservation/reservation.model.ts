@@ -19,29 +19,41 @@ const ReservationSchema = new Schema<IReservation, ReservationModel>(
             ref: "Service",
             required: true
         },
+        name: {
+            type:String,
+            required:false
+        },
+        email: {
+            type:String,
+            required:false
+        },
+        contactNumber: {
+            type: String,
+            required: false
+        },
         status: {
             type: String,
             enum: ["Upcoming", "Accepted", "Canceled", "Completed"],
             default: "Upcoming",
             required: true
         },
-        paymentStatus: {
-            type: String,
-            enum: [ "Pending", "Paid", "Refunded"],
-            default: "Pending"
-        },
-        price: {
-            type: Number,
-            required: false
-        },
-        tips: {
-            type: Number,
-            default: 0
-        },
-        travelFee: {
-            type: Number,
-            default: 0
-        },
+        // paymentStatus: {
+        //     type: String,
+        //     enum: [ "Pending", "Paid", "Refunded"],
+        //     default: "Pending"
+        // },
+        // price: {
+        //     type: Number,
+        //     required: false
+        // },
+        // tips: {
+        //     type: Number,
+        //     default: 0
+        // },
+        // travelFee: {
+        //     type: Number,
+        //     default: 0
+        // },
          appCharge: {
             type: Number,
             default: 0

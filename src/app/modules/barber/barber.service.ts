@@ -13,7 +13,7 @@ import getBarberCategory from "../../../shared/getCategoryForBarber";
 import { Bookmark } from "../bookmark/bookmark.model";
 import getRatingForBarber from "../../../shared/getRatingForBarber";
 import { Category } from "../category/category.model";
-import { SubCategory } from "../subCategory-Brand/subCategory.model";
+import { SubCategory } from "../subCategory-Brand-Model/subCategory.model";
 
 const getBarberProfileFromDB = async (user: JwtPayload, id: string, query: Record<string, any>): Promise<{}> => {
 

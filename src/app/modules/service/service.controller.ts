@@ -49,7 +49,7 @@ const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFu
       ? 'Services retrieved successfully' 
       : 'No services found matching the filters',
     data: result.data,
-    meta: result.meta,
+    // meta: result.meta,
   });
 });
 

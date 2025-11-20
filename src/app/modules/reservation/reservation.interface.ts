@@ -5,15 +5,18 @@ export type IReservation = {
     customer: Types.ObjectId;
     service: Types.ObjectId;
     status: "Upcoming" | "Accepted" | "Canceled" | "Completed";
-    paymentStatus: "Pending" | "Paid" | "Refunded";
-    travelFee: number;
+    name?: string;
+    email?: string;
+    contactNumber: string;
+    // paymentStatus: "Pending" | "Paid" | "Refunded";
+    // travelFee: number;
     appCharge: number;
-    price: number;
+    // price: number;
     txid: string;
     cancelByCustomer: boolean;
     isReported: boolean;
     sessionId?: string;
-    tips?: number;
+    // tips?: number;
     transfer?: boolean;
 }
 

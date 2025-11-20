@@ -10,7 +10,7 @@ const router = Router()
 router.get('/stats', ServiceController.getServiceStats)
 
 // Create service with file upload
-router.post('/' ,auth(USER_ROLES.USER),fileUploadHandler(), ServiceController.createService)
+router.post('/' ,auth(USER_ROLES.SELLER),fileUploadHandler(), ServiceController.createService)
 
 // Get all services
 router.get('/', ServiceController.getAllServices)

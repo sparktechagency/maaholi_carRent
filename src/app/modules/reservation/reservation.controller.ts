@@ -9,7 +9,7 @@ const createReservation = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Reservation created successfully",
+        message: "car test drive booking successfully",
         data: reservation
     })
 }); 
