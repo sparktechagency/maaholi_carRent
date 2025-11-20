@@ -9,13 +9,13 @@ const createAccount = (values: ICreateAccount) => {
                 <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
     
                     <!-- Logo -->
-                    <img src="https://res.cloudinary.com/ddqovbzxy/image/upload/v1734498548/Barbar_Me_u4jj7s.png" alt="Barber Me Logo" style="display: block; margin: 0 auto 20px; width:150px" />
+                    <img src="https://i.postimg.cc/VvTmrKPC/image.png" alt="carplace24.ch Logo" style="display: block; margin: 0 auto 20px; width:150px" />
 
                     <!-- Greeting -->
                     <h2 style="color: #D0A933; font-size: 24px; margin-bottom: 20px;">Hey, ${values.name}!</h2>
 
                     <!-- Verification Instructions -->
-                    <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Thank you for signing up for Barber Me. Please verify your email address to activate your account.</p>
+                    <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Thank you for signing up for carplace24.ch Me. Please verify your email address to activate your account.</p>
 
                     <!-- OTP Section -->
                     <div style="text-align: center;">
@@ -25,8 +25,8 @@ const createAccount = (values: ICreateAccount) => {
                     </div>
 
                     <!-- Footer -->
-                    <p style="color: #999; font-size: 12px; text-align: center; margin-top: 30px;">If you did not sign up for Barber Me, please ignore this email.</p>
-                    <p style="color: #999; font-size: 12px; text-align: center;">&copy; 2024 Barber Me. All rights reserved.</p>
+                    <p style="color: #999; font-size: 12px; text-align: center; margin-top: 30px;">If you did not sign up for  carplace24.ch, please ignore this email.</p>
+                    <p style="color: #999; font-size: 12px; text-align: center;">&copy; 2024 carplace24.ch. All rights reserved.</p>
 
                 </div>
             </body>
