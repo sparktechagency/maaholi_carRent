@@ -5,6 +5,8 @@ import { ServiceModelInstance } from './service.model'
 import { IService } from './service.interface'
 import ApiError from '../../../errors/ApiError'
 import { parseFormData } from '../../../helpers/nestedObject.helper'
+import { buildQuery } from '../../../util/buildQuery';
+import { paginateAndSort } from '../../../util/pagination.on';
 
 
 
@@ -382,7 +384,57 @@ const getAllFilterFromDB = async (requestData: any) => {
     },
   };
 };
+const getAllServicesFromDBFilter = async (query: any) => {
 
+  const searchQuery = buildQuery({
+    query,
+    searchFields: [
+      "basicInformation.vehicleName",
+      "basicInformation.vinNo",
+      "basicInformation.condition",
+      "basicInformation.MfkWarranty",
+      "basicInformation.leasingRate",
+      "location.address",
+      "location.city",
+      "location.country",
+      "technicalInformation.fuelType",
+      "technicalInformation.transmission",
+      "electricHybrid.towingCapacity",
+      "extras.tires",
+      "colour.exterior",
+      "description"
+    ],
+    exactFilters: ["status"],
+    numberFilters: ["basicInformation.year", "basicInformation.miles"],
+  });
+
+  const { skip, limit, sort, page } = paginateAndSort(query);
+
+  const [data, total] = await Promise.all([
+    ServiceModelInstance.find(searchQuery)
+      .populate("user", "name email")
+      .populate("brand")
+      .populate("model")
+      .populate("Category")
+      .populate("createdBy", "name email")
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+
+    ServiceModelInstance.countDocuments(searchQuery),
+  ]);
+
+  return {
+    data,
+    meta: {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
+};
 const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   // Validate ObjectId
   if (!Types.ObjectId.isValid(id)) {
@@ -588,10 +640,12 @@ const ServiceService = {
   restoreServiceInDB,
   assignUsersToService,
   getServiceStatsFromDB,
-  getAllFilterFromDB
+  getAllFilterFromDB,
+  getAllServicesFromDBFilter
 }
 
 export default ServiceService
+
 
 
 
