@@ -134,7 +134,7 @@ equipment: {
     },
 
     // Relationships and other top-level fields
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: false },
+    seller: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     service: { type: Schema.Types.ObjectId, ref: 'Service', required: false },
 
 

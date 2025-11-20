@@ -123,7 +123,7 @@ export interface IService extends Document {
   location?: ILocation
   description?: string
 
-  user?: Types.ObjectId
+  seller?: Types.ObjectId
   service?: Types.ObjectId
   assignedUsers?: Types.ObjectId[]
 

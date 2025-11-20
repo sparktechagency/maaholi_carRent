@@ -9,7 +9,7 @@ import { emailTemplate } from "../../../shared/emailTemplate";
 import { emailHelper } from "../../../helpers/emailHelper";
 import unlinkFile from "../../../shared/unlinkFile";
 import { Reservation } from "../reservation/reservation.model";
-// import { Service } from "../service/service.model";
+import { ServiceModelInstance } from "../service/service.model";
 import { sendTwilioOTP } from "../../../helpers/twillo";
 import { formatPhoneNumber } from "../../../helpers/formatedPhoneNumber";
 import { AppError } from "../../../errors/error.app";
@@ -74,7 +74,7 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
 
-    const holderStatus = await Service.findOne({barber: user.id, status: "Inactive"});
+    const holderStatus = await ServiceModelInstance.findOne({ seller: user.id, status: "Inactive" });
 
     const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed", paymentStatus: "Paid" });
 

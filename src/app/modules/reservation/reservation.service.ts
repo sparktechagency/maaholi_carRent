@@ -18,7 +18,7 @@ const createReservationToDB = async (payload: IReservation): Promise<IReservatio
     } else {
         const data = {
             text: "You receive a new reservation request",
-            receiver: payload.barber,
+            receiver: payload.seller,
             referenceId: reservation._id,
             screen: "RESERVATION"
         }
@@ -37,7 +37,7 @@ const barberReservationFromDB = async (user: JwtPayload, query: Record<string, a
     }
 
     const condition: any = {
-        barber: user.id
+        seller: user.id
     }
 
     if (status) {
@@ -81,7 +81,7 @@ const barberReservationFromDB = async (user: JwtPayload, query: Record<string, a
         async (status: string) => {
             return {
                 status,
-                count: await Reservation.countDocuments({ barber: user.id, status })
+                count: await Reservation.countDocuments({ seller: user.id, status })
             }
         })
     );
@@ -314,7 +314,7 @@ const cancelReservationFromDB = async (id: string): Promise<IReservation | null>
     } else {
         const data = {
             text: "A customer has requested to cancel your reservation",
-            receiver: updatedReservation.barber,
+            receiver: updatedReservation.seller,
             referenceId: id,
             screen: "RESERVATION"
         }

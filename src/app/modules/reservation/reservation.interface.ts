@@ -1,7 +1,7 @@
 import { Model, Types } from "mongoose"
 
 export type IReservation = {
-    barber: Types.ObjectId;
+    seller: Types.ObjectId;
     customer: Types.ObjectId;
     service: Types.ObjectId;
     status: "Upcoming" | "Accepted" | "Canceled" | "Completed";

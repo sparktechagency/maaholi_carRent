@@ -4,7 +4,7 @@ import { randomBytes } from "crypto";
 
 const ReservationSchema = new Schema<IReservation, ReservationModel>(
     {
-        barber: {
+        seller: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true
@@ -32,7 +32,7 @@ const ReservationSchema = new Schema<IReservation, ReservationModel>(
         },
         price: {
             type: Number,
-            required: true
+            required: false
         },
         tips: {
             type: Number,
