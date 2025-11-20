@@ -54,7 +54,7 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
 // });
 
 const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const requestData = req.body; // Changed from req.query to req.body
+  const requestData = req.query; 
   const result = await ServiceService.getAllServicesFromDBFilter(requestData);
   
   sendResponse(res, {
