@@ -34,7 +34,7 @@ export async function main() {
     try {
         // Connect to database
         await mongoose.connect(config.database_url as string);
-        logger.info(colors.bgYellow('🚀 Database connected successfully'));
+        logger.info(colors.green('🚀 Database connected successfully'));
 
         // Seed super admin
         await seedSuperAdmin();
@@ -48,7 +48,7 @@ export async function main() {
         // Start HTTP server
         const port = typeof config.port === 'number' ? config.port : Number(config.port);
         const server = app.listen(port, config.ip_address as string, () => {
-            logger.info(colors.yellow(`♻️ Worker ${process.pid} listening on ${config.ip_address}:${config.port}`));
+            logger.info(colors.bold.italic.bgWhite(`♻️ Worker ${process.pid} listening on ${config.ip_address}:${config.port}`));
         });
 
         // Setup Socket.IO
@@ -87,8 +87,8 @@ async function bootstrap() {
         } else {
 
             logger.info(colors.bgBlue.white('\n='.repeat(2)));
-            logger.info(colors.bgBlue.white('  DEVELOPMENT MODE - SINGLE PROCESS  '));
-            logger.info(colors.bgBlue.white('='.repeat(60) + '\n'));
+            logger.info(colors.bgBlue.white(' DEVELOPMENT MODE - SINGLE PROCESS  '));
+            logger.info(colors.bgBlue.white(' ='.repeat(17) + '\n'));
 
             await main();
         }

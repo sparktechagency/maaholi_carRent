@@ -12,6 +12,7 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: false,
     },
+
     appId: {
       type: String,
       required: false,
@@ -20,8 +21,15 @@ const userSchema = new Schema<IUser, UserModal>(
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
-      required: true,
+      required: false,
+      default: "BUYER"
     },
+  currentRole: {
+  type: String,
+  enum: Object.values(USER_ROLES),
+  required: false,
+  default: "BUYER",
+},
 
     email: {
       type: String,
@@ -146,93 +154,88 @@ const userSchema = new Schema<IUser, UserModal>(
     timestamps: true,
   }
 );
-
 userSchema.index({ location: '2dsphere' });
-
 userSchema.statics.isExistUserById = async (id: string) => {
-    const isExist = await User.findById(id);
-    return isExist;
+  const isExist = await User.findById(id);
+  return isExist;
 };
 
 userSchema.statics.isExistUserByEmail = async (email: string) => {
-    const isExist = await User.findOne({ email });
-    return isExist;
+  const isExist = await User.findOne({ email });
+  return isExist;
 };
 
 userSchema.statics.isExistUserByMobileNumber = async (mobileNumber: string) => {
-    const isExist = await User.findOne({ mobileNumber });
-    return isExist;
+  const isExist = await User.findOne({ mobileNumber });
+  return isExist;
 };
 
 //account check
 userSchema.statics.isAccountCreated = async (id: string) => {
-    const isUserExist: any = await User.findById(id);
-    return isUserExist.accountInformation.status;
+  const isUserExist: any = await User.findById(id);
+  return isUserExist.accountInformation.status;
 };
 
 //is match password
 userSchema.statics.isMatchPassword = async (password: string, hashPassword: string): Promise<boolean> => {
-    return await bcrypt.compare(password, hashPassword);
+  return await bcrypt.compare(password, hashPassword);
 };
 
 // Updated pre-save middleware section only
 userSchema.pre('save', async function (next) {
-    const user = this as IUser;
+  const user = this as IUser;
 
-    if (this.isNew) {
-        if (user.mobileNumber) {
-            const existingUserByMobile = await User.findOne({ mobileNumber: user.mobileNumber });
-            if (existingUserByMobile) {
-                throw new ApiError(StatusCodes.BAD_REQUEST, 'Mobile number already exists');
-            }
-        }
-
-        if (user.email) {
-            const existingUserByEmail = await User.findOne({ email: user.email });
-            if (existingUserByEmail) {
-                throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exists!');
-            }
-        }
+  if (this.isNew) {
+    if (user.mobileNumber) {
+      const existingUserByMobile = await User.findOne({ mobileNumber: user.mobileNumber });
+      if (existingUserByMobile) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Mobile number already exists');
+      }
     }
 
+    if (user.email) {
+      const existingUserByEmail = await User.findOne({ email: user.email });
+      if (existingUserByEmail) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, 'Email already exists!');
+      }
+    }
+  }
 
-    if (user.role === USER_ROLES.BARBER || user.role === USER_ROLES.USER) {
-        if (!user.accountInformation) {
-            user.accountInformation = {
-                status: false
-            };
-        }
-
-        if (user.discount === undefined) {
-            user.discount = 0;
-        }
-        
-        if (!user.about) {
-            user.about = '';
-        }
-
-        // if role is BARBER the isSubscribe initially set as false
-        if (user.isSubscribed === undefined) {
-            user.isSubscribed = false;
-        }
+  if (user.role === USER_ROLES.SELLER || user.role === USER_ROLES.BUYER) {
+    if (!user.accountInformation) {
+      user.accountInformation = {
+        status: false
+      };
+    }
+    if (user.discount === undefined) {
+      user.discount = 0;
     }
 
-    // Apply isUpdate logic to all users (not just BARBER)
-    const hasTradelicences = user.tradeLicences && user.tradeLicences.trim() !== '';
-    const hasProofOwnerId = user.proofOwnerId && user.proofOwnerId.trim() !== '';
-    const hasSallonPhoto = user.sallonPhoto && user.sallonPhoto.trim() !== '';
-    
-    // Only set isUpdate to true when ALL three fields have values
-    user.isUpdate = !!(hasTradelicences && hasProofOwnerId && hasSallonPhoto);
+    if (!user.about) {
+      user.about = '';
+    }
+
+    if (user.isSubscribed === undefined) {
+      user.isSubscribed = false;
+    }
+  }
+
+  const hasTradelicences = user.tradeLicences && user.tradeLicences.trim() !== '';
+  const hasProofOwnerId = user.proofOwnerId && user.proofOwnerId.trim() !== '';
+  const hasSallonPhoto = user.sallonPhoto && user.sallonPhoto.trim() !== '';
+
+  user.isUpdate = !!(hasTradelicences && hasProofOwnerId && hasSallonPhoto);
+
+  // ✅ FIX: Only hash password if it exists and is modified
+  if (this.password && this.isModified('password')) {
     this.password = await bcrypt.hash(
-    this.password,
-    Number(config.bcrypt_salt_rounds)
-  );
+      this.password,
+      Number(config.bcrypt_salt_rounds)
+    );
+  }
 
-    
-    next();
+  next();
 });
-
 
 export const User = model<IUser, UserModal>("User", userSchema);
 

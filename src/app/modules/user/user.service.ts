@@ -1,4 +1,4 @@
-import { USER_ROLES } from "../../../enums/user";
+import { USER_ROLES } from '../../../enums/user';
 import { IUser } from "./user.interface";
 import { JwtPayload } from 'jsonwebtoken';
 import { User } from "./user.model";
@@ -13,6 +13,10 @@ import { ServiceModelInstance } from "../service/service.model";
 import { sendTwilioOTP } from "../../../helpers/twillo";
 import { formatPhoneNumber } from "../../../helpers/formatedPhoneNumber";
 import { AppError } from "../../../errors/error.app";
+import { object } from "zod";
+import config from '../../../config';
+import { jwtHelper } from '../../../helpers/jwtHelper';
+import { ILoginData } from '../../../types/auth';
 
 const createAdminToDB = async (payload: any): Promise<IUser> => {
 
@@ -33,39 +37,53 @@ const createAdminToDB = async (payload: any): Promise<IUser> => {
     return createAdmin;
 }
 
+
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
-  const createUser = await User.create(payload);
+  console.log('=== CREATE USER DEBUG ===');
+  console.log('Payload email:', payload.email);
+
+const createUser = await User.create({
+  ...payload,
+  role: payload.role || 'BUYER',
+  currentRole: payload.role || 'BUYER',
+});
+
+  console.log('User created with ID:', createUser._id);
+  console.log('User created with email:', createUser.email);
+
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create user');
   }
 
-  console.log(createUser);
+  const otp = generateOTP();
+  console.log('Generated OTP:', otp);
 
-  // Send email with OTP
-  const otp = generateOTP(); // Assume this generates the OTP
+  const authentication = {
+    oneTimeCode: otp,
+    expireAt: new Date(Date.now() + 3 * 60000),
+  };
+
+  // Update with OTP
+  const updatedUser = await User.findOneAndUpdate(
+    { _id: createUser._id },
+    { $set: { authentication } },
+    { new: true }
+  ).select('+authentication');
+
+  console.log('User after OTP update:', updatedUser);
+  console.log('Authentication saved:', updatedUser?.authentication);
+
+  // Send email...
   const values = {
     name: createUser.name,
     otp: otp,
     email: createUser.email!
   };
-  console.log('Generated OTP:', otp);  // Log the generated OTP
   const createAccountTemplate = emailTemplate.createAccount(values);
   emailHelper.sendEmail(createAccountTemplate);
 
-  // Save OTP in the database
-  const authentication = {
-    oneTimeCode: otp,
-    expireAt: new Date(Date.now() + 3 * 60000), // OTP expires in 3 minutes
-  };
-  console.log('Saving OTP to database:', authentication);  // Log the OTP and expiration time
-  await User.findOneAndUpdate(
-    { _id: createUser._id },
-    { $set: { authentication } }
-  );
-
   return createUser;
 };
-
 
 const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> => {
     const { id } = user;
@@ -103,6 +121,48 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
 
     return data;
 };
+
+const switchRoleService = async (userId: string, newRole: string) => {
+  console.log('=== SWITCH ROLE SERVICE DEBUG ===');
+  console.log('User ID:', userId);
+  console.log('New Role:', newRole);
+
+  const user = await User.findById(userId);
+  
+  console.log('Found user:', user);
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Validate role is allowed
+  const allowedRoles = ['BUYER', 'SELLER', 'ADMIN'];
+  if (!allowedRoles.includes(newRole)) {
+    throw new ApiError(400, "Invalid role");
+  }
+
+  // Update both role and currentRole
+  user.currentRole = newRole;
+  await user.save();
+
+  const newAccessToken = jwtHelper.createToken(
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      currentRole: user.currentRole,
+    },
+    config.jwt.jwt_secret as string,
+    config.jwt.jwt_expire_in as string
+  );
+
+  return {
+    currentRole: user.currentRole,
+    accessToken: newAccessToken,
+  };
+};
+
+
 
 // const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
 //     const { id } = user;
@@ -193,5 +253,6 @@ export const UserService = {
     getUserProfileFromDB,
     updateProfileToDB,
     createAdminToDB,
-    updateLocationToDB
+    updateLocationToDB,
+    switchRoleService
 };

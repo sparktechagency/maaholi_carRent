@@ -58,9 +58,9 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
       throw new AppError("Mobile number is required", 400);
     }
 
-    const validRoles = [USER_ROLES.CUSTOMER, USER_ROLES.BARBER];
+    const validRoles = [USER_ROLES.BUYER, USER_ROLES.SELLER];
     if (!role || !validRoles.includes(role as USER_ROLES)) {
-      throw new AppError(`Invalid role. Must be either ${USER_ROLES.CUSTOMER} or ${USER_ROLES.BARBER}`, 400);
+      throw new AppError(`Invalid role. Must be either ${USER_ROLES.BUYER} or ${USER_ROLES.SELLER}`, 400);
     }
 
     const result = await AuthService.loginService(
@@ -82,6 +82,8 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
     next(error);
   }
 };
+
+
  const verifyLoginOTP = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { mobileNumber, otpCode } = req.body;

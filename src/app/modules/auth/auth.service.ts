@@ -42,48 +42,98 @@ const verifyTwilioOTP = async (mobileNumber: string, otpCode: string): Promise<b
     return false;
   }
 };
+
 //login
+// const loginUserFromDB = async (payload: ILoginData) => {
+
+//     const { email, password, deviceToken } = payload;
+//     const isExistUser: any = await User.findOne({ email }).select('+password');
+//     if (!isExistUser) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+//     }
+
+//     //check verified and status
+//     if (!isExistUser.verified) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account, then try to login again');
+//     }
+
+//     //check match password
+//     if (password && !(await User.isMatchPassword(password, isExistUser.password))) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
+//     }
+
+//     await User.findOneAndUpdate(
+//         { _id: isExistUser._id },
+//         { deviceToken: deviceToken },
+//         { new: true },
+//     )
+
+    // //create token
+    // const accessToken = jwtHelper.createToken(
+    //     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
+    //     config.jwt.jwt_secret as Secret,
+    //     config.jwt.jwt_expire_in as string
+    // );
+
+    // //create token
+    // const refreshToken = jwtHelper.createToken(
+    //     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
+    //     config.jwt.jwtRefreshSecret as Secret,
+    //     config.jwt.jwtRefreshExpiresIn as string
+    // );
+
+//     return { accessToken, refreshToken };
+// };
 const loginUserFromDB = async (payload: ILoginData) => {
+  const { email, password, deviceToken } = payload;
 
-    const { email, password, deviceToken } = payload;
-    const isExistUser: any = await User.findOne({ email }).select('+password');
-    if (!isExistUser) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-    }
+  const user: any = await User.findOne({ email }).select("+password");
+  if (!user) throw new ApiError(400, "User doesn't exist!");
 
-    //check verified and status
-    if (!isExistUser.verified) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account, then try to login again');
-    }
+  if (!user.verified)
+    throw new ApiError(400, "Please verify your account first.");
 
-    //check match password
-    if (password && !(await User.isMatchPassword(password, isExistUser.password))) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
-    }
+  if (password && !(await User.isMatchPassword(password, user.password))) {
+    throw new ApiError(400, "Password is incorrect!");
+  }
 
-    await User.findOneAndUpdate(
-        { _id: isExistUser._id },
-        { deviceToken: deviceToken },
-        { new: true },
-    )
+  await User.updateOne(
+    { _id: user._id },
+    { deviceToken },
+    { new: true }
+  );
 
-    //create token
-    const accessToken = jwtHelper.createToken(
-        { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
-        config.jwt.jwt_secret as Secret,
-        config.jwt.jwt_expire_in as string
-    );
+// In your login service
+const accessToken = jwtHelper.createToken(
+  { 
+    id: user._id, 
+    email: user.email,
+    role: user.role,     
+    currentRole: user.currentRole
+  },
+  config.jwt.jwt_secret as string,
+  config.jwt.jwt_expire_in as string
+);
 
-    //create token
-    const refreshToken = jwtHelper.createToken(
-        { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
-        config.jwt.jwtRefreshSecret as Secret,
-        config.jwt.jwtRefreshExpiresIn as string
-    );
+  const refreshToken = jwtHelper.createToken(
+    {
+      id: user._id,
+      email: user.email,
+      currentRole: user.currentRole,
+      roles: user.roles
+    },
+    config.jwt.jwtRefreshSecret as string,
+    config.jwt.jwtRefreshExpiresIn as string
+  );
 
-    return { accessToken, refreshToken };
+  return {
+    userId: user._id,
+    roles: user.roles,
+    currentRole: user.currentRole,
+    accessToken,
+    refreshToken
+  };
 };
-
 
 const forgetPasswordToDB = async (email: string) => {
 
@@ -322,9 +372,9 @@ const loginService = async (
      role: USER_ROLES
    ) => {
      // Validate role
-     const validRoles = [USER_ROLES.CUSTOMER, USER_ROLES.BARBER];
+     const validRoles = [USER_ROLES.BUYER, USER_ROLES.SELLER];
      if (!validRoles.includes(role)) {
-       throw new AppError(`Invalid role. Must be either ${USER_ROLES.CUSTOMER} or ${USER_ROLES.BARBER}`, 400);
+       throw new AppError(`Invalid role. Must be either ${USER_ROLES.BUYER} or ${USER_ROLES.SELLER}`, 400);
      }
 
      const formattedNumber = formatPhoneNumber(mobileNumber);
@@ -443,7 +493,7 @@ const verifyLoginOTPService = async (mobileNumber: string, otpCode: string) => {
     throw new AppError('User account was not found. Please create an account', 404);
   }
   
-  const storedOtp = user.authentication?.otpCode;  
+  const storedOtp = user.authentication?.oneTimeCode;  
   const expireAt = user.authentication?.expireAt;
   
   console.log('OTP submitted by user:', otpCode);

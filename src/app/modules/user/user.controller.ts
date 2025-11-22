@@ -3,6 +3,10 @@ import { StatusCodes } from 'http-status-codes';
 import { UserService } from './user.service';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
+import { config } from 'dotenv';
+import ApiError from '../../../errors/ApiError';
+import { jwtHelper } from '../../../helpers/jwtHelper';
+import { User } from './user.model';
 
 // register user
 const createUser = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -14,6 +18,20 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
         statusCode: StatusCodes.OK,
         message: 'Please check your email verify your account. We have sent you an OTP to complete the registration process.',
     })
+});
+
+//role-switch
+const switchRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  const userId = req.user.id;  
+  const { role } = req.body;   
+  
+  const result = await UserService.switchRoleService(userId, role);
+  
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    data: result
+  });
 });
 
 // register admin
@@ -103,5 +121,6 @@ export const UserController = {
     createAdmin,
     getUserProfile,
     updateProfile,
-    updateLocation
+    updateLocation,
+    switchRole
 };

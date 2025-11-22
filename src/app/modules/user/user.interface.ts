@@ -19,7 +19,8 @@ export type IUser = {
     _id: any;
     name: string;
     appId?: string;
-    role: USER_ROLES;
+    role: string;
+    currentRole: string;
     mobileNumber?: string;
     email?: string;
     password: string;
@@ -52,4 +53,5 @@ export type UserModal = {
     isExistUserByEmail(email: string): any;
     isAccountCreated(id: string): any;
     isMatchPassword(password: string, hashPassword: string): boolean;
+    
 } & Model<IUser>;

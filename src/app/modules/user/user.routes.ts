@@ -18,6 +18,10 @@ router.patch('/update-location',
     UserController.updateLocation
   );
   
+router.patch("/switch-role",
+        auth(USER_ROLES.BUYER, USER_ROLES.SELLER),
+        UserController.switchRole
+    );
 router.post(
     '/create-admin',
     validateRequest(UserValidation.createAdminZodSchema),
