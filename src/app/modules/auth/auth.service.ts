@@ -43,47 +43,7 @@ const verifyTwilioOTP = async (mobileNumber: string, otpCode: string): Promise<b
   }
 };
 
-//login
-// const loginUserFromDB = async (payload: ILoginData) => {
 
-//     const { email, password, deviceToken } = payload;
-//     const isExistUser: any = await User.findOne({ email }).select('+password');
-//     if (!isExistUser) {
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-//     }
-
-//     //check verified and status
-//     if (!isExistUser.verified) {
-//         throw new ApiError(StatusCodes.BAD_REQUEST, 'Please verify your account, then try to login again');
-//     }
-
-//     //check match password
-//     if (password && !(await User.isMatchPassword(password, isExistUser.password))) {
-//         throw new ApiError(StatusCodes.BAD_REQUEST, 'Password is incorrect!');
-//     }
-
-//     await User.findOneAndUpdate(
-//         { _id: isExistUser._id },
-//         { deviceToken: deviceToken },
-//         { new: true },
-//     )
-
-    // //create token
-    // const accessToken = jwtHelper.createToken(
-    //     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
-    //     config.jwt.jwt_secret as Secret,
-    //     config.jwt.jwt_expire_in as string
-    // );
-
-    // //create token
-    // const refreshToken = jwtHelper.createToken(
-    //     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
-    //     config.jwt.jwtRefreshSecret as Secret,
-    //     config.jwt.jwtRefreshExpiresIn as string
-    // );
-
-//     return { accessToken, refreshToken };
-// };
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password, deviceToken } = payload;
 
@@ -160,49 +120,6 @@ const forgetPasswordToDB = async (email: string) => {
     await User.findOneAndUpdate({ email }, { $set: { authentication } });
 };
 
-// export const verifyOTP = async (payload: IVerifymobile) => {
-//   const { mobileNumber, otpCode } = payload;
-
-//   if (!mobileNumber) {
-//     throw new AppError('Mobile number is required', 400);
-//   }
-
-//   const formattedNumber = formatPhoneNumber(mobileNumber.toString());
-
-//   const isValidOTP = await verifyTwilioOTP(formattedNumber, otpCode.toString());
-//   if (!isValidOTP) {
-//     throw new AppError('Invalid or expired OTP', 400);
-//   }
-
-//   const user = await User.findOne({ mobileNumber: formattedNumber });
-//   if (!user) {
-//     throw new AppError('User account not found. To continue, please create an account', 404);
-//   }
-
-//   if (!user.verified) {
-//     await User.findByIdAndUpdate(user._id, { verified: true });
-//   }
-
-//   const accessToken = jwtHelper.createToken(
-//     { id: user._id, role: user.role, mobileNumber: user.mobileNumber },
-//     config.jwt.jwt_secret as Secret,
-//     config.jwt.jwt_expire_in as string
-//   );
-
-//   const refreshToken = jwtHelper.createToken(
-//     { id: user._id, role: user.role, mobileNumber: user.mobileNumber },
-//     config.jwt.jwtRefreshSecret as Secret,
-//     config.jwt.jwtRefreshExpiresIn as string
-//   );
-
-//   // Return success message and data
-//   return {
-//     message: 'Mobile number verified successfully',
-//     data: { accessToken, refreshToken, user },
-//   };
-// };
-
-//verify email
 
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
     const { email, oneTimeCode } = payload;
