@@ -123,7 +123,7 @@ export interface IService extends Document {
   euroStandard?: IEuroStandard
   location?: ILocation
   description?: string
-
+  isActive?: boolean;
   user?: Types.ObjectId
   service?: Types.ObjectId
   assignedUsers?: Types.ObjectId[]

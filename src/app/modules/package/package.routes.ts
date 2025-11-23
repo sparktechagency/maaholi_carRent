@@ -14,7 +14,7 @@ router
         PackageController.createPackage
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.BARBER), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.BUYER, USER_ROLES.SELLER), 
         PackageController.getPackage
     )
 
@@ -25,7 +25,7 @@ router
         PackageController.updatePackage
     )
     .get(
-        auth(USER_ROLES.BARBER), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.BUYER, USER_ROLES.SELLER), 
         PackageController.packageDetails
     )
 

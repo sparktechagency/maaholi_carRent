@@ -43,7 +43,6 @@ const verifyTwilioOTP = async (mobileNumber: string, otpCode: string): Promise<b
   }
 };
 
-
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password, deviceToken } = payload;
 
@@ -119,7 +118,6 @@ const forgetPasswordToDB = async (email: string) => {
     };
     await User.findOneAndUpdate({ email }, { $set: { authentication } });
 };
-
 
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
     const { email, oneTimeCode } = payload;
@@ -399,7 +397,8 @@ const loginService = async (
      );
 
      return { message, userId, accessToken, refreshToken };
-   };
+
+    };
 
 const verifyLoginOTPService = async (mobileNumber: string, otpCode: string) => {
   const formattedNumber = formatPhoneNumber(mobileNumber);
@@ -498,7 +497,6 @@ const resetPasswordToDB = async (token: string, payload: IAuthResetPassword) => 
     );
 };
 
-
 const changePasswordToDB = async (user: JwtPayload, payload: IChangePassword) => {
 
     const { currentPassword, newPassword, confirmPassword } = payload;
@@ -531,7 +529,6 @@ const changePasswordToDB = async (user: JwtPayload, payload: IChangePassword) =>
 
     await User.findOneAndUpdate({ _id: user.id }, updateData, { new: true });
 };
-
 
 const newAccessTokenToUser = async (token: string) => {
 
@@ -680,7 +677,6 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
 };
 
 export const AuthService = {
-
     loginUserFromDB,
     forgetPasswordToDB,
     resetPasswordToDB,
@@ -694,3 +690,4 @@ export const AuthService = {
     loginService,
     verifyLoginOTPService
 };
+

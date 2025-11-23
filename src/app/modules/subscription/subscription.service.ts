@@ -7,7 +7,7 @@ import { User } from "../user/user.model";
 
 const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscription: ISubscription | {} }> => {
 
-    const subscription = await Subscription.findOne({ barber: user.id }).populate("package", "title credit").lean();
+    const subscription = await Subscription.findOne({ user: user.id }).populate("package", "title credit").lean();
     if (!subscription) {
         return { subscription: {} };
     }
@@ -18,7 +18,7 @@ const subscriptionDetailsFromDB = async (user: JwtPayload): Promise<{ subscripti
     if (subscriptionFromStripe?.status !== "active") {
         await Promise.all([
             User.findByIdAndUpdate(user.id, { isSubscribed: false }, { new: true }),
-            Subscription.findOneAndUpdate({ barber: user.id }, { status: "expired" }, { new: true }),
+            Subscription.findOneAndUpdate({ user: user.id }, { status: "expired" }, { new: true }),
         ]);
     }
 

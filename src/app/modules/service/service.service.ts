@@ -7,20 +7,27 @@ import ApiError from '../../../errors/ApiError'
 import { parseFormData } from '../../../helpers/nestedObject.helper'
 import { buildQuery } from '../../../util/buildQuery';
 import { paginateAndSort } from '../../../util/pagination.on';
+import { CarManagementService } from '../car_Management/car.service';
+import { USER_ROLES } from '../../../enums/user';
+import { User } from '../user/user.model';
 
-
-
-// const createServiceToDB = async ( req: Request,
+// const createServiceToDB = async (
+//   req: Request,
 //   payload: any,
 //   files?: { [fieldname: string]: Express.Multer.File[] }
 // ): Promise<IService> => {
-//  const user = req.user.id;
 //   const parsedData = parseFormData(payload, files)
+  
+//   console.log('Parsed Data:', JSON.stringify(parsedData, null, 2))
 
-//   // Validate required fields
-//   if (!user.createdBy) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, 'createdBy is required')
+//   const userId = (req as any).user?.id || (req as any).user?._id
+
+//   if (!userId) {
+//     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated')
 //   }
+
+//   // Add createdBy to parsed data
+//   parsedData.createdBy = userId
 
 //   // Create service
 //   const service = await ServiceModelInstance.create(parsedData)
@@ -32,7 +39,6 @@ import { paginateAndSort } from '../../../util/pagination.on';
 //   await service.populate([
 //     { path: 'user', select: 'name email' },
 //     { path: 'createdBy', select: 'name email' },
-//     { path: 'assignedUsers', select: 'name email' }
 //   ])
 
 //   return service
@@ -42,33 +48,95 @@ const createServiceToDB = async (
   payload: any,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
-  const parsedData = parseFormData(payload, files)
+  const parsedData = parseFormData(payload, files);
   
-  console.log('Parsed Data:', JSON.stringify(parsedData, null, 2))
+  console.log('Parsed Data:', JSON.stringify(parsedData, null, 2));
 
-  const userId = (req as any).user?.id || (req as any).user?._id
+  const userId = (req as any).user?.id || (req as any).user?._id;
 
   if (!userId) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated')
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
+  }
+
+  // Check if user is a SELLER
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+
+  // Only check car limit for SELLERS
+  if (user.role === USER_ROLES.SELLER) {
+    // Check if user has an active subscription
+    if (!user.isSubscribed) {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        'You need an active subscription to add cars. Please subscribe to a package first.'
+      );
+    }
+
+    try {
+      // Check car limit and process ad-hoc payment if needed
+      const carLimitCheck = await CarManagementService.checkCarLimitAndAddCar({
+        id: userId,
+        role: user.role
+      });
+
+      console.log('Car Limit Check Result:', carLimitCheck);
+
+      // If ad-hoc charge was applied, you might want to notify the user
+      if (carLimitCheck.adHocCars > 0) {
+        console.log(
+          `Ad-hoc charge applied: $${carLimitCheck.adHocCharges} for ${carLimitCheck.adHocCars} additional car(s)`
+        );
+      }
+    } catch (error: any) {
+      // If car limit check fails, don't create the service
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        error.message || 'Failed to verify car limit. Please check your subscription.'
+      );
+    }
   }
 
   // Add createdBy to parsed data
-  parsedData.createdBy = userId
+  parsedData.createdBy = userId;
 
   // Create service
-  const service = await ServiceModelInstance.create(parsedData)
-  if (!service) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service')
+  let service;
+  try {
+    service = await ServiceModelInstance.create(parsedData);
+    if (!service) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service');
+    }
+  } catch (error: any) {
+    // If service creation fails and we already added a car count, roll it back
+    if (user.role === USER_ROLES.SELLER) {
+      try {
+        await CarManagementService.removeCarFromSubscription({
+          id: userId,
+          role: user.role
+        });
+        console.log('Rolled back car count due to service creation failure');
+      } catch (rollbackError) {
+        console.error('Failed to rollback car count:', rollbackError);
+      }
+    }
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `Failed to create service: ${error.message}`
+    );
   }
 
   // Populate relationships
   await service.populate([
     { path: 'user', select: 'name email' },
     { path: 'createdBy', select: 'name email' },
-  ])
+  ]);
 
-  return service
-}
+  return service;
+};
+
+
 
 const getAllServicesFromDB = async (query: any) => {
   const {
@@ -516,22 +584,78 @@ const updateServiceMilesInDB = async (id: string, miles: number) => {
   }
 }
 
-const deleteServiceFromDB = async (id: string): Promise<void> => {
-  if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+// const deleteServiceFromDB = async (id: string): Promise<void> => {
+//   if (!Types.ObjectId.isValid(id)) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+//   }
+
+//   const service = await ServiceModelInstance.findOneAndUpdate(
+//     { _id: id, isDeleted: false },
+//     { $set: { isDeleted: true } },
+//     { new: true }
+//   )
+
+//   if (!service) {
+//     throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+//   }
+// }
+const deleteServiceFromDB = async (
+  req: Request,
+  serviceId: string
+): Promise<IService> => {
+  const userId = (req as any).user?.id || (req as any).user?._id;
+
+  if (!userId) {
+    throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
   }
 
-  const service = await ServiceModelInstance.findOneAndUpdate(
-    { _id: id, isDeleted: false },
-    { $set: { isDeleted: true } },
-    { new: true }
-  )
-
+  const service = await ServiceModelInstance.findById(serviceId);
+  
   if (!service) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found');
   }
-}
 
+  if (service.createdBy.toString() !== userId.toString()) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'You are not authorized to delete this service'
+    );
+  }
+
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  }
+
+  const deletedService = await ServiceModelInstance.findByIdAndDelete(serviceId);
+  
+  if (!deletedService) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to delete service');
+  }
+
+  if (user.role === USER_ROLES.SELLER && user.isSubscribed) {
+    try {
+      const result = await CarManagementService.removeCarFromSubscription({
+        id: userId,
+        role: user.role
+      });
+      
+      console.log('Car count reduced after service deletion:', result);
+      
+      if (result.adHocCars >= 0 && result.adHocCharges > 0) {
+        console.log(
+          `Ad-hoc charges updated: $${result.adHocCharges} for ${result.adHocCars} additional car(s)`
+        );
+      }
+    } catch (error: any) {
+
+      console.error('Failed to reduce car count after deletion:', error.message);
+      
+    }
+  }
+
+  return deletedService;
+};
 const permanentDeleteServiceFromDB = async (id: string): Promise<void> => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
@@ -645,8 +769,3 @@ const ServiceService = {
 }
 
 export default ServiceService
-
-
-
-
-

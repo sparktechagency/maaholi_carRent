@@ -5,10 +5,12 @@ export type IPackage = {
     title: String;
     description: String;
     price: Number;
+    adHocPricePerCar: Number;
     duration: 'month' | 'year';
     feature: [String];
     priceId: String;
     productId: String;
+    carLimit: Number;
 }
 
 export type PackageModel = Model<IPackage, Record<string, unknown>>;

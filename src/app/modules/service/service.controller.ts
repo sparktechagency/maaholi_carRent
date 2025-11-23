@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes'
 import catchAsync from '../../../shared/catchAsync'
 import ServiceService from './service.service'
 import sendResponse from '../../../shared/sendResponse'
+import { ServiceHelpers } from '../car_Management/helper'
 
 
 const createService = catchAsync(async(req: Request, res: Response) => {
@@ -24,6 +25,27 @@ const createService = catchAsync(async(req: Request, res: Response) => {
   })
 })
 
+const checkCanAddCar = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceHelpers.checkCarAddPermission(req);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result
+  });
+});
+
+const getCarStatistics = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceHelpers.getSellerCarStatistics(req);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Car statistics retrieved successfully',
+    data: result
+  });
+});
 
 const getAllServices = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const query = req.query
@@ -115,7 +137,7 @@ const updateServiceMiles = catchAsync(async (req: Request, res: Response, next: 
 const deleteService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params
 
-  await ServiceService.deleteServiceFromDB(id)
+  await ServiceService.deleteServiceFromDB(req, id)
 
   sendResponse(res, {
     success: true,
@@ -176,6 +198,8 @@ const getServiceStats = catchAsync(async (req: Request, res: Response, next: Nex
 
 export const ServiceController = {
   createService,
+  checkCanAddCar,
+  getCarStatistics,
   getAllServices,
   getSingleService,
   updateService,

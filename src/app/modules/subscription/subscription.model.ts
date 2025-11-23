@@ -1,7 +1,5 @@
 import { model, Schema } from "mongoose";
 import { ISubscription, SubscriptionModel } from "./subscription.interface";
-
-
 const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     {
         customerId: {
@@ -12,7 +10,7 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
             type: Number,
             required: true
         },
-        barber: {
+        user: {
             type: Schema.Types.ObjectId,
             ref: "User",
             required: true
@@ -43,12 +41,24 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
             enum: ["expired", "active", "cancel"],
             default: "active",
             required: true
+        },
+        carsAdded: {
+            type: Number,
+            default: 0,
+            required: true
+        },
+        adHocCharges: {
+            type: Number,
+            default: 0
+        },
+        adHocCars: {
+            type: Number,
+            default: 0
         }
-
     },
     {
         timestamps: true
     }
 )
 
-export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", subscriptionSchema)
+export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", subscriptionSchema);

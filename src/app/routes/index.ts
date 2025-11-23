@@ -20,6 +20,7 @@ import { ReportRoutes } from '../modules/report/report.routes';
 import { PaymentRoutes } from '../modules/payment/payment.routes';
 import { OfferRoutes } from '../modules/offer/offer.routes';
 import { carModelsRoutes } from '../modules/Model/model.route';
+import { SubscriptionRoutes } from '../modules/subscription/subscription.routes';
 const router = express.Router();
 
 const apiRoutes = [
@@ -43,6 +44,7 @@ const apiRoutes = [
     { path: "/reservation", route: ReservationRoutes },
     { path: "/report", route: ReportRoutes },
     { path: "/payment", route: PaymentRoutes },
+    { path: "/subscription", route: SubscriptionRoutes },
     { path: "/offer", route: OfferRoutes },
 ]
 

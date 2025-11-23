@@ -8,7 +8,7 @@ import ApiError from '../errors/ApiError';
 import stripe from '../config/stripe';
 import { handleCheckoutSession } from '../handlers/handleCheckoutSession';
 import { handleAccountConnectEvent } from '../handlers';
-
+import { handleSubscriptionEvent } from './stripe.event';
 const handleStripeWebhook = async (req: Request, res: Response) => {
 
     // Extract Stripe signature and webhook secret
@@ -46,18 +46,48 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 const session = event.data.object as Stripe.Checkout.Session;
 
                 if (session.payment_status === "paid") {
-                    await handleCheckoutSession(event.data.object as Stripe.Checkout.Session);
+                    // Check if this is a subscription checkout
+                    if (session.mode === "subscription") {
+                        await handleSubscriptionEvent(event);
+                        logger.info(colors.bgGreen.bold(`Subscription checkout completed: ${session.id}`));
+                    } else {
+                        // Handle regular payment checkout
+                        await handleCheckoutSession(session);
+                    }
                 }
+                break;
+
+            // New subscription events
+            case 'customer.subscription.updated':
+                await handleSubscriptionEvent(event);
+                logger.info(colors.bgBlue.bold(`Subscription updated: ${(data as Stripe.Subscription).id}`));
+                break;
+
+            case 'customer.subscription.deleted':
+                await handleSubscriptionEvent(event);
+                logger.info(colors.bgYellow.bold(`Subscription deleted: ${(data as Stripe.Subscription).id}`));
+                break;
+
+            case 'invoice.payment_succeeded':
+                await handleSubscriptionEvent(event);
+                logger.info(colors.bgGreen.bold(`Invoice payment succeeded`));
+                break;
+
+            case 'invoice.payment_failed':
+                await handleSubscriptionEvent(event);
+                logger.warn(colors.bgRed.bold(`Invoice payment failed`));
                 break;
 
             default:
                 logger.warn(colors.bgGreen.bold(`Unhandled event type: ${eventType}`));
         }
     } catch (error) {
-        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Error handling event: ${error}`,);
+        logger.error(colors.bgRed.bold(`Error handling event: ${error}`));
+        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Error handling event: ${error}`);
     }
 
     res.sendStatus(200);
 };
+
 
 export default handleStripeWebhook;

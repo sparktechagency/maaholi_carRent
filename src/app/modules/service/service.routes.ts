@@ -12,7 +12,19 @@ router.get('/stats', ServiceController.getServiceStats)
 // Create service with file upload
 router.post('/' ,auth(USER_ROLES.SELLER),fileUploadHandler(), ServiceController.createService)
 
-// Get all services
+router.get(
+  '/check-can-add',
+  auth(USER_ROLES.SELLER),
+  ServiceController.checkCanAddCar
+);
+
+
+router.get(
+  '/car-statistics',
+  auth(USER_ROLES.SELLER),
+  ServiceController.getCarStatistics
+);
+
 router.get('/', ServiceController.getAllServices)
 router.get('/filter', ServiceController.  getAllFilter)
 

@@ -37,9 +37,44 @@ const transferAndPayout = catchAsync(async(req: Request, res: Response)=>{
     })
 });
 
+const createSubscriptionCheckout = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    const { packageId } = req.body;
 
+    if (!packageId) {
+        return sendResponse(res, {
+            statusCode: StatusCodes.BAD_REQUEST,
+            success: false,
+            message: "Package ID is required",
+            data: null
+        });
+    }
+
+    const result = await PaymentService.createSubscriptionCheckoutToStripe(user, packageId);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: "Subscription checkout created successfully",
+        data: { checkoutUrl: result }
+    });
+});
+
+const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
+    const user = req.user;
+    const result = await PaymentService.cancelSubscriptionFromStripe(user);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: result.message,
+        data: null
+    });
+});
 export const PaymentController = {
     createPaymentCheckoutToStripe,
     createAccountToStripe,
-    transferAndPayout
+    transferAndPayout,
+    createSubscriptionCheckout,
+    cancelSubscription
 }
