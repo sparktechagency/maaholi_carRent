@@ -195,6 +195,19 @@ const getServiceStats = catchAsync(async (req: Request, res: Response, next: Nex
   })
 })
 
+ const compareTwoServices = catchAsync(async (req: Request, res: Response) => {
+  const { id1, id2 } = req.params;
+
+  const result = await ServiceService.compareTwoServicesFromDB(id1, id2);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Comparison data retrieved successfully",
+    data: result,
+  });
+});
+
 export const ServiceController = {
   createService,
   checkCanAddCar,
@@ -208,5 +221,6 @@ export const ServiceController = {
   restoreService,
   assignUsers,
   getServiceStats,
-  getAllFilter
+  getAllFilter,
+  compareTwoServices
 }

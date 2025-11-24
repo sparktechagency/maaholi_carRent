@@ -12,6 +12,7 @@ import { User } from '../user/user.model';
 import { CACHE_PREFIXES, CACHE_TTL, RedisCacheService } from '../redis/cache';
 import { ServiceFilterQuery } from './service.query.filter';
 
+
 // const createServiceToDB = async (
 //   req: Request,
 //   payload: any,
@@ -453,55 +454,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     },
   };
 };
-// export const getAllServicesFromDBFilter = async (query: any) => {
-//   const searchQuery = buildQuery({
-//     query,
-//     searchFields: [
-//       "basicInformation.vehicleName",
-//       "basicInformation.vinNo",
-//       "basicInformation.condition",
-//       "location.address",
-//       "location.city",
-//       "location.country",
-//       "technicalInformation.fuelType",
-//       "technicalInformation.transmission",
-//       "colour.exterior",
-//       "description"
-//     ],
-//     exactFilters: ["status", "Category"],
-//     numberFilters: ["basicInformation.year", "basicInformation.miles"],
-//   });
-
-//   const { skip, limit, sort, page } = paginateAndSort(query);
-
-//   const [data, total] = await Promise.all([
-//     ServiceModelInstance.find(searchQuery)
-//       .populate("user", "name email")
-//       .populate("brand")
-//       .populate("model")
-//       .populate("Category")
-//       .populate("createdBy", "name email")
-//       .sort(sort)
-//       .skip(skip)
-//       .limit(limit)
-//       .lean(),
-
-//     ServiceModelInstance.countDocuments(searchQuery),
-//   ]);
-
-//   return {
-//     data,
-//     meta: {
-//       page,
-//       limit,
-//       total,
-//       totalPages: Math.ceil(total / limit),
-//     },
-//   };
-// };
-
-// src/modules/service/service.service.ts
-
 
  const getAllServicesFromDBFilter = async (query: ServiceFilterQuery) => {
   const {
@@ -776,6 +728,25 @@ const getAllFilterFromDB = async (requestData: any) => {
   return result;
 };
 
+//compare
+const compareTwoServicesFromDB = async(id1: string, id2: string) => {
+    const car1 = await ServiceModelInstance.findById(id1);
+    const car2 = await ServiceModelInstance.findById(id2);
+
+    if (!car1 || !car2) {
+      throw new Error("One or both cars not found");
+    }
+
+    return {
+      car1,
+      car2,
+      comparison: {
+        priceDifference: Math.abs(car1.basicInformation?.price - car2.basicInformation?.price),
+        mileageDifference: Math.abs(car1.basicInformation?.miles ?? 0 - (car2.basicInformation?.miles ?? 0)),
+        yearDifference: Math.abs(car1.basicInformation?.year ?? 0 - (car2.basicInformation?.year ?? 0)),
+      },
+    };
+  }
 // Optional: Get single service by ID
 export const getServiceByIdFromDB = async (id: string) => {
   const cacheKey = `${CACHE_PREFIXES.SERVICES}:id:${id}`;
@@ -1062,7 +1033,8 @@ const ServiceService = {
   assignUsersToService,
   getServiceStatsFromDB,
   getAllFilterFromDB,
-  getAllServicesFromDBFilter
+  getAllServicesFromDBFilter,
+  compareTwoServicesFromDB
 }
 
 export default ServiceService

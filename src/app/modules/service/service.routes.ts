@@ -11,7 +11,7 @@ router.get('/stats', ServiceController.getServiceStats)
 
 // Create service with file upload
 router.post('/' ,auth(USER_ROLES.SELLER),fileUploadHandler(), ServiceController.createService)
-
+router.get("/compare/:id1/:id2", ServiceController.compareTwoServices);
 router.get(
   '/check-can-add',
   auth(USER_ROLES.SELLER),
