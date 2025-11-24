@@ -21,16 +21,16 @@ const createUser = catchAsync(async (req: Request, res: Response, next: NextFunc
 });
 
 //role-switch
-const switchRole = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const userId = req.user.id;  
-  const { role } = req.body;   
-  
-  const result = await UserService.switchRoleService(userId, role);
-  
+ const switchRole = catchAsync(async (req, res) => {
+  const userId = req.user?.id;
+
+  const result = await UserService.switchRoleService(userId);
+
   sendResponse(res, {
+    statusCode: 200,
     success: true,
-    statusCode: StatusCodes.OK,
-    data: result
+    message: "Role switched successfully",
+    data: result,
   });
 });
 

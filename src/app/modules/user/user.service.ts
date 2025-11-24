@@ -122,27 +122,64 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
     return data;
 };
 
-const switchRoleService = async (userId: string, newRole: string) => {
-  console.log('=== SWITCH ROLE SERVICE DEBUG ===');
-  console.log('User ID:', userId);
-  console.log('New Role:', newRole);
+// const switchRoleService = async (userId: string, newRole: string) => {
+//   console.log('=== SWITCH ROLE SERVICE DEBUG ===');
+//   console.log('User ID:', userId);
+//   console.log('New Role:', newRole);
 
-  const user = await User.findById(userId);
+//   const user = await User.findById(userId);
   
-  console.log('Found user:', user);
+//   console.log('Found user:', user);
+
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
+
+//   // Validate role is allowed
+//   const allowedRoles = ['BUYER', 'SELLER', 'ADMIN'];
+//   if (!allowedRoles.includes(newRole)) {
+//     throw new ApiError(400, "Invalid role");
+//   }
+
+//   // Update both role and currentRole
+//   user.currentRole = newRole;
+//   await user.save();
+
+//   const newAccessToken = jwtHelper.createToken(
+//     {
+//       id: user._id,
+//       email: user.email,
+//       role: user.role,
+//       currentRole: user.currentRole,
+//     },
+//     config.jwt.jwt_secret as string,
+//     config.jwt.jwt_expire_in as string
+//   );
+
+//   return {
+//     currentRole: user.currentRole,
+//     accessToken: newAccessToken,
+//   };
+// };
+const switchRoleService = async (userId: string) => {
+  const user = await User.findById(userId);
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  // Validate role is allowed
-  const allowedRoles = ['BUYER', 'SELLER', 'ADMIN'];
-  if (!allowedRoles.includes(newRole)) {
-    throw new ApiError(400, "Invalid role");
+  // Block admin/super_admin
+  if (user.role === USER_ROLES.ADMIN || user.role === USER_ROLES.SUPER_ADMIN) {
+    throw new ApiError(400, "Admin or Super Admin role cannot be switched.");
   }
 
-  // Update both role and currentRole
-  user.currentRole = newRole;
+  // Swap roles
+  const previousRole = user.role;
+  const newRole =
+    previousRole === USER_ROLES.BUYER ? USER_ROLES.SELLER : USER_ROLES.BUYER;
+
+  user.role = newRole;
+  user.currentRole = newRole; // keep currentRole in sync with permanent role
   await user.save();
 
   const newAccessToken = jwtHelper.createToken(
@@ -150,19 +187,18 @@ const switchRoleService = async (userId: string, newRole: string) => {
       id: user._id,
       email: user.email,
       role: user.role,
-      currentRole: user.currentRole,
+      // currentRole: user.previousRole,
     },
     config.jwt.jwt_secret as string,
     config.jwt.jwt_expire_in as string
   );
 
   return {
-    currentRole: user.currentRole,
+    role: user.role,
+    // previousRole: user.previousRole,
     accessToken: newAccessToken,
   };
 };
-
-
 
 // const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
 //     const { id } = user;
