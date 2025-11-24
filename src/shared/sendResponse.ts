@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { any } from 'zod';
 
 type IData<T> = {
     success: boolean;
@@ -9,6 +10,8 @@ type IData<T> = {
         limit: number;
         totalPage: number;
         total: number;
+        meta: any;
+    
     };
     data?: T;
 };
@@ -19,6 +22,7 @@ const sendResponse = <T>(res: Response, data: IData<T>) => {
         message: data.message,
         pagination: data.pagination,
         data: data.data,
+        meta: data.pagination,
     };
     res.status(data.statusCode).json(resData);
 };

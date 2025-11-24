@@ -5,11 +5,12 @@ import { ServiceModelInstance } from './service.model'
 import { IService } from './service.interface'
 import ApiError from '../../../errors/ApiError'
 import { parseFormData } from '../../../helpers/nestedObject.helper'
-import { buildQuery } from '../../../util/buildQuery';
 import { paginateAndSort } from '../../../util/pagination.on';
 import { CarManagementService } from '../car_Management/car.service';
 import { USER_ROLES } from '../../../enums/user';
 import { User } from '../user/user.model';
+import { CACHE_PREFIXES, CACHE_TTL, RedisCacheService } from '../redis/cache';
+import { ServiceFilterQuery } from './service.query.filter';
 
 // const createServiceToDB = async (
 //   req: Request,
@@ -452,57 +453,353 @@ const getAllFilterFromDB = async (requestData: any) => {
     },
   };
 };
-const getAllServicesFromDBFilter = async (query: any) => {
+// export const getAllServicesFromDBFilter = async (query: any) => {
+//   const searchQuery = buildQuery({
+//     query,
+//     searchFields: [
+//       "basicInformation.vehicleName",
+//       "basicInformation.vinNo",
+//       "basicInformation.condition",
+//       "location.address",
+//       "location.city",
+//       "location.country",
+//       "technicalInformation.fuelType",
+//       "technicalInformation.transmission",
+//       "colour.exterior",
+//       "description"
+//     ],
+//     exactFilters: ["status", "Category"],
+//     numberFilters: ["basicInformation.year", "basicInformation.miles"],
+//   });
 
-  const searchQuery = buildQuery({
-    query,
-    searchFields: [
-      "basicInformation.vehicleName",
-      "basicInformation.vinNo",
-      "basicInformation.condition",
-      "basicInformation.MfkWarranty",
-      "basicInformation.leasingRate",
-      "location.address",
-      "location.city",
-      "location.country",
-      "technicalInformation.fuelType",
-      "technicalInformation.transmission",
-      "electricHybrid.towingCapacity",
-      "extras.tires",
-      "colour.exterior",
-      "description"
-    ],
-    exactFilters: ["status"],
-    numberFilters: ["basicInformation.year", "basicInformation.miles"],
+//   const { skip, limit, sort, page } = paginateAndSort(query);
+
+//   const [data, total] = await Promise.all([
+//     ServiceModelInstance.find(searchQuery)
+//       .populate("user", "name email")
+//       .populate("brand")
+//       .populate("model")
+//       .populate("Category")
+//       .populate("createdBy", "name email")
+//       .sort(sort)
+//       .skip(skip)
+//       .limit(limit)
+//       .lean(),
+
+//     ServiceModelInstance.countDocuments(searchQuery),
+//   ]);
+
+//   return {
+//     data,
+//     meta: {
+//       page,
+//       limit,
+//       total,
+//       totalPages: Math.ceil(total / limit),
+//     },
+//   };
+// };
+
+// src/modules/service/service.service.ts
+
+
+ const getAllServicesFromDBFilter = async (query: ServiceFilterQuery) => {
+  const {
+    searchTerm,
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    // Extract all filter params
+    vehicleName,
+    brand,
+    model,
+    Category,
+    vinNo,
+    yearFrom,
+    yearTo,
+    priceFrom,
+    priceTo,
+    condition,
+    milesFrom,
+    milesTo,
+    MfkWarranty,
+    AccidentVehicle,
+    BodyType,
+    fuelType,
+    driveType,
+    transmission,
+    engineType,
+    performance,
+    batteryCapacityFrom,
+    batteryCapacityTo,
+    rangeFrom,
+    rangeTo,
+    tires,
+    season,
+    handicapAccessible,
+    raceCar,
+    tuning,
+    exterior,
+    interior,
+    metallic,
+    seatsFrom,
+    seatsTo,
+    doorsFrom,
+    doorsTo,
+    city,
+    country,
+    status,
+    // Equipment booleans (sent as string "true"/"false" from frontend)
+    ABS,
+    Camera,
+    AdaptiveCruiseControl,
+    AlarmSystem,
+    ElectricSeatAdjustment,
+    Towbar,
+    LeatherAlcantaraFabricSeats,
+    HeatedVentilatedSeats,
+    SunroofPanoramicRoof,
+    AndroidAuto,
+    NavigationSystem,
+    ParkingSensors,
+    HeadUpDisplay,
+    XenonLEDHeadlights,
+    KeylessEntryStart,
+    Isofix,
+    StartStopSystem,
+    TheftProtection,
+    ClimateControl,
+    SportsSeats,
+    SpeedLimiter,
+    StabilityControlESP,
+    SoundSystem,
+  } = query;
+
+  // Build $and array to safely combine all conditions
+  const andConditions: any[] = [{ isDeleted: false }];
+
+  // 1. Global Search Term
+  if (searchTerm) {
+    andConditions.push({
+      $or: [
+        { 'basicInformation.vehicleName': { $regex: searchTerm, $options: 'i' } },
+        { 'basicInformation.vinNo': { $regex: searchTerm, $options: 'i' } },
+        { 'basicInformation.condition': { $regex: searchTerm, $options: 'i' } },
+        { 'location.city': { $regex: searchTerm, $options: 'i' } },
+        { 'location.country': { $regex: searchTerm, $options: 'i' } },
+        { 'technicalInformation.fuelType': { $regex: searchTerm, $options: 'i' } },
+        { 'colour.exterior': { $regex: searchTerm, $options: 'i' } },
+        { description: { $regex: searchTerm, $options: 'i' } },
+      ],
+    });
+  }
+
+  // 2. Price Range (matches RegularPrice OR OfferPrice)
+  if (priceFrom || priceTo) {
+    const priceCondition: any = {};
+    if (priceFrom) priceCondition.$gte = Number(priceFrom);
+    if (priceTo) priceCondition.$lte = Number(priceTo);
+
+    andConditions.push({
+      $or: [
+        { 'basicInformation.RegularPrice': priceCondition },
+        { 'basicInformation.OfferPrice': priceCondition },
+      ],
+    });
+  }
+
+  // 3. Number Range Filters
+  const ranges = [
+    { from: yearFrom, to: yearTo, path: 'basicInformation.year' },
+    { from: milesFrom, to: milesTo, path: 'basicInformation.miles' },
+    { from: seatsFrom, to: seatsTo, path: 'seatsAndDoors.seats' },
+    { from: doorsFrom, to: doorsTo, path: 'seatsAndDoors.doors' },
+    { from: batteryCapacityFrom, to: batteryCapacityTo, path: 'electricHybrid.batteryCapacityKWh' },
+    { from: rangeFrom, to: rangeTo, path: 'electricHybrid.rangeKm' },
+  ];
+
+  ranges.forEach(({ from, to, path }) => {
+    if (from || to) {
+      const condition: any = {};
+      if (from) condition.$gte = Number(from);
+      if (to) condition.$lte = Number(to);
+      andConditions.push({ [path]: condition });
+    }
   });
 
-  const { skip, limit, sort, page } = paginateAndSort(query);
+  // 4. Exact or Regex Matches
+  const fieldMap: Record<string, string> = {
+    brand: 'basicInformation.brand',
+    model: 'basicInformation.model',
+    Category: 'basicInformation.Category',
+    condition: 'basicInformation.condition',
+    status: 'status',
+    BodyType: 'basicInformation.BodyType',
+    MfkWarranty: 'basicInformation.MfkWarranty',
+    AccidentVehicle: 'basicInformation.AccidentVehicle',
+    fuelType: 'technicalInformation.fuelType',
+    driveType: 'technicalInformation.driveType',
+    transmission: 'technicalInformation.transmission',
+    tires: 'extras.tires',
+    season: 'extras.season',
+    handicapAccessible: 'extras.handicapAccessible',
+    raceCar: 'extras.raceCar',
+    tuning: 'extras.tuning',
+    metallic: 'colour.metallic',
+    city: 'location.city',
+    country: 'location.country',
+  };
 
+  Object.entries(fieldMap).forEach(([key, path]) => {
+    const value = query[key as keyof ServiceFilterQuery];
+    if (value !== undefined && value !== null && value !== '') {
+      if (['city', 'country'].includes(key)) {
+        andConditions.push({ [path]: { $regex: value, $options: 'i' } });
+      } else {
+        andConditions.push({ [path]: value });
+      }
+    }
+  });
+
+  // 5. Partial Text Matches
+  const partialFields = {
+    'basicInformation.vehicleName': vehicleName,
+    'basicInformation.vinNo': vinNo,
+    'colour.exterior': exterior,
+    'colour.interior': interior,
+    'technicalInformation.engineType': engineType,
+    'technicalInformation.performance': performance,
+  };
+
+  Object.entries(partialFields).forEach(([path, value]) => {
+    if (value) {
+      andConditions.push({ [path]: { $regex: value, $options: 'i' } });
+    }
+  });
+
+  // 6. Equipment Boolean Filters
+  const equipmentKeys = [
+    'ABS',
+    'Camera',
+    'AdaptiveCruiseControl',
+    'AlarmSystem',
+    'ElectricSeatAdjustment',
+    'Towbar',
+    'LeatherAlcantaraFabricSeats',
+    'HeatedVentilatedSeats',
+    'SunroofPanoramicRoof',
+    'AndroidAuto',
+    'NavigationSystem',
+    'ParkingSensors',
+    'HeadUpDisplay',
+    'XenonLEDHeadlights',
+    'KeylessEntryStart',
+    'Isofix',
+    'StartStopSystem',
+    'TheftProtection',
+    'ClimateControl',
+    'SportsSeats',
+    'SpeedLimiter',
+    'StabilityControlESP',
+    'SoundSystem',
+  ];
+
+  equipmentKeys.forEach((key) => {
+    const value = query[key as keyof ServiceFilterQuery];
+    if (value !== undefined && value !== null && value !== '') {
+      const boolValue = value === 'true';
+      if (boolValue) {
+        andConditions.push({ [`equipment.${key}`]: true });
+      }
+    }
+  });
+
+  // Final MongoDB Query
+  const mongoQuery = andConditions.length > 1 ? { $and: andConditions } : andConditions[0];
+
+  // Pagination & Sorting
+  const pageNum = Math.max(1, Number(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
+  const skip = (pageNum - 1) * limitNum;
+
+  const sortOptions: any = {};
+  sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+  // Execute Queries
   const [data, total] = await Promise.all([
-    ServiceModelInstance.find(searchQuery)
-      .populate("user", "name email")
-      .populate("brand")
-      .populate("model")
-      .populate("Category")
-      .populate("createdBy", "name email")
-      .sort(sort)
+    ServiceModelInstance.find(mongoQuery)
+      .populate('user', 'name email profile')
+      .populate('brand', 'name logo')
+      .populate('model', 'name')
+      .populate('Category', 'name')
+      .populate('createdBy', 'name email profile')
+      .sort(sortOptions)
       .skip(skip)
-      .limit(limit)
+      .limit(limitNum)
       .lean(),
 
-    ServiceModelInstance.countDocuments(searchQuery),
+    ServiceModelInstance.countDocuments(mongoQuery),
   ]);
 
-  return {
+  const totalPages = Math.ceil(total / limitNum);
+
+  const result = {
+    success: true,
+    message: 'Services fetched successfully',
     data,
     meta: {
+      page: pageNum,
+      limit: limitNum,
       total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
     },
+    appliedFilters: query,
   };
+
+  // Caching (safe & efficient)
+  try {
+    const cacheKey = `${CACHE_PREFIXES.SERVICES}:filter:${JSON.stringify({
+      ...query,
+      page: undefined,
+      limit: undefined,
+    })}`;
+
+    const ttl = Object.keys(query).length > 6 ? CACHE_TTL.SHORT : CACHE_TTL.MEDIUM;
+    await RedisCacheService.set(cacheKey, result, { ttl });
+  } catch (error) {
+    console.warn('Redis cache failed (non-critical):', error);
+  }
+
+  return result;
 };
+
+// Optional: Get single service by ID
+export const getServiceByIdFromDB = async (id: string) => {
+  const cacheKey = `${CACHE_PREFIXES.SERVICES}:id:${id}`;
+  const cached = await RedisCacheService.get(cacheKey);
+
+  if (cached) return cached;
+
+  const service = await ServiceModelInstance.findById(id)
+    .populate('user', 'name email profile')
+    .populate('brand', 'name logo')
+    .populate('model', 'name')
+    .populate('Category', 'name')
+    .populate('createdBy', 'name email profile')
+    .lean();
+
+  if (service) {
+    await RedisCacheService.set(cacheKey, service, { ttl: CACHE_TTL.LONG });
+  }
+
+  return service;
+};
+
+
+
 const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   // Validate ObjectId
   if (!Types.ObjectId.isValid(id)) {

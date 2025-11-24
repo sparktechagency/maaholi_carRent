@@ -44,8 +44,8 @@ const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
 
 const createUser = await User.create({
   ...payload,
-  role: payload.role || 'BUYER',
-  currentRole: payload.role || 'BUYER',
+  role: payload.role,
+  currentRole: payload.role
 });
 
   console.log('User created with ID:', createUser._id);

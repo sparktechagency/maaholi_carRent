@@ -21,14 +21,12 @@ const userSchema = new Schema<IUser, UserModal>(
     role: {
       type: String,
       enum: Object.values(USER_ROLES),
-      required: false,
-      default: "BUYER"
+      required: true,
     },
   currentRole: {
   type: String,
   enum: Object.values(USER_ROLES),
-  required: false,
-  default: "BUYER",
+  required: true,
 },
 
     email: {

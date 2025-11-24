@@ -1,0 +1,81 @@
+export type ServiceFilterQuery = Partial<{
+  searchTerm: string;
+  page: number | string;
+  limit: number | string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+
+  vehicleName: string;
+  brand: string;
+  model: string;
+  Category: string;
+  vinNo: string;
+  condition: string;
+  status: string;
+
+  yearFrom: string | number;
+  yearTo: string | number;
+  priceFrom: string | number;
+  priceTo: string | number;
+  milesFrom: string | number;
+  milesTo: string | number;
+  seatsFrom: string | number;
+  seatsTo: string | number;
+  doorsFrom: string | number;
+  doorsTo: string | number;
+  batteryCapacityFrom: string | number;
+  batteryCapacityTo: string | number;
+  rangeFrom: string | number;
+  rangeTo: string | number;
+
+  fuelType: string;
+  driveType: string;
+  transmission: string;
+  engineType: string;
+  performance: string;
+  BodyType: string;
+  MfkWarranty: string;
+  AccidentVehicle: string;
+  tires: string;
+  season: string;
+  handicapAccessible: string;
+  raceCar: string;
+  tuning: string;
+  exterior: string;
+  interior: string;
+  metallic: string;
+  city: string;
+  country: string;
+
+  // Equipment (accept string "true"/"false" or boolean)
+  ABS: string | boolean;
+  Camera: string | boolean;
+  AdaptiveCruiseControl: string | boolean;
+  AlarmSystem: string | boolean;
+  ElectricSeatAdjustment: string | boolean;
+  Towbar: string | boolean;
+  LeatherAlcantaraFabricSeats: string | boolean;
+  HeatedVentilatedSeats: string | boolean;
+  SunroofPanoramicRoof: string | boolean;
+  AndroidAuto: string | boolean;
+  NavigationSystem: string | boolean;
+  ParkingSensors: string | boolean;
+  HeadUpDisplay: string | boolean;
+  XenonLEDHeadlights: string | boolean;
+  KeylessEntryStart: string | boolean;
+  Isofix: string | boolean;
+  StartStopSystem: string | boolean;
+  TheftProtection: string | boolean;
+  ClimateControl: string | boolean;
+  SportsSeats: string | boolean;
+  SpeedLimiter: string | boolean;
+  StabilityControlESP: string | boolean;
+  SoundSystem: string | boolean;
+}>;
+
+export type IOptions = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
