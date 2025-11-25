@@ -281,7 +281,7 @@ const userListFromDB = async (query: Record<string, any>) => {
     const users = await result.queryModel;
     const pagination = result.getPaginationInfo();
 
-    return { users, pagination };
+    return { users };
 };
 
 const reservationListFromDB = async (query: Record<string, any>) => {
