@@ -5,6 +5,7 @@ import { User } from '../user/user.model';
 import { Reservation } from '../reservation/reservation.model';
 import QueryBuilder from '../../../shared/apiFeature';
 import { ServiceModelInstance } from '../service/service.model';
+import { Subscription } from '../subscription/subscription.model';
 
 const createAdminToDB = async (payload: IUser): Promise<IUser> => {
     const createAdmin: any = await User.create(payload);
@@ -37,59 +38,77 @@ const getAdminFromDB = async (): Promise<IUser[]> => {
 
 const countSummaryFromDB = async () => {
 
-    const totalCustomers = await User.countDocuments({
+    const totalprivateSeller = await User.countDocuments({
         $and: [
             { role: { $nin: ["SUPER-ADMIN", "ADMIN"] } },
-            { role: "CUSTOMER" }
+            { role: "BUYER" }
         ]
     });
 
-    const totalBarbers = await User.countDocuments({
+    const totalDealers = await User.countDocuments({
         $and: [
             { role: { $nin: ["SUPER-ADMIN", "ADMIN"] } },
-            { role: "BARBER" }
+            { role: "SELLER" }
         ]
     });
 
-    const totalRevenue = await Reservation.aggregate([
+const totalRevenueAgg = await Subscription.aggregate([
         {
             $match: {
-                status: "Completed",
-                paymentStatus: "Paid"
+                status: "active"
             }
         },
         {
             $group: {
                 _id: null,
-                total: { $sum: "$price" }
+                total: {
+                    $sum: {
+                        $add: ["$price", "$adHocCharges"]   // 👈 ADD BOTH
+                    }
+                }
             }
         }
     ]);
 
-    const totalIncome = await Reservation.aggregate([
+    // === INCOME (10% of total) ===
+    const totalIncomeAgg = await Subscription.aggregate([
         {
             $match: {
-                status: "Completed",
-                paymentStatus: "Paid"
+                status: "active"
             }
         },
         {
             $group: {
                 _id: null,
-                total: { $sum: "$price" }
+                total: {
+                    $sum: {
+                        $add: ["$price", "$adHocCharges"]   // 👈 SAME ADDITION
+                    }
+                }
             }
         },
         {
             $project: {
                 _id: 0,
-                totalAfterDeduction: { $multiply: ["$total", 0.1] }
+                totalAfterDeduction: { $multiply: ["$total", 0.1] } // 10% FEE
             }
         }
     ]);
 
+    const totalRevenue = totalRevenueAgg.length > 0 ? totalRevenueAgg : [{ total: 0 }];
+    const totalIncome = totalIncomeAgg.length > 0 ? totalIncomeAgg : [{ totalAfterDeduction: 0 }];
+
+  const  totalUser = await User.countDocuments({
+        $and: [
+            // { role: { $nin: ["SUPER-ADMIN", "ADMIN"] } },
+            { $or: [{ role: "BUYER" }, { role: "SELLER" }, { role: "ADMIN" }, { role: "SUPER-ADMIN" }] }
+        ]
+    });
+
     return {
-        totalCustomers,
-        totalBarbers,
+        totalprivateSeller,
+        totalDealers,
+        totalUser,
         totalRevenue: totalRevenue[0]?.total || 0,
         totalIncome: totalIncome[0]?.totalAfterDeduction || 0
     };
@@ -102,8 +121,8 @@ const userStatisticsFromDB = async () => {
     // Initialize user statistics array with 0 counts
     const userStatisticsArray = Array.from({ length: 12 }, (_, i) => ({
         month: monthNames[i],
-        customers: 0,
-        barbers: 0,
+        dealr: 0,
+        privateSeller: 0,
     }));
 
     const now = new Date();
@@ -113,7 +132,7 @@ const userStatisticsFromDB = async () => {
     const usersAnalytics = await User.aggregate([
         {
             $match: {
-                role: { $in: ["CUSTOMER", "BARBER"] },
+                role: { $in: ["SELLER", "BUYER"] },
                 createdAt: { $gte: startOfYear, $lt: endOfYear }
             }
         },
@@ -131,10 +150,10 @@ const userStatisticsFromDB = async () => {
     // Populate statistics array
     usersAnalytics.forEach(stat => {
         const monthIndex = stat._id.month - 1; // Convert month (1-12) to array index (0-11)
-        if (stat._id.role === "CUSTOMER") {
-            userStatisticsArray[monthIndex].customers = stat.total;
-        } else if (stat._id.role === "BARBER") {
-            userStatisticsArray[monthIndex].barbers = stat.total;
+        if (stat._id.role === "BUYER") {
+            userStatisticsArray[monthIndex].dealr = stat.total;
+        } else if (stat._id.role === "SELLER") {
+            userStatisticsArray[monthIndex].privateSeller = stat.total;
         }
     });
 

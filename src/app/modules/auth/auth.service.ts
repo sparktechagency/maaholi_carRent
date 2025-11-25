@@ -94,31 +94,69 @@ const accessToken = jwtHelper.createToken(
   };
 };
 
-const forgetPasswordToDB = async (email: string) => {
+// const forgetPasswordToDB = async (email: string) => {
+//     const isExistUser = await User.isExistUserByEmail(email);
+//     if (!isExistUser) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+//     }
 
+//     const otp = generateOTP();
+
+//     const value = {
+//         name: isExistUser.firstName,
+//         otp, 
+//         email: isExistUser.email
+//     };
+
+//     const forgetPassword = emailTemplate.resetPassword(value);
+//     await emailHelper.sendEmail(forgetPassword); 
+
+//     const authentication = {
+//         oneTimeCode: otp,      
+//         expireAt: new Date(Date.now() + 3 * 60 * 1000), 
+//         isResetPassword: true               
+//     };
+
+//     await User.findOneAndUpdate(
+//         { email },
+//         { $set: { authentication } },
+//         { new: true }
+//     );
+
+//     return { message: 'Password reset OTP sent successfully' };
+// };
+const forgetPasswordToDB = async (email: string) => {
     const isExistUser = await User.isExistUserByEmail(email);
     if (!isExistUser) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
 
-    //send mail
     const otp = generateOTP();
+
     const value = {
-        otp,
+        name: isExistUser.firstName,
+        otp, 
         email: isExistUser.email
     };
 
     const forgetPassword = emailTemplate.resetPassword(value);
-    emailHelper.sendEmail(forgetPassword);
+    await emailHelper.sendEmail(forgetPassword); 
 
-    //save to DB
-    const authentication = {
-        otpCode: otp,
-        expireAt: new Date(Date.now() + 3 * 60000)
-    };
-    await User.findOneAndUpdate({ email }, { $set: { authentication } });
+    // ✅ FIX: Update nested authentication fields correctly
+    await User.findOneAndUpdate(
+        { email },
+        { 
+            $set: { 
+                'authentication.oneTimeCode': otp,
+                'authentication.expireAt': new Date(Date.now() + 3 * 60 * 1000),
+                'authentication.isResetPassword': true
+            } 
+        },
+        { new: true }
+    );
+
+    return { message: 'Password reset OTP sent successfully' };
 };
-
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
     const { email, oneTimeCode } = payload;
     const isExistUser = await User.findOne({ email }).select('+authentication');
