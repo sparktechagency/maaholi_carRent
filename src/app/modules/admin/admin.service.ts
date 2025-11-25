@@ -382,9 +382,47 @@ const totalserviceInCar = async () => {
   };
 };
 
-const getTotalSubscribers = async (): Promise<number> => {
-    const totalSubscribers = await Subscription.countDocuments({ status: "active" });
-    return totalSubscribers;
+const getTotalSubscribers = async () => {
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Initialize array for 12 months
+    const monthlySubscribers = Array.from({ length: 12 }, (_, i) => ({
+        month: monthNames[i],
+        totalSubscribers: 0
+    }));
+
+    const now = new Date();
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+
+    // Aggregate subscriptions grouped by month
+    const subscribersData = await Subscription.aggregate([
+        {
+            $match: {
+                status: "active",
+                createdAt: { $gte: startOfYear, $lt: endOfYear }
+            }
+        },
+        {
+            $project: {
+                month: { $month: "$createdAt" }
+            }
+        },
+        {
+            $group: {
+                _id: "$month",
+                count: { $sum: 1 }
+            }
+        }
+    ]);
+
+    // Map counts to monthly array
+    subscribersData.forEach(stat => {
+        const monthIndex = stat._id - 1;
+        monthlySubscribers[monthIndex].totalSubscribers = stat.count;
+    });
+
+    return monthlySubscribers;
 };
 
 export const AdminService = {

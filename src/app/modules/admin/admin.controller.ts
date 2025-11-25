@@ -100,12 +100,13 @@ const reservationList = catchAsync(async (req: Request, res: Response) => {
     });
 });
 const totalsubscriber = catchAsync(async (req: Request, res: Response) => {
-    const result = await AdminService.getTotalSubscribers();
+    const totalSubscribers = await AdminService.getTotalSubscribers();
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
         message: 'total subscriber Retrieved Successfully',
-        data: result
+        data: totalSubscribers
+        
     });
 });
 
