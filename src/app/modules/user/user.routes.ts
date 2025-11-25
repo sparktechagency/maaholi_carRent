@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.get(
     '/profile',
-    auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
+    auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
     UserController.getUserProfile
 );
 
@@ -35,9 +35,17 @@ router
         UserController.createUser
     )
     .patch(
-        auth(USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
+        auth(USER_ROLES.
+            DELEAR, USER_ROLES.SUPER_ADMIN, USER_ROLES.SELLER, USER_ROLES.BUYER),
         fileUploadHandler(),
         UserController.updateProfile
     );
 
+router.patch(
+    '/toggle-user-lock/:id',
+    auth(USER_ROLES.
+        DELEAR, USER_ROLES.SUPER_ADMIN),
+    fileUploadHandler(),
+    UserController.toggleUserLock
+)
 export const UserRoutes = router;

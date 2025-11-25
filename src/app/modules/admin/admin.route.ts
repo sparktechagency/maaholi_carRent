@@ -19,35 +19,35 @@ router.get('/get-admin',
 );
 
 router.get('/revenue-statistics',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.revenueStatistics
 );
 
 router.get('/user-statistics',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.userStatistics
 );
 
 router.get('/count-summary',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.countSummary
 );
 router.get('/numberofCar',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN,USER_ROLES.SELLER,USER_ROLES.BUYER),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR,USER_ROLES.SELLER,USER_ROLES.BUYER),
     AdminController.counttotalCar
 );
 
 router.get('/user-list',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.userList
 );
 
 router.get('/reservation-list',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.reservationList
 );
 router.get('/totalSubscriber',
-    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
     AdminController.totalsubscriber
 );
 

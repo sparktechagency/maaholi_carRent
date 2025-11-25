@@ -59,7 +59,10 @@ const userSchema = new Schema<IUser, UserModal>(
         required: false,
       },
     },
-
+    isLocked: {
+      type: Boolean,
+      default: false
+    },
     profile: {
       type: String,
       default: 'https://res.cloudinary.com/ddqovbzxy/image/upload/v1736572642/avatar_ziy9mp.jpg',

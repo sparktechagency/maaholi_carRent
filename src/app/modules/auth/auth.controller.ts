@@ -201,6 +201,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 //     });
 // });
 
+
 export const AuthController = {
     // verifyMobile,
     loginUser,

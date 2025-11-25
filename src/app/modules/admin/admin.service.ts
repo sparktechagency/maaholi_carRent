@@ -276,10 +276,16 @@ const revenueStatisticsFromDB = async () => {
 };
 
 
+// const userListFromDB = async (query: Record<string, any>) => {
+//     const result = new QueryBuilder(User.find(), query).filter().search(['name', 'email', 'role']);
+//     const users = await result.queryModel;
+
+//     return { users };
+// };
 const userListFromDB = async (query: Record<string, any>) => {
-    const result = new QueryBuilder(User.find(), query).paginate().filter().search(['name', 'email']);
-    const users = await result.queryModel;
-    const pagination = result.getPaginationInfo();
+    const result = await User.find({ role: { $ne: "SUPER_ADMIN" } });
+
+    const users = result;
 
     return { users };
 };

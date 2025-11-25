@@ -36,6 +36,7 @@ export type IUser = {
     sallonPhoto?: string;
     isUpdate: boolean;
     verified: boolean;
+    isLocked: boolean;
     discount?: number;
     deviceToken?: string;
     // authentication?: IAuthenticationProps;

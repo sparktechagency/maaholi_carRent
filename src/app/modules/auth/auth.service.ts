@@ -49,6 +49,11 @@ const loginUserFromDB = async (payload: ILoginData) => {
   const user: any = await User.findOne({ email }).select("+password");
   if (!user) throw new ApiError(400, "User doesn't exist!");
 
+  //is user is locked true then throw error
+  if (user.isLocked) {
+    throw new ApiError(400, "User is locked! Please contact Support.");
+  }
+
   if (!user.verified)
     throw new ApiError(400, "Please verify your account first.");
 
@@ -713,6 +718,7 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
     }
     return;
 };
+
 
 export const AuthService = {
     loginUserFromDB,

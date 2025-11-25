@@ -85,7 +85,7 @@ const getAllSubscriptionsFromDB = async (query: any) => {
     const filter: any = {};
     
     if (status) {
-        filter.status = status; 
+        filter.status = status; // active, expired, cancel
     }
 
     // Search by user name or email

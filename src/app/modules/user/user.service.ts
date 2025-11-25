@@ -129,7 +129,7 @@ const switchRoleService = async (userId: string) => {
   }
 
   // Block admin/super_admin
-  if (user.role === USER_ROLES.ADMIN || user.role === USER_ROLES.SUPER_ADMIN) {
+  if (user.role === USER_ROLES.DELEAR || user.role === USER_ROLES.SUPER_ADMIN) {
     throw new ApiError(400, "Admin or Super Admin role cannot be switched.");
   }
 
@@ -246,11 +246,24 @@ const updateLocationToDB = async (user: JwtPayload, payload: { longitude: number
     return result;
 };
 
+ const toggleUserLock = async (userId: string) => {
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    user.isLocked = !user.isLocked;
+    await user.save();
+
+    return user;
+};
+
 export const UserService = {
     createUserToDB,
     getUserProfileFromDB,
     updateProfileToDB,
     createAdminToDB,
     updateLocationToDB,
-    switchRoleService
+    switchRoleService,
+    toggleUserLock
 };
