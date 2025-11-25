@@ -115,14 +115,58 @@ const totalRevenueAgg = await Subscription.aggregate([
 
 }
 
+// const userStatisticsFromDB = async () => {
+//     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+//     // Initialize user statistics array with 0 counts
+//     const userStatisticsArray = Array.from({ length: 12 }, (_, i) => ({
+//         month: monthNames[i],
+//         dealr: 0,
+//         privateSeller: 0,
+//     }));
+
+//     const now = new Date();
+//     const startOfYear = new Date(now.getFullYear(), 0, 1);
+//     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
+
+//     const usersAnalytics = await User.aggregate([
+//         {
+//             $match: {
+//                 role: { $in: ["SELLER", "BUYER"] },
+//                 createdAt: { $gte: startOfYear, $lt: endOfYear }
+//             }
+//         },
+//         {
+//             $group: {
+//                 _id: {
+//                     month: { $month: "$createdAt" },
+//                     role: "$role",
+//                 },
+//                 total: { $sum: 1 }
+//             }
+//         }
+//     ]);
+
+//     // Populate statistics array
+//     usersAnalytics.forEach(stat => {
+//         const monthIndex = stat._id.month - 1; // Convert month (1-12) to array index (0-11)
+//         if (stat._id.role === "BUYER") {
+//             userStatisticsArray[monthIndex].dealr = stat.total;
+//         } else if (stat._id.role === "SELLER") {
+//             userStatisticsArray[monthIndex].privateSeller = stat.total;
+//         }
+//     });
+
+//     return userStatisticsArray;
+// };
 const userStatisticsFromDB = async () => {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // Initialize user statistics array with 0 counts
     const userStatisticsArray = Array.from({ length: 12 }, (_, i) => ({
         month: monthNames[i],
-        dealr: 0,
-        privateSeller: 0,
+        dealer: 0,     
+        privateSeller: 0,  
+        allUsers: 0       
     }));
 
     const now = new Date();
@@ -132,7 +176,6 @@ const userStatisticsFromDB = async () => {
     const usersAnalytics = await User.aggregate([
         {
             $match: {
-                role: { $in: ["SELLER", "BUYER"] },
                 createdAt: { $gte: startOfYear, $lt: endOfYear }
             }
         },
@@ -140,66 +183,98 @@ const userStatisticsFromDB = async () => {
             $group: {
                 _id: {
                     month: { $month: "$createdAt" },
-                    role: "$role",
+                    role: "$role"
                 },
                 total: { $sum: 1 }
             }
         }
     ]);
 
-    // Populate statistics array
     usersAnalytics.forEach(stat => {
-        const monthIndex = stat._id.month - 1; // Convert month (1-12) to array index (0-11)
-        if (stat._id.role === "BUYER") {
-            userStatisticsArray[monthIndex].dealr = stat.total;
-        } else if (stat._id.role === "SELLER") {
+        const monthIndex = stat._id.month - 1;
+        const role = stat._id.role;
+
+        userStatisticsArray[monthIndex].allUsers += stat.total;
+
+        if (role === "BUYER") {
             userStatisticsArray[monthIndex].privateSeller = stat.total;
+        }
+
+        if (role === "SELLER") {
+            userStatisticsArray[monthIndex].dealer = stat.total;
         }
     });
 
     return userStatisticsArray;
 };
-
 const revenueStatisticsFromDB = async () => {
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    // Initialize user statistics array with 0 counts
     const revenueStatisticsArray = Array.from({ length: 12 }, (_, i) => ({
         month: monthNames[i],
         revenue: 0,
+        privateSellerRevenue: 0, 
+        dealerRevenue: 0          
     }));
 
     const now = new Date();
     const startOfYear = new Date(now.getFullYear(), 0, 1);
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
 
-    const revenueAnalytics = await Reservation.aggregate([
+    const revenueAnalytics = await Subscription.aggregate([
         {
             $match: {
-                status: "Completed",
-                paymentStatus: "Paid",
+                status: "active",
                 createdAt: { $gte: startOfYear, $lt: endOfYear }
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "user",
+                foreignField: "_id",
+                as: "userData"
+            }
+        },
+        { $unwind: "$userData" },
+        {
+            $project: {
+                month: { $month: "$createdAt" },
+                role: "$userData.role",
+                totalRevenue: { $add: ["$price", "$adHocCharges"] }
             }
         },
         {
             $group: {
                 _id: {
-                    month: { $month: "$createdAt" },
-                    role: "$role",
+                    month: "$month",
+                    role: "$role"
                 },
-                total: { $sum: "$price" }
+                total: { $sum: "$totalRevenue" }
             }
         }
     ]);
 
-    // Populate statistics array
+    // Insert into the array
     revenueAnalytics.forEach(stat => {
         const monthIndex = stat._id.month - 1;
-        revenueStatisticsArray[monthIndex].revenue = stat.total;
+        const role = stat._id.role;
+
+        // All combined revenue
+        revenueStatisticsArray[monthIndex].revenue += stat.total;
+
+        // Role-wise separation
+        if (role === "BUYER") {
+            revenueStatisticsArray[monthIndex].privateSellerRevenue = stat.total;
+        }
+        if (role === "SELLER") {
+            revenueStatisticsArray[monthIndex].dealerRevenue = stat.total;
+        }
     });
 
     return revenueStatisticsArray;
 };
+
 
 const userListFromDB = async (query: Record<string, any>) => {
     const result = new QueryBuilder(User.find(), query).paginate().filter().search(['name', 'email']);
@@ -217,7 +292,7 @@ const reservationListFromDB = async (query: Record<string, any>) => {
             select: "name profile"
         },
         {
-            path: 'barber',
+            path: 'user',
             select: "name profile"
         },
         {
@@ -307,6 +382,11 @@ const totalserviceInCar = async () => {
   };
 };
 
+const getTotalSubscribers = async (): Promise<number> => {
+    const totalSubscribers = await Subscription.countDocuments({ status: "active" });
+    return totalSubscribers;
+};
+
 export const AdminService = {
     createAdminToDB,
     deleteAdminFromDB,
@@ -316,5 +396,6 @@ export const AdminService = {
     revenueStatisticsFromDB,
     userListFromDB,
     reservationListFromDB,
-    totalserviceInCar
+    totalserviceInCar,
+    getTotalSubscribers
 };

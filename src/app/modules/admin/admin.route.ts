@@ -46,6 +46,10 @@ router.get('/reservation-list',
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
     AdminController.reservationList
 );
+router.get('/totalSubscriber',
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN),
+    AdminController.totalsubscriber
+);
 
 router.delete('/:id',
     auth(USER_ROLES.SUPER_ADMIN),

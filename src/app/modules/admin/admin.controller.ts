@@ -75,7 +75,7 @@ const revenueStatistics = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: 'Revenue Statistics Retrieved Successfully',
+        message: 'Earning Statistics Retrieved Successfully',
         data: result
     });
 });
@@ -99,6 +99,15 @@ const reservationList = catchAsync(async (req: Request, res: Response) => {
         data: result
     });
 });
+const totalsubscriber = catchAsync(async (req: Request, res: Response) => {
+    const result = await AdminService.getTotalSubscribers();
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'total subscriber Retrieved Successfully',
+        data: result
+    });
+});
 
 export const AdminController = {
     deleteAdmin,
@@ -109,5 +118,6 @@ export const AdminController = {
     countSummary,
     userList,
     reservationList,
-    counttotalCar
+    counttotalCar,
+    totalsubscriber
 };
