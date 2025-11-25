@@ -276,19 +276,19 @@ const revenueStatisticsFromDB = async () => {
 };
 
 
-// const userListFromDB = async (query: Record<string, any>) => {
-//     const result = new QueryBuilder(User.find(), query).filter().search(['name', 'email', 'role']);
-//     const users = await result.queryModel;
-
-//     return { users };
-// };
 const userListFromDB = async (query: Record<string, any>) => {
-    const result = await User.find({ role: { $ne: "SUPER_ADMIN" } });
-
-    const users = result;
+    const result = new QueryBuilder(User.find(), query).filter().search(['name', 'email', 'role']);
+    const users = await result.queryModel;
 
     return { users };
 };
+// const userListFromDB = async (query: Record<string, any>) => {
+//     const result = await User.find({ role: { $ne: "SUPER_ADMIN" } });
+
+//     const users = result;
+
+//     return { users };
+// };
 
 const reservationListFromDB = async (query: Record<string, any>) => {
     const result = new QueryBuilder(Reservation.find(), query).paginate().filter();
@@ -414,6 +414,7 @@ const getTotalSubscribers = async () => {
                 month: { $month: "$createdAt" }
             }
         },
+        
         {
             $group: {
                 _id: "$month",
