@@ -22,6 +22,7 @@ router.patch("/switch-role",
         auth(USER_ROLES.BUYER, USER_ROLES.SELLER),
         UserController.switchRole
     );
+    
 router.post(
     '/create-admin',
     validateRequest(UserValidation.createAdminZodSchema),

@@ -26,7 +26,7 @@ const userSchema = new Schema<IUser, UserModal>(
   currentRole: {
   type: String,
   enum: Object.values(USER_ROLES),
-  required: true,
+  required: false,
 },
 
     email: {

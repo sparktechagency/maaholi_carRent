@@ -19,25 +19,24 @@ import { jwtHelper } from '../../../helpers/jwtHelper';
 import { ILoginData } from '../../../types/auth';
 
 const createAdminToDB = async (payload: any): Promise<IUser> => {
-
-    // check admin is exist or not;
-    const isExistAdmin = await User.findOne({ email: payload.email })
+    const isExistAdmin = await User.findOne({ email: payload.email });
     if (isExistAdmin) {
         throw new ApiError(StatusCodes.CONFLICT, "This Email already taken");
     }
 
-    // create admin to db
     const createAdmin = await User.create(payload);
     if (!createAdmin) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create Admin');
-    } else {
-        await User.findByIdAndUpdate({ _id: createAdmin?._id }, { verified: true }, { new: true });
     }
 
-    return createAdmin;
-}
+    const updatedAdmin = await User.findByIdAndUpdate(
+        createAdmin._id,
+        { verified: true },
+        { new: true } 
+    );
 
-
+    return updatedAdmin!; 
+};
 const createUserToDB = async (payload: Partial<IUser>): Promise<IUser> => {
   console.log('=== CREATE USER DEBUG ===');
   console.log('Payload email:', payload.email);
@@ -161,6 +160,7 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
 //     accessToken: newAccessToken,
 //   };
 // };
+
 const switchRoleService = async (userId: string) => {
   const user = await User.findById(userId);
 
