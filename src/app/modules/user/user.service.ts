@@ -121,46 +121,6 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
     return data;
 };
 
-// const switchRoleService = async (userId: string, newRole: string) => {
-//   console.log('=== SWITCH ROLE SERVICE DEBUG ===');
-//   console.log('User ID:', userId);
-//   console.log('New Role:', newRole);
-
-//   const user = await User.findById(userId);
-  
-//   console.log('Found user:', user);
-
-//   if (!user) {
-//     throw new ApiError(404, "User not found");
-//   }
-
-//   // Validate role is allowed
-//   const allowedRoles = ['BUYER', 'SELLER', 'ADMIN'];
-//   if (!allowedRoles.includes(newRole)) {
-//     throw new ApiError(400, "Invalid role");
-//   }
-
-//   // Update both role and currentRole
-//   user.currentRole = newRole;
-//   await user.save();
-
-//   const newAccessToken = jwtHelper.createToken(
-//     {
-//       id: user._id,
-//       email: user.email,
-//       role: user.role,
-//       currentRole: user.currentRole,
-//     },
-//     config.jwt.jwt_secret as string,
-//     config.jwt.jwt_expire_in as string
-//   );
-
-//   return {
-//     currentRole: user.currentRole,
-//     accessToken: newAccessToken,
-//   };
-// };
-
 const switchRoleService = async (userId: string) => {
   const user = await User.findById(userId);
 
