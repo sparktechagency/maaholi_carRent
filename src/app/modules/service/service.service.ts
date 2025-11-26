@@ -208,9 +208,9 @@ const createServiceToDB = async (
   await service.populate([
     { path: 'user', select: 'name email' },
     { path: 'createdBy', select: 'name email' },
-    { path: 'brand', select: 'name logo' },
-    { path: 'model', select: 'name' },
-    { path: 'Category', select: 'name' },
+    { path: 'basicInformation.brand', select: 'brand image' },
+    { path: 'basicInformation.model', select: 'model' },
+    // { path: 'Category', select: 'name' },
   ]);
 
   // Invalidate cache
