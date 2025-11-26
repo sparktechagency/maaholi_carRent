@@ -165,7 +165,6 @@ const bulkUploadCarsForDealer = async (
           vehicleName: carData['Vehicle Name'] || carData['vehicleName'],
           brand: carData['Brand ID'] || carData['brand'],
           model: carData['Model ID'] || carData['model'],
-          Category: carData['Category ID'] || carData['Category'],
           vinNo: carData['VIN Number'] || carData['vinNo'],
           year: Number(carData['Year'] || carData['year']),
           RegularPrice: Number(carData['Regular Price'] || carData['RegularPrice']),
@@ -200,7 +199,7 @@ const bulkUploadCarsForDealer = async (
       // Validate required fields
       if (!serviceData.basicInformation.brand || 
           !serviceData.basicInformation.model || 
-          !serviceData.basicInformation.Category) {
+          !serviceData.basicInformation.vehicleName) {
         throw new Error('Missing required fields: Brand, Model, or Category');
       }
 
@@ -254,7 +253,6 @@ const getExcelTemplate = (): Buffer => {
       'Vehicle Name': 'BMW X5 2023',
       'Brand ID': '65abc123...',
       'Model ID': '65def456...',
-      'Category ID': '65ghi789...',
       'VIN Number': 'WBA12345ABCD67890',
       'Year': 2023,
       'Regular Price': 50000,
