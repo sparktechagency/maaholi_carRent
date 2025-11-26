@@ -39,7 +39,7 @@ const apiRoutes = [
     { path: "/notification", route: NotificationRoutes },
     { path: "/package", route: PackageRoutes },
     { path: "/review", route: ReviewRoutes },
-    { path: "/service", route: ServiceRoutes },
+    { path: "/car", route: ServiceRoutes },
     { path: "/bulk", route: DealerBulkRoutes },
     { path: "/portfolio", route: PortfolioRoutes },
     { path: "/barber", route: BarberRoutes },
