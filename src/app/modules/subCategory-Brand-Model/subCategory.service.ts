@@ -2,6 +2,7 @@ import { StatusCodes } from 'http-status-codes'
 import ApiError from '../../../errors/ApiError'
 import { IBrand } from './subCategory.interface'
 import { BrandModel } from './subCategory.model' 
+import unlinkFile from '../../../shared/unlinkFile'
 
 type CreateBrandDto = Omit<IBrand, '_id' | 'createdAt' | 'updatedAt'> 
 
@@ -37,10 +38,13 @@ const getBrandsFromDB = async (): Promise<IBrand[]> => {
 
 const updateBrandToDB = async (id: string, payload: Partial<CreateBrandDto>) => {
   const existing = await BrandModel.findById(id)
+
   if (!existing) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Brand doesn't exist")
   }
-
+  if (payload.image && existing.image) {
+        unlinkFile(existing.image) // delete old image file;
+    }
   if (payload.brand) {
     payload.brand = payload.brand.toString().trim().toLowerCase()
     const conflict = await BrandModel.findOne({ brand: payload.brand, _id: { $ne: id } }).lean()

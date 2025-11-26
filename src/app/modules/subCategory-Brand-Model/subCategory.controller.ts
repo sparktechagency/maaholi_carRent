@@ -35,6 +35,9 @@ const getBrand = catchAsync(async (req: Request, res: Response) => {
 const updateBrand = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id
     const updateCategoryData = req.body;
+    //image update handling
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    updateCategoryData.image = files && files['image'] ? `/images/${files['image'][0].filename}` : undefined
     const result = await BrandService.updateBrandToDB(id, updateCategoryData)
 
     sendResponse(res, {

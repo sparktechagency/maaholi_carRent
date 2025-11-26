@@ -22,6 +22,7 @@ router.route("/")
 router.route("/:id")
     .patch(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
+        fileUploadHandler(),
         BrandController.updateBrand
     )
     .delete(
