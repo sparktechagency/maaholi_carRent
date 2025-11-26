@@ -21,7 +21,9 @@ const createModelTDB = async (payload: ICarModel) => {
 }
 
 const getmodelFromDb = async (): Promise<ICarModel[]> => {
-  const result = await CarModel.find({}).populate("model", "image")
+  const result = await CarModel.find({})
+  .populate("model", " model image")
+  .populate("brand", " brand image")
   return result;
 }
 

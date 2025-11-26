@@ -5,7 +5,7 @@ const CarModelSchema = new Schema<ICarModel, CarModelI>(
   {
     brand: {
       type: Schema.Types.ObjectId,
-      ref: 'brand', 
+      ref: 'BrandModel', 
       required: true,
     },
     model: {
