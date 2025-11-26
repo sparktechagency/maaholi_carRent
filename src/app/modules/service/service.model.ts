@@ -94,10 +94,8 @@ equipment: {
       raceCar:{ type: String, required: false},
       tuning:{ type: String, required: false},
 
-
     },
 
-  
     colour: {
       metallic: {
         type: String, 
