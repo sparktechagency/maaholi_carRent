@@ -3,9 +3,9 @@ import { BrandsI, IBrand } from './subCategory.interface'
 
 const BrandSchema = new Schema<IBrand, BrandsI>(
   {
-    category: {
+    model: {
       type: Schema.Types.ObjectId,
-      ref: 'Category',
+      ref: 'CarModel',
       required: true
     },
     brand: {

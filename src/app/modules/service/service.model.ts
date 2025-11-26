@@ -21,7 +21,7 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       Category: {
             type: Schema.Types.ObjectId,
             ref: "Category",
-            required: true 
+            required: false 
       },
       vinNo: { type: String, required: false },
       year: { type: Number, required: false },

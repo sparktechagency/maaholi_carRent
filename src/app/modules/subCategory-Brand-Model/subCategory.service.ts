@@ -31,7 +31,7 @@ const createBrandToDB = async (payload: CreateBrandDto) => {
 
 const getBrandsFromDB = async (): Promise<IBrand[]> => {
   // return populated category fields
-  const result = await BrandModel.find({}).populate('category', 'name image').lean()
+  const result = await BrandModel.find({}).populate('model', 'model image').lean()
   return result
 }
 
@@ -49,7 +49,7 @@ const updateBrandToDB = async (id: string, payload: Partial<CreateBrandDto>) => 
     }
   }
 
-  const updated = await BrandModel.findByIdAndUpdate(id, payload, { new: true }).populate('category', 'name image')
+  const updated = await BrandModel.findByIdAndUpdate(id, payload, { new: true }).populate('model', 'model image')
   return updated
 }
 

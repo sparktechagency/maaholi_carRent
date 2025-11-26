@@ -11,40 +11,101 @@ import { USER_ROLES } from '../../../enums/user';
 import { User } from '../user/user.model';
 import { CACHE_PREFIXES, CACHE_TTL, RedisCacheService } from '../redis/cache';
 import { ServiceFilterQuery } from './service.query.filter';
-
+import { Subscription } from '../subscription/subscription.model';
 
 // const createServiceToDB = async (
 //   req: Request,
 //   payload: any,
 //   files?: { [fieldname: string]: Express.Multer.File[] }
 // ): Promise<IService> => {
-//   const parsedData = parseFormData(payload, files)
+//   const parsedData = parseFormData(payload, files);
   
-//   console.log('Parsed Data:', JSON.stringify(parsedData, null, 2))
+//   console.log('Parsed Data:', JSON.stringify(parsedData, null, 2));
 
-//   const userId = (req as any).user?.id || (req as any).user?._id
+//   const userId = (req as any).user?.id || (req as any).user?._id;
 
 //   if (!userId) {
-//     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated')
+//     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
+//   }
+
+//   // Check if user is a SELLER
+//   const user = await User.findById(userId);
+//   if (!user) {
+//     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+//   }
+
+//   // Only check car limit for SELLERS
+//   if (user.role === USER_ROLES.SELLER && USER_ROLES.DELEAR) {
+//     // Check if user has an active subscription
+//     if (!user.isSubscribed) {
+//       throw new ApiError(
+//         StatusCodes.FORBIDDEN,
+//         'You need an active subscription to add cars. Please subscribe to a package first.'
+//       );
+//     }
+
+//     try {
+//       // Check car limit and process ad-hoc payment if needed
+//       const carLimitCheck = await CarManagementService.checkCarLimitAndAddCar({
+//         id: userId,
+//         role: user.role
+//       });
+
+//       console.log('Car Limit Check Result:', carLimitCheck);
+
+//       // If ad-hoc charge was applied, you might want to notify the user
+//       if (carLimitCheck.adHocCars > 0) {
+//         console.log(
+//           `Ad-hoc charge applied: $${carLimitCheck.adHocCharges} for ${carLimitCheck.adHocCars} additional car(s)`
+//         );
+//       }
+//     } catch (error: any) {
+//       // If car limit check fails, don't create the service
+//       throw new ApiError(
+//         StatusCodes.BAD_REQUEST,
+//         error.message || 'Failed to verify car limit. Please check your subscription.'
+//       );
+//     }
 //   }
 
 //   // Add createdBy to parsed data
-//   parsedData.createdBy = userId
+//   parsedData.createdBy = userId;
 
 //   // Create service
-//   const service = await ServiceModelInstance.create(parsedData)
-//   if (!service) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service')
+//   let service;
+//   try {
+//     service = await ServiceModelInstance.create(parsedData);
+//     if (!service) {
+//       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service');
+//     }
+//   } catch (error: any) {
+//     // If service creation fails and we already added a car count, roll it back
+//     if (user.role === USER_ROLES.SELLER) {
+//       try {
+//         await CarManagementService.removeCarFromSubscription({
+//           id: userId,
+//           role: user.role
+//         });
+//         console.log('Rolled back car count due to service creation failure');
+//       } catch (rollbackError) {
+//         console.error('Failed to rollback car count:', rollbackError);
+//       }
+//     }
+//     throw new ApiError(
+//       StatusCodes.BAD_REQUEST,
+//       `Failed to create service: ${error.message}`
+//     );
 //   }
 
 //   // Populate relationships
 //   await service.populate([
 //     { path: 'user', select: 'name email' },
 //     { path: 'createdBy', select: 'name email' },
-//   ])
+//   ]);
 
-//   return service
-// }
+//   return service;
+// };
+
 const createServiceToDB = async (
   req: Request,
   payload: any,
@@ -60,13 +121,13 @@ const createServiceToDB = async (
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
   }
 
-  // Check if user is a SELLER
+  // Get user details
   const user = await User.findById(userId);
   if (!user) {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  // Only check car limit for SELLERS
+  // ========== SELLER LOGIC - STRICT PACKAGE LIMIT ==========
   if (user.role === USER_ROLES.SELLER) {
     // Check if user has an active subscription
     if (!user.isSubscribed) {
@@ -76,28 +137,42 @@ const createServiceToDB = async (
       );
     }
 
-    try {
-      // Check car limit and process ad-hoc payment if needed
-      const carLimitCheck = await CarManagementService.checkCarLimitAndAddCar({
-        id: userId,
-        role: user.role
-      });
+    // Get subscription details
+    const subscription = await Subscription.findOne({
+      user: userId,
+      status: 'active'
+    }).populate('package');
 
-      console.log('Car Limit Check Result:', carLimitCheck);
-
-      // If ad-hoc charge was applied, you might want to notify the user
-      if (carLimitCheck.adHocCars > 0) {
-        console.log(
-          `Ad-hoc charge applied: $${carLimitCheck.adHocCharges} for ${carLimitCheck.adHocCars} additional car(s)`
-        );
-      }
-    } catch (error: any) {
-      // If car limit check fails, don't create the service
+    if (!subscription) {
       throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        error.message || 'Failed to verify car limit. Please check your subscription.'
+        StatusCodes.NOT_FOUND,
+        'No active subscription found. Please subscribe to a package.'
       );
     }
+
+    const packageData: any = subscription.package;
+    const carLimit = packageData.carLimit || 4;
+    const currentCarsAdded = subscription.carsAdded || 0;
+
+    // ⚠️ STRICT CHECK - Cannot exceed package limit
+    if (currentCarsAdded >= carLimit) {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        `Your package limit is over! You have already added ${currentCarsAdded} cars (Limit: ${carLimit}). Please purchase another package or upgrade your current package to add more cars.`
+      );
+    }
+
+    // Increment car count
+    subscription.carsAdded = currentCarsAdded + 1;
+    await subscription.save();
+
+    console.log(`✅ [SELLER] Car added: ${subscription.carsAdded}/${carLimit}`);
+  } else {
+    // Only SELLER can use this endpoint
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'This endpoint is only for SELLER. DEALER should use bulk upload endpoint.'
+    );
   }
 
   // Add createdBy to parsed data
@@ -111,18 +186,18 @@ const createServiceToDB = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service');
     }
   } catch (error: any) {
-    // If service creation fails and we already added a car count, roll it back
-    if (user.role === USER_ROLES.SELLER) {
-      try {
-        await CarManagementService.removeCarFromSubscription({
-          id: userId,
-          role: user.role
-        });
-        console.log('Rolled back car count due to service creation failure');
-      } catch (rollbackError) {
-        console.error('Failed to rollback car count:', rollbackError);
-      }
+    // Rollback car count if service creation fails
+    const subscription = await Subscription.findOne({
+      user: userId,
+      status: 'active'
+    });
+    
+    if (subscription && subscription.carsAdded > 0) {
+      subscription.carsAdded -= 1;
+      await subscription.save();
+      console.log('🔄 [SELLER] Rolled back car count');
     }
+    
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `Failed to create service: ${error.message}`
@@ -133,13 +208,16 @@ const createServiceToDB = async (
   await service.populate([
     { path: 'user', select: 'name email' },
     { path: 'createdBy', select: 'name email' },
+    { path: 'brand', select: 'name logo' },
+    { path: 'model', select: 'name' },
+    { path: 'Category', select: 'name' },
   ]);
+
+  // Invalidate cache
+  await RedisCacheService.deletePattern(`${CACHE_PREFIXES.SERVICES}:*`);
 
   return service;
 };
-
-
-
 const getAllServicesFromDB = async (query: any) => {
   const {
     page = 1,

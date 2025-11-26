@@ -21,6 +21,7 @@ import { PaymentRoutes } from '../modules/payment/payment.routes';
 import { OfferRoutes } from '../modules/offer/offer.routes';
 import { carModelsRoutes } from '../modules/Model/model.route';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.routes';
+import { DealerBulkRoutes } from '../modules/excel/excel.bulk.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -39,6 +40,7 @@ const apiRoutes = [
     { path: "/package", route: PackageRoutes },
     { path: "/review", route: ReviewRoutes },
     { path: "/service", route: ServiceRoutes },
+    { path: "/bulk", route: DealerBulkRoutes },
     { path: "/portfolio", route: PortfolioRoutes },
     { path: "/barber", route: BarberRoutes },
     { path: "/reservation", route: ReservationRoutes },

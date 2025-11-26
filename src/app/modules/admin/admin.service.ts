@@ -275,13 +275,13 @@ const revenueStatisticsFromDB = async () => {
     return revenueStatisticsArray;
 };
 
-
 const userListFromDB = async (query: Record<string, any>) => {
     const result = new QueryBuilder(User.find(), query).filter().search(['name', 'email', 'role']);
     const users = await result.queryModel;
 
     return { users };
 };
+
 // const userListFromDB = async (query: Record<string, any>) => {
 //     const result = await User.find({ role: { $ne: "SUPER_ADMIN" } });
 

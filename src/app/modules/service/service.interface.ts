@@ -3,10 +3,11 @@ import { Document, Model, Types } from 'mongoose'
 import { carStatus } from '../../../enums/car-status'
 
 export interface IBasicInformation {
+  price: any;
   vehicleName: string
   brand?: Types.ObjectId,
   model?: Types.ObjectId,
-  Category: Types.ObjectId,
+  Category?: Types.ObjectId,
   vinNo?: string,
   year?: number
   productImage?: string[]

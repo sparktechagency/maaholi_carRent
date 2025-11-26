@@ -5,7 +5,7 @@ import { PaymentController } from "./payment.controller";
 const router = express.Router();
 
 router.post("/create-payment-checkout", 
-    auth(USER_ROLES.SELLER),
+    auth(USER_ROLES.SELLER,USER_ROLES.DELEAR),
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { price } = req.body;
@@ -19,7 +19,7 @@ router.post("/create-payment-checkout",
 );
 router.post(
     "/create-subscription-checkout",
-    auth(USER_ROLES.SELLER),
+    auth(USER_ROLES.SELLER,USER_ROLES.DELEAR),
     PaymentController.createSubscriptionCheckout
 );
 

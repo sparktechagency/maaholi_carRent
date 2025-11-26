@@ -10,22 +10,22 @@ router
     .route("/")
     .post( 
         validateRequest(PackageValidation.createPackageZodSchema), 
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR), 
         PackageController.createPackage
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.BUYER, USER_ROLES.SELLER), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
         PackageController.getPackage
     )
 
 router
     .route("/:id")
     .patch(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR), 
         PackageController.updatePackage
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.ADMIN, USER_ROLES.BUYER, USER_ROLES.SELLER), 
+        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
         PackageController.packageDetails
     )
 
