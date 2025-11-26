@@ -134,6 +134,87 @@ const toggleUserLock = async (req: Request, res: Response) => {
     }
 };
 
+
+//dealer
+const getDealerCompleteProfile = catchAsync(async (req: Request, res: Response) => {
+  const dealerId = req.params.dealerId || (req as any).user?.id;
+
+  const result = await UserService.getDealerCompleteProfile(dealerId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Dealer profile retrieved successfully',
+    data: result
+  });
+});
+
+/**
+ * Get DEALER's car inventory with filters
+ */
+const getDealerCarInventory = catchAsync(async (req: Request, res: Response) => {
+  const dealerId = req.params.dealerId || (req as any).user?.id;
+
+  const result = await UserService.getDealerCarInventory(dealerId, req.query);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Car inventory retrieved successfully',
+    data: result.cars
+  });
+});
+
+/**
+ * Get DEALER's subscription history
+ */
+const getDealerSubscriptionHistory = catchAsync(async (req: Request, res: Response) => {
+  const dealerId = req.params.dealerId || (req as any).user?.id;
+
+  const result = await UserService.getDealerSubscriptionHistory(dealerId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Subscription history retrieved successfully',
+    data: result
+  });
+});
+
+/**
+ * Get DEALER dashboard overview (quick stats)
+ */
+const getDealerDashboard = catchAsync(async (req: Request, res: Response) => {
+  const dealerId = (req as any).user?.id;
+
+  const result = await UserService.getDealerDashboard(dealerId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Dashboard data retrieved successfully',
+    data: result
+  });
+});
+
+/**
+ * Get own profile (for logged-in DEALER)
+ */
+const getMyProfile = catchAsync(async (req: Request, res: Response) => {
+  const dealerId = (req as any).user?.id;
+
+  const result = await UserService.getDealerCompleteProfile(dealerId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Your profile retrieved successfully',
+    data: result
+  });
+});
+
+
+
 export const UserController = {
     createUser,
     createAdmin,
@@ -141,5 +222,10 @@ export const UserController = {
     updateProfile,
     updateLocation,
     switchRole,
-    toggleUserLock
+    toggleUserLock,
+    getDealerCompleteProfile,
+    getDealerCarInventory,
+    getDealerSubscriptionHistory,
+    getDealerDashboard,
+    getMyProfile
 };

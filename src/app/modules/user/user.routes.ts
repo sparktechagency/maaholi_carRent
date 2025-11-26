@@ -47,5 +47,57 @@ router.patch(
         DELEAR, USER_ROLES.SUPER_ADMIN),
     fileUploadHandler(),
     UserController.toggleUserLock
-)
+);
+
+router.get(
+  '/my-profile',
+  auth(USER_ROLES.DELEAR),
+  UserController.getMyProfile
+);
+
+// Get own dashboard
+router.get(
+  '/dashboard',
+  auth(USER_ROLES.DELEAR,USER_ROLES.SUPER_ADMIN),
+  UserController.getDealerDashboard
+);
+
+// Get own car inventory
+router.get(
+  '/my-inventory',
+  auth(USER_ROLES.DELEAR),
+  UserController.getDealerCarInventory
+);
+
+// Get own subscription history
+router.get(
+  '/my-subscription-history',
+  auth(USER_ROLES.DELEAR),
+  UserController.getDealerSubscriptionHistory
+);
+
+/**
+ * ADMIN Routes - Any Dealer Profile Access
+ */
+
+// Get any dealer's complete profile (Admin only)
+router.get(
+  '/profile/:dealerId',
+  auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+  UserController.getDealerCompleteProfile
+);
+
+// Get any dealer's car inventory (Admin only)
+router.get(
+  '/inventory/:dealerId',
+  auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+  UserController.getDealerCarInventory
+);
+
+// Get any dealer's subscription history (Admin only)
+router.get(
+  '/subscription-history/:dealerId',
+  auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+  UserController.getDealerSubscriptionHistory
+);
 export const UserRoutes = router;

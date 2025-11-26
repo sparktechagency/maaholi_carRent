@@ -5,8 +5,13 @@ import sendResponse from '../../../shared/sendResponse'
 import { BrandService } from './subCategory.service'
 
 const createBrand = catchAsync(async (req: Request, res: Response) => {
-    const categoryData = req.body;
-    const result = await BrandService.createBrandToDB(categoryData)
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] }
+    const brandData = {
+        ...req.body,
+        image: files && files['image'] ? `/images/${files['image'][0].filename}` : undefined,
+        files
+    }
+    const result = await BrandService.createBrandToDB(brandData)
 
     sendResponse(res, {
         success: true,

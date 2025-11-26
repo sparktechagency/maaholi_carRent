@@ -17,6 +17,11 @@ import { object } from "zod";
 import config from '../../../config';
 import { jwtHelper } from '../../../helpers/jwtHelper';
 import { ILoginData } from '../../../types/auth';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(config.stripe.stripeSecretKey as string);
+import { CACHE_PREFIXES, RedisCacheService, CACHE_TTL } from '../redis/cache';
+import { Subscription } from '../subscription/subscription.model';
 
 const createAdminToDB = async (payload: any): Promise<IUser> => {
     const isExistAdmin = await User.findOne({ email: payload.email });
@@ -257,6 +262,347 @@ const updateLocationToDB = async (user: JwtPayload, payload: { longitude: number
 
     return user;
 };
+const getDealerCompleteProfile = async (dealerId: string) => {
+  // Validate dealer ID
+  if (!dealerId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Dealer ID is required');
+  }
+
+  // Check cache first
+  const cacheKey = `${CACHE_PREFIXES.USER_PROFILE}:dealer:${dealerId}`;
+  const cached = await RedisCacheService.get<any>(cacheKey);
+  
+  if (cached) {
+    console.log('[Dealer Profile] Returning cached data');
+    return cached;
+  }
+
+  console.log('[Dealer Profile] Cache miss, querying database');
+
+  // Get dealer details
+  const dealer = await User.findById(dealerId)
+    .select('-password -authentication')
+    .lean();
+
+  if (!dealer) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Dealer not found');
+  }
+
+  // Verify user is DEALER
+  if (dealer.role !== USER_ROLES.DEALER) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      'This endpoint is only for DEALER role'
+    );
+  }
+
+  // ========== GET SUBSCRIPTION DETAILS ==========
+  let subscriptionDetails: any = null;
+  let stripeSubscriptionDetails: any = null;
+
+  const subscription = await Subscription.findOne({ user: dealerId })
+    .populate('package', 'title description price duration carLimit adHocPricePerCar feature')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  if (subscription) {
+    subscriptionDetails = subscription;
+
+    // Get Stripe subscription details
+    if (subscription.subscriptionId && subscription.subscriptionId !== 'pending') {
+      try {
+        const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscriptionId);
+        stripeSubscriptionDetails = {
+          status: stripeSubscription.status,
+          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end,
+          canceledAt: stripeSubscription.canceled_at ? new Date(stripeSubscription.canceled_at * 1000) : null,
+          created: new Date(stripeSubscription.created * 1000),
+          daysUntilDue: stripeSubscription.days_until_due,
+        };
+      } catch (error: any) {
+        console.error('[Dealer Profile] Error fetching Stripe details:', error.message);
+      }
+    }
+  }
+
+  // ========== GET ALL CARS CREATED BY DEALER ==========
+  const cars = await ServiceModelInstance.find({ createdBy: dealerId, isDeleted: false })
+    .populate('brand', 'name logo')
+    .populate('model', 'name')
+    .populate('Category', 'name')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // ========== CALCULATE STATISTICS ==========
+  const totalCars = cars.length;
+  
+  // Group by status
+  const carsByStatus = cars.reduce((acc: any, car: any) => {
+    acc[car.status] = (acc[car.status] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Calculate total inventory value
+  const totalInventoryValue = cars.reduce((sum: number, car: any) => 
+    sum + (car.basicInformation?.OfferPrice || 0), 0
+  );
+
+  // Group by condition
+  const carsByCondition = cars.reduce((acc: any, car: any) => {
+    const condition = car.basicInformation?.condition || 'Unknown';
+    acc[condition] = (acc[condition] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Group by fuel type
+  const carsByFuelType = cars.reduce((acc: any, car: any) => {
+    const fuelType = car.technicalInformation?.fuelType || 'Unknown';
+    acc[fuelType] = (acc[fuelType] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Group by body type
+  const carsByBodyType = cars.reduce((acc: any, car: any) => {
+    const bodyType = car.basicInformation?.BodyType || 'Unknown';
+    acc[bodyType] = (acc[bodyType] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Recent cars (last 10)
+  const recentCars = cars.slice(0, 10);
+
+  // Most expensive cars (top 5)
+  const mostExpensiveCars = [...cars]
+    .sort((a: any, b: any) => 
+      (b.basicInformation?.OfferPrice || 0) - (a.basicInformation?.OfferPrice || 0)
+    )
+    .slice(0, 5)
+    .map((car: any) => ({
+      _id: car._id,
+      vehicleName: car.basicInformation?.vehicleName,
+      brand: car.brand,
+      model: car.model,
+      year: car.basicInformation?.year,
+      price: car.basicInformation?.OfferPrice,
+      image: car.basicInformation?.productImage?.[0],
+      status: car.status
+    }));
+
+  // ========== SUBSCRIPTION USAGE ANALYSIS ==========
+  let subscriptionUsage: any = null;
+
+  if (subscription) {
+    const packageData: any = subscription.package;
+    const carLimit = packageData?.carLimit || 4;
+    const carsAdded = subscription.carsAdded || 0;
+    const adHocCars = subscription.adHocCars || 0;
+    const adHocCharges = subscription.adHocCharges || 0;
+
+    subscriptionUsage = {
+      packageLimit: carLimit,
+      carsAdded: carsAdded,
+      carsWithinLimit: Math.min(carsAdded, carLimit),
+      adHocCars: adHocCars,
+      adHocCharges: adHocCharges,
+      remainingFreeSlots: Math.max(0, carLimit - carsAdded),
+      utilizationPercentage: ((carsAdded / carLimit) * 100).toFixed(2),
+      monthlyCost: {
+        baseSubscription: subscription.price,
+        adHocCharges: adHocCharges,
+        total: subscription.price + adHocCharges
+      }
+    };
+  }
+
+  // ========== BUILD COMPLETE RESPONSE ==========
+  const result = {
+    // Dealer Profile Information
+    profile: {
+      _id: dealer._id,
+      name: dealer.name,
+      email: dealer.email,
+      mobileNumber: dealer.mobileNumber,
+      role: dealer.role,
+      profile: dealer.profile,
+      about: dealer.about,
+      address: dealer.address,
+      location: dealer.location,
+      verified: dealer.verified,
+      isSubscribed: dealer.isSubscribed,
+      tradeLicences: dealer.tradeLicences,
+      proofOwnerId: dealer.proofOwnerId,
+      sallonPhoto: dealer.sallonPhoto,
+      isUpdate: dealer.isUpdate,
+      accountInformation: dealer.accountInformation,
+      createdAt: dealer,
+      updatedAt: dealer,
+    },
+
+    // Subscription Details
+    subscription: subscriptionDetails ? {
+      _id: subscriptionDetails._id,
+      package: subscriptionDetails.package,
+      status: subscriptionDetails.status,
+      price: subscriptionDetails.price,
+      carsAdded: subscriptionDetails.carsAdded,
+      adHocCars: subscriptionDetails.adHocCars,
+      adHocCharges: subscriptionDetails.adHocCharges,
+      currentPeriodStart: subscriptionDetails.currentPeriodStart,
+      currentPeriodEnd: subscriptionDetails.currentPeriodEnd,
+      subscriptionId: subscriptionDetails.subscriptionId,
+      customerId: subscriptionDetails.customerId,
+      createdAt: subscriptionDetails.createdAt,
+      stripeDetails: stripeSubscriptionDetails
+    } : null,
+
+    // Subscription Usage
+    subscriptionUsage,
+
+    // All Cars
+    cars: {
+      total: totalCars,
+      data: cars,
+      recentCars,
+      mostExpensiveCars
+    },
+
+    // Statistics
+    statistics: {
+      totalCars,
+      carsByStatus,
+      carsByCondition,
+      carsByFuelType,
+      carsByBodyType,
+      totalInventoryValue,
+      averageCarPrice: totalCars > 0 ? (totalInventoryValue / totalCars).toFixed(2) : 0
+    },
+
+    // Financial Overview
+    financialOverview: subscriptionUsage ? {
+      monthlySubscriptionCost: subscriptionUsage.monthlyCost.total,
+      potentialRevenue: totalInventoryValue,
+      costPerCar: totalCars > 0 ? (subscriptionUsage.monthlyCost.total / totalCars).toFixed(2) : 0,
+      revenueToSubscriptionRatio: subscriptionUsage.monthlyCost.total > 0 
+        ? (totalInventoryValue / subscriptionUsage.monthlyCost.total).toFixed(2) 
+        : 0
+    } : null
+  };
+
+  // Cache the result
+  await RedisCacheService.set(cacheKey, result, { ttl: CACHE_TTL.SHORT });
+
+  return result;
+};
+
+/**
+ * Get DEALER's car inventory summary
+ */
+const getDealerCarInventory = async (dealerId: string, filters?: any) => {
+  const { status, condition, fuelType, priceFrom, priceTo, page = 1, limit = 20 } = filters || {};
+
+  // Build query
+  const query: any = { createdBy: dealerId, isDeleted: false };
+
+  if (status) query.status = status;
+  if (condition) query['basicInformation.condition'] = condition;
+  if (fuelType) query['technicalInformation.fuelType'] = fuelType;
+  
+  if (priceFrom || priceTo) {
+    query['basicInformation.OfferPrice'] = {};
+    if (priceFrom) query['basicInformation.OfferPrice'].$gte = Number(priceFrom);
+    if (priceTo) query['basicInformation.OfferPrice'].$lte = Number(priceTo);
+  }
+
+  // Pagination
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [cars, total] = await Promise.all([
+    ServiceModelInstance.find(query)
+      .populate('basicInformation.brand', 'brand logo')
+      .populate('basicInformation.model', 'name')
+      .populate('basicInformation.Category', 'name')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .lean(),
+    ServiceModelInstance.countDocuments(query)
+  ]);
+
+  return {
+    cars,
+    pagination: {
+      total,
+      page: Number(page),
+      limit: Number(limit),
+      totalPages: Math.ceil(total / Number(limit))
+    }
+  };
+};
+
+/**
+ * Get DEALER's subscription history
+ */
+const getDealerSubscriptionHistory = async (dealerId: string) => {
+  const subscriptions = await Subscription.find({ user: dealerId })
+    .populate('package', 'title price duration carLimit')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const summary = {
+    totalSubscriptions: subscriptions.length,
+    activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
+    totalSpent: subscriptions.reduce((sum, s) => sum + s.price + (s.adHocCharges || 0), 0),
+    totalCarsAdded: subscriptions.reduce((sum, s) => sum + (s.carsAdded || 0), 0),
+    totalAdHocCharges: subscriptions.reduce((sum, s) => sum + (s.adHocCharges || 0), 0)
+  };
+
+  return {
+    subscriptions,
+    summary
+  };
+};
+
+/**
+ * Get DEALER dashboard overview
+ */
+const getDealerDashboard = async (dealerId: string) => {
+  const [profile, cars, subscription] = await Promise.all([
+    User.findById(dealerId).select('name email profile isSubscribed').lean(),
+    ServiceModelInstance.countDocuments({ createdBy: dealerId, isDeleted: false }),
+    Subscription.findOne({ user: dealerId, status: 'active' }).populate('package').lean()
+  ]);
+
+  if (!profile) {
+    throw new ApiError(StatusCodes.NOT_FOUND, 'Dealer not found');
+  }
+
+  // Quick stats
+  const [activeCars, pendingCars, soldCars] = await Promise.all([
+    ServiceModelInstance.countDocuments({ createdBy: dealerId, status: 'ACTIVE', isDeleted: false }),
+    ServiceModelInstance.countDocuments({ createdBy: dealerId, status: 'PENDING', isDeleted: false }),
+    ServiceModelInstance.countDocuments({ createdBy: dealerId, status: 'SOLD', isDeleted: false })
+  ]);
+
+  return {
+    dealer: profile,
+    quickStats: {
+      totalCars: cars,
+      activeCars,
+      pendingCars,
+      soldCars
+    },
+    subscription: subscription ? {
+      package: (subscription.package as any)?.title,
+      status: subscription.status,
+      carsAdded: subscription.carsAdded,
+      carLimit: (subscription.package as any)?.carLimit,
+      adHocCars: subscription.adHocCars,
+      monthlyCost: subscription.price + (subscription.adHocCharges || 0)
+    } : null
+  };
+};
 
 export const UserService = {
     createUserToDB,
@@ -265,5 +611,10 @@ export const UserService = {
     createAdminToDB,
     updateLocationToDB,
     switchRoleService,
-    toggleUserLock
+    toggleUserLock,
+    getDealerCarInventory,
+    getDealerSubscriptionHistory,
+    getDealerDashboard,
+    getDealerCompleteProfile
+  
 };

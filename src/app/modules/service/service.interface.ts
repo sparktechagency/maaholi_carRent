@@ -129,7 +129,7 @@ export interface IService extends Document {
   service?: Types.ObjectId
   assignedUsers?: Types.ObjectId[]
 
-  status: keyof typeof carStatus
+  status: string;
   miles: number
   totalMiles: number
   price: number

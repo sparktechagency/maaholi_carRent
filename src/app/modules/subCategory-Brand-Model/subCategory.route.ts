@@ -4,12 +4,14 @@ import auth from '../../middlewares/auth'
 import validateRequest from '../../middlewares/validateRequest';
 import { SubCategoryValidation } from './subCategory.validation';
 import { BrandController } from './subCategory.controller';
+import fileUploadHandler from '../../middlewares/fileUploaderHandler';
 const router = express.Router()
 
 router.route("/")
     .post(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.SELLER),
-        validateRequest(SubCategoryValidation.createSubCategoryZodSchema),
+        // validateRequest(SubCategoryValidation.createSubCategoryZodSchema),
+        fileUploadHandler(),
         BrandController.createBrand
     )
     .get(

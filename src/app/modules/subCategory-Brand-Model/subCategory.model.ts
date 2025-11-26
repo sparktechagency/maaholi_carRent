@@ -6,7 +6,7 @@ const BrandSchema = new Schema<IBrand, BrandsI>(
     model: {
       type: Schema.Types.ObjectId,
       ref: 'CarModel',
-      required: true
+      required: false
     },
     brand: {
       type: String,
@@ -14,6 +14,10 @@ const BrandSchema = new Schema<IBrand, BrandsI>(
       unique: true,
       trim: true,
       lowercase: true 
+    },
+    image: {
+      type: String,
+      required: false
     }
   },
   { timestamps: true }

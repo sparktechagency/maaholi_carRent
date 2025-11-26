@@ -99,9 +99,18 @@ equipment: {
 
   
     colour: {
-      metallic: {type: String, required: false},
-      exterior: { type: String, required: false },
-      interior: { type: String, required: false },
+      metallic: {
+        type: String, 
+        required: false
+      },
+      exterior: { 
+        type: [String],
+         required: false 
+        },
+      interior: { 
+        type: [String], 
+        required: false 
+      },
     },
 
     // Category: Seats & Doors
@@ -141,8 +150,8 @@ equipment: {
 
     status: {
       type: String,
-      default: 'PENDING',
-      enum: Object.values(carStatus),
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
     description: {type:String, required:false},
     isDeleted: { type: Boolean, default: false },
