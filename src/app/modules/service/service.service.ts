@@ -859,7 +859,7 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   const service = await ServiceModelInstance
     .findOne({ _id: id, isDeleted: false })
     .populate('user', 'name email')
-    .populate('assignedUsers', 'name email')
+    // .populate('assignedUsers', 'name email')
     .populate('createdBy', 'name email')
     .lean()
 

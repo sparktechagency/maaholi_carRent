@@ -18,7 +18,6 @@ router.get(
   ServiceController.checkCanAddCar
 );
 
-
 router.get(
   '/car-statistics',
   auth(USER_ROLES.SELLER),
@@ -26,7 +25,7 @@ router.get(
 );
 
 router.get('/', ServiceController.getAllServices)
-router.get('/filter', ServiceController.  getAllFilter)
+router.get('/filter', ServiceController.getAllFilter)
 
 // Get single service
 router.get('/:id', ServiceController.getSingleService)
