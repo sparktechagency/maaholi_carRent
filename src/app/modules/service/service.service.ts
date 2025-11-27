@@ -127,9 +127,17 @@ const createServiceToDB = async (
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  // ========== SELLER LOGIC - STRICT PACKAGE LIMIT ==========
+  if (files) {
+  Object.keys(files).forEach((field) => {
+    parsedData[field] = files[field].map(f => {
+      if (f.path.startsWith('uploads')) {
+        return '/' + f.path.replace(/\\/g, '/');
+      }
+      return `/productImage/${f.filename}`;
+    });
+  });
+}
   if (user.role === USER_ROLES.SELLER) {
-    // Check if user has an active subscription
     if (!user.isSubscribed) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
@@ -213,11 +221,11 @@ const createServiceToDB = async (
     // { path: 'Category', select: 'name' },
   ]);
 
-  // Invalidate cache
   await RedisCacheService.deletePattern(`${CACHE_PREFIXES.SERVICES}:*`);
 
   return service;
 };
+
 const getAllServicesFromDB = async (query: any) => {
   const {
     page = 1,
@@ -870,41 +878,99 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   return service as IService
 }
 
+//helper color
+const removeConflictingMongoPaths = (data: any) => {
+  const keys = Object.keys(data);
+
+  for (let key of keys) {
+    for (let otherKey of keys) {
+      if (key !== otherKey && otherKey.startsWith(key + ".")) {
+        delete data[key];
+      }
+    }
+  }
+
+  return data;
+};
+
 const updateServiceInDB = async (
   id: string,
   payload: any,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
-  // Validate ObjectId
   if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID');
   }
 
-  // Parse form data and files
-  const parsedData = parseFormData(payload, files)
+  let parsedData = parseFormData(payload, files);
 
-  // Remove fields that shouldn't be updated
-  delete parsedData._id
-  delete parsedData.createdAt
-  delete parsedData.createdBy
-  delete parsedData.isDeleted
+  delete parsedData._id;
+  delete parsedData.createdAt;
+  delete parsedData.createdBy;
+  delete parsedData.isDeleted;
 
-  // Update service
-  const service = await ServiceModelInstance.findOneAndUpdate(
-    { _id: id, isDeleted: false },
-    { $set: parsedData },
-    { new: true, runValidators: true }
-  )
-    .populate('user', 'name email')
-    .populate('assignedUsers', 'name email')
-    .populate('createdBy', 'name email')
-
-  if (!service) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
+  const interior: string[] = [];
+  const exterior: string[] = [];
+  Object.keys(parsedData).forEach((key) => {
+    if (key.startsWith("colour[interior]")) {
+      interior.push(parsedData[key]);
+      delete parsedData[key];
+    }
+    if (key.startsWith("colour[exterior]")) {
+      exterior.push(parsedData[key]);
+      delete parsedData[key];
+    }
+  });
+  if (interior.length || exterior.length) {
+    parsedData.colour = parsedData.colour || {};
+    if (interior.length) parsedData.colour.interior = interior;
+    if (exterior.length) parsedData.colour.exterior = exterior;
   }
 
-  return service
+  if (files) {
+    Object.keys(files).forEach((field) => {
+      const parts = field.split(/[\[\]]/).filter(Boolean);
+      let target = parsedData;
+
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (!target[parts[i]]) target[parts[i]] = {};
+        target = target[parts[i]];
+      }
+
+      target[parts[parts.length - 1]] = files[field].map(f => f.path);
+    });
+  }
+
+  parsedData = removeConflictingMongoPaths(parsedData);
+
+const service = await ServiceModelInstance.findById(id);
+if (!service) throw new ApiError(StatusCodes.NOT_FOUND, "Service not found");
+
+if (files) {
+  Object.keys(files).forEach((field) => {
+    const parts = field.split(/[\[\]]/).filter(Boolean);
+    let target: any = service;
+
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (!target[parts[i]]) target[parts[i]] = {};
+      target = target[parts[i]];
+    }
+
+    target[parts[parts.length - 1]] = files[field].map(f => {
+      if (f.path.startsWith('uploads')) {
+        return '/' + f.path.replace(/\\/g, '/');
+      }
+      return `/productImage/${f.filename}`;
+    });
+  });
 }
+
+Object.assign(service, parsedData);
+
+await service.save();
+return service;
+};
+
 
 const updateServiceMilesInDB = async (id: string, miles: number) => {
   if (!Types.ObjectId.isValid(id)) {

@@ -16,14 +16,13 @@ const createFaqToDB = async (payload: IFaq): Promise<IFaq> => {
 };
 
 const faqsFromDB = async (query: Record<string, any>):
-  Promise<{ faqs: IFaq[], pagination: { page: number, totalPage: number, limit: number, total: number } }> => {
+  Promise<{ faqs: IFaq[],  }> => {
 
   const apiFeatures = new QueryBuilder(Faq.find(), query).paginate();
   const faqs = await apiFeatures.queryModel;
   const pagination = await apiFeatures.getPaginationInfo();
 
   return {
-    pagination: pagination,
     faqs
   };
 }

@@ -6,12 +6,20 @@ import { USER_ROLES } from '../../../enums/user'
 
 const router = Router()
 
-// Get service statistics (before /:id routes)
-router.get('/stats', ServiceController.getServiceStats)
+router.get('/stats',
+   ServiceController.getServiceStats
+  );
 
-// Create service with file upload
-router.post('/' ,auth(USER_ROLES.SELLER),fileUploadHandler(), ServiceController.createService)
-router.get("/compare/:id1/:id2", ServiceController.compareTwoServices);
+router.post('/' ,
+  auth(USER_ROLES.SELLER),
+  fileUploadHandler(),
+   ServiceController.createService
+  );
+
+router.get("/compare/:id1/:id2",
+   ServiceController.compareTwoServices
+  );
+
 router.get(
   '/check-can-add',
   auth(USER_ROLES.SELLER),
@@ -24,28 +32,45 @@ router.get(
   ServiceController.getCarStatistics
 );
 
-router.get('/', ServiceController.getAllServices)
-router.get('/filter', ServiceController.getAllFilter)
+router.get('/',
+   ServiceController.getAllServices
+  );
+router.get('/filter',
+   ServiceController.getAllFilter
+  );
 
 // Get single service
-router.get('/:id', ServiceController.getSingleService)
+router.get('/:id', 
+  ServiceController.getSingleService
+);
 
 // Update service with file upload
-router.put('/:id', fileUploadHandler(), ServiceController.updateService)
+router.put(
+  "/:id",
+  fileUploadHandler(),
+  ServiceController.updateService
+);
 
 // Update miles only
-router.patch('/:id/miles', ServiceController.updateServiceMiles)
+router.patch('/:id/miles', 
+  ServiceController.updateServiceMiles
+);
 
 // Soft delete
-router.delete('/:id', ServiceController.deleteService)
+router.delete('/:id',
+   ServiceController.deleteService
+  );
 
 // Permanent delete
-router.delete('/:id/permanent', ServiceController.permanentDeleteService)
+router.delete('/:id/permanent', 
+  ServiceController.permanentDeleteService
+);
 
 // Restore service
-router.patch('/:id/restore', ServiceController.restoreService)
+router.patch('/:id/restore', 
+  ServiceController.restoreService
+)
 
-// Assign users
-router.post('/:id/assign-users', ServiceController.assignUsers)
+
 
 export const ServiceRoutes = router

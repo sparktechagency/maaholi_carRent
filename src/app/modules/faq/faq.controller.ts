@@ -47,7 +47,6 @@ const getFaqs = catchAsync(async (req: Request, res: Response) => {
       statusCode: 200,
       success: true,
       message: 'Faq retrieved Successfully',
-      pagination: result.pagination,
       data: result.faqs
     });
 });
