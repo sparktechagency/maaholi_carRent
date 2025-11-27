@@ -25,5 +25,4 @@ router.get("/statistics",
     SubscriptionController.getSubscriptionStats
 );
 
-
 export const SubscriptionRoutes = router;

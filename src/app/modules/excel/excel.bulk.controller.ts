@@ -5,9 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import { DealerBulkService } from './excel.bulk.service';
 import ApiError from '../../../errors/ApiError';
 
-/**
- * Bulk upload cars from Excel (DEALER only)
- */
+
 const bulkUploadCars = catchAsync(async (req: Request, res: Response) => {
   if (!req.file) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Excel file is required');
@@ -35,9 +33,7 @@ const bulkUploadCars = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/**
- * Download Excel template
- */
+
 const downloadTemplate = catchAsync(async (req: Request, res: Response) => {
   const buffer = DealerBulkService.getExcelTemplate();
 

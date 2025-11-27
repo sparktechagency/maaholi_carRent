@@ -8,7 +8,7 @@ import { Server } from "socket.io";
 import seedSuperAdmin from "./DB";
 import { setupCluster } from "./app/modules/cluster/node.cluster";
 import cluster from 'cluster';
-import { setupSecurity } from "./app/modules/cluster/setup.security";
+// import { setupSecurity } from "./app/modules/cluster/setup.security";
 
 //uncaught exception
 // process.on('uncaughtException', error => {
@@ -81,7 +81,7 @@ export async function main() {
 // Bootstrap function - runs on startup
 async function bootstrap() {
     try {
-        setupSecurity();
+        // setupSecurity();
         if (config.node_env === 'production') {
             setupCluster();
         } else {
