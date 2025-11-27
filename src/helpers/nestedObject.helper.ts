@@ -1,114 +1,82 @@
-export  const parseFormData = (body: any, files?: { [fieldname: string]: Express.Multer.File[] }) => {
-  const parsedBody: any = {}
+export const parseFormData = (body: any, files?: { [fieldname: string]: Express.Multer.File[] }) => {
+  const parsedBody: any = {};
 
-  Object.keys(body).forEach(key => {
-    const value = body[key]
-    
-    if (value === null || value === undefined) {
-      return
+  Object.keys(body).forEach((key) => {
+    let value = body[key];
+
+    // 1️⃣ Parse JSON strings for top-level fields
+    if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
+      try { 
+        value = JSON.parse(value); 
+      } catch {}
     }
 
-    if (typeof value === 'object' && value.constructor && (value.constructor.name === 'File' || Array.isArray(value))) {
-      return
-    }
-    
-    const nestedMatch = key.match(/^(\w+)\[(\w+)\]$/)
+    // 2️⃣ Handle nested fields like basicInformation[vehicleName]
+    const nestedMatch = key.match(/^(\w+)\[(\w+)\]$/);
     if (nestedMatch) {
-      const [, parent, child] = nestedMatch
-      if (!parsedBody[parent]) {
-        parsedBody[parent] = {}
-      }
-      parsedBody[parent][child] = parseValue(value)
+      const [, parent, child] = nestedMatch;
+      if (!parsedBody[parent]) parsedBody[parent] = {};
+      parsedBody[parent][child] = value;
+    } else {
+      parsedBody[key] = value;
     }
-    else if (key.includes('[') && key.includes(']')) {
-      const parts = key.match(/(\w+)(?:\[(\w+)\])?(?:\[(\w+)\])?/)
-      if (parts) {
-        const [, level1, level2, level3] = parts
-        
-        if (level3) {
-          if (!parsedBody[level1]) parsedBody[level1] = {}
-          if (!parsedBody[level1][level2]) parsedBody[level1][level2] = {}
-          parsedBody[level1][level2][level3] = parseValue(value)
-        } else if (level2) {
-          if (!parsedBody[level1]) parsedBody[level1] = {}
-          parsedBody[level1][level2] = parseValue(value)
-        }
-      }
-    }
-    else if (key.endsWith('[]') || /\[\d+\]$/.test(key)) {
-      const arrayKey = key.replace(/\[\d*\]$/, '')
-      if (!parsedBody[arrayKey]) {
-        parsedBody[arrayKey] = []
-      }
-      parsedBody[arrayKey].push(parseValue(value))
-    }
-    else {
-      parsedBody[key] = parseValue(value)
-    }
-  })
+  });
 
+  // 3️⃣ Force nested objects to be objects if still strings
+  const objectFields = [
+    'basicInformation',
+    'technicalInformation',
+    'electricHybrid',
+    'equipment',
+    'extras',
+    'colour',
+    'seatsAndDoors',
+    'energyAndEnvironment',
+    'euroStandard',
+    'location'
+  ];
+
+  objectFields.forEach(field => {
+    if (parsedBody[field] && typeof parsedBody[field] === 'string') {
+      try {
+        parsedBody[field] = JSON.parse(parsedBody[field]);
+      } catch {
+        parsedBody[field] = {};
+      }
+    }
+  });
+
+  // 4️⃣ Handle file uploads
   if (files) {
-    if (files['productImage']) {
-      parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.productImage = `/productImage/${files['productImage'][0].filename}`
-    }
-    
-    if (files['basicInformation[productImage]']) {
-      parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.productImage = `/productImage/${files['basicInformation[productImage]'][0].filename}`
-    }
-
-    if (files['basicInformation[insuranceProof]']) {
-      parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.insuranceProof = `/insuranceProof/${files['basicInformation[insuranceProof]'][0].filename}`
-      
-    }
-
-    // Handle other image fields
-    if (files['image']) {
-      parsedBody.image = files['image'].map(file => `/images/${file.filename}`)
-    }
-
-    if (files['tradeLicences']) {
-      parsedBody.tradeLicences = files['tradeLicences'].map(
-        file => `/tradeLicences/${file.filename}`
-      )
-    }
-
-    if (files['proofOwnerId']) {
-      parsedBody.proofOwnerId = files['proofOwnerId'].map(
-        file => `/proofOwnerId/${file.filename}`
-      )
-    }
+    Object.keys(files).forEach((field) => {
+      const filePaths = files[field].map(f => `/uploads/${f.filename}`);
+      if (field.includes('basicInformation')) {
+        parsedBody.basicInformation = parsedBody.basicInformation || {};
+        const name = field.match(/\[(\w+)\]/)?.[1] || 'productImage';
+        parsedBody.basicInformation[name] = filePaths;
+      } else {
+        parsedBody[field] = filePaths;
+      }
+    });
   }
 
-  return parsedBody
-}
-
-// Helper to parse values
+  return parsedBody;
+};
+// Helper to parse individual values
 const parseValue = (value: any): any => {
-  // Skip if undefined, null, or empty
-  if (value === undefined || value === null || value === '') {
-    return undefined
-  }
+  if (value === undefined || value === null || value === '') return undefined
+  if (typeof value !== 'string') return value
 
-  // Skip if it's not a string (like File objects, arrays, etc.)
-  if (typeof value !== 'string') {
-    return value
-  }
-
-  // Handle boolean strings
+  // Booleans
   if (value === 'true') return true
   if (value === 'false') return false
 
-  // Handle number strings (only for pure numeric strings)
-  const trimmedValue = value.trim()
-  if (trimmedValue !== '' && !isNaN(Number(trimmedValue)) && !isNaN(parseFloat(trimmedValue))) {
-    return parseFloat(trimmedValue)
-  }
+  // Numbers
+  const trimmed = value.trim()
+  if (trimmed !== '' && !isNaN(Number(trimmed))) return parseFloat(trimmed)
 
-  // Handle JSON strings
-  if (value.startsWith('{') || value.startsWith('[')) {
+  // JSON objects or arrays
+  if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
     try {
       return JSON.parse(value)
     } catch {

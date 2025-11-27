@@ -4,7 +4,7 @@ import mongoose, { Types } from 'mongoose'
 import { ServiceModelInstance } from './service.model'
 import { IService } from './service.interface'
 import ApiError from '../../../errors/ApiError'
-import { parseFormData } from '../../../helpers/nestedObject.helper'
+import { FilterQuery, SortOrder } from 'mongoose'
 import { paginateAndSort } from '../../../util/pagination.on';
 import { CarManagementService } from '../car_Management/car.service';
 import { USER_ROLES } from '../../../enums/user';
@@ -12,209 +12,64 @@ import { User } from '../user/user.model';
 import { CACHE_PREFIXES, CACHE_TTL, RedisCacheService } from '../redis/cache';
 import { ServiceFilterQuery } from './service.query.filter';
 import { Subscription } from '../subscription/subscription.model';
+import { parseFormData } from '../../../helpers/nestedObject.helper';
 
-// const createServiceToDB = async (
-//   req: Request,
-//   payload: any,
-//   files?: { [fieldname: string]: Express.Multer.File[] }
-// ): Promise<IService> => {
-//   const parsedData = parseFormData(payload, files);
-  
-//   console.log('Parsed Data:', JSON.stringify(parsedData, null, 2));
 
-//   const userId = (req as any).user?.id || (req as any).user?._id;
-
-//   if (!userId) {
-//     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
-//   }
-
-//   // Check if user is a SELLER
-//   const user = await User.findById(userId);
-//   if (!user) {
-//     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
-//   }
-
-//   // Only check car limit for SELLERS
-//   if (user.role === USER_ROLES.SELLER && USER_ROLES.DELEAR) {
-//     // Check if user has an active subscription
-//     if (!user.isSubscribed) {
-//       throw new ApiError(
-//         StatusCodes.FORBIDDEN,
-//         'You need an active subscription to add cars. Please subscribe to a package first.'
-//       );
-//     }
-
-//     try {
-//       // Check car limit and process ad-hoc payment if needed
-//       const carLimitCheck = await CarManagementService.checkCarLimitAndAddCar({
-//         id: userId,
-//         role: user.role
-//       });
-
-//       console.log('Car Limit Check Result:', carLimitCheck);
-
-//       // If ad-hoc charge was applied, you might want to notify the user
-//       if (carLimitCheck.adHocCars > 0) {
-//         console.log(
-//           `Ad-hoc charge applied: $${carLimitCheck.adHocCharges} for ${carLimitCheck.adHocCars} additional car(s)`
-//         );
-//       }
-//     } catch (error: any) {
-//       // If car limit check fails, don't create the service
-//       throw new ApiError(
-//         StatusCodes.BAD_REQUEST,
-//         error.message || 'Failed to verify car limit. Please check your subscription.'
-//       );
-//     }
-//   }
-
-//   // Add createdBy to parsed data
-//   parsedData.createdBy = userId;
-
-//   // Create service
-//   let service;
-//   try {
-//     service = await ServiceModelInstance.create(parsedData);
-//     if (!service) {
-//       throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service');
-//     }
-//   } catch (error: any) {
-//     // If service creation fails and we already added a car count, roll it back
-//     if (user.role === USER_ROLES.SELLER) {
-//       try {
-//         await CarManagementService.removeCarFromSubscription({
-//           id: userId,
-//           role: user.role
-//         });
-//         console.log('Rolled back car count due to service creation failure');
-//       } catch (rollbackError) {
-//         console.error('Failed to rollback car count:', rollbackError);
-//       }
-//     }
-//     throw new ApiError(
-//       StatusCodes.BAD_REQUEST,
-//       `Failed to create service: ${error.message}`
-//     );
-//   }
-
-//   // Populate relationships
-//   await service.populate([
-//     { path: 'user', select: 'name email' },
-//     { path: 'createdBy', select: 'name email' },
-//   ]);
-
-//   return service;
-// };
-
-const createServiceToDB = async (
+export const createServiceToDB = async (
   req: Request,
   payload: any,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
   const parsedData = parseFormData(payload, files);
-  
-  console.log('Parsed Data:', JSON.stringify(parsedData, null, 2));
 
   const userId = (req as any).user?.id || (req as any).user?._id;
+  if (!userId) throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
 
-  if (!userId) {
-    throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
-  }
-
-  // Get user details
   const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+  if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+
+  if (user.role !== USER_ROLES.SELLER) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only SELLER can create services');
   }
 
-  if (user.role === USER_ROLES.SELLER) {
-    if (!user.isSubscribed) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        'You need an active subscription to add cars. Please subscribe to a package first.'
-      );
-    }
+  // Check subscription limits
+  const subscription = await Subscription.findOne({ user: userId, status: 'active' }).populate('package');
+  if (!subscription) throw new ApiError(StatusCodes.FORBIDDEN, 'No active subscription found');
 
-    // Get subscription details
-    const subscription = await Subscription.findOne({
-      user: userId,
-      status: 'active'
-    }).populate('package');
+  const packageData: any = subscription.package;
+  const carLimit = packageData?.carLimit || 4;
+  if ((subscription.carsAdded || 0) >= carLimit) {
+    throw new ApiError(StatusCodes.FORBIDDEN, `Package limit reached: ${carLimit}`);
+  }
+  subscription.carsAdded = (subscription.carsAdded || 0) + 1;
+  await subscription.save();
 
-    if (!subscription) {
-      throw new ApiError(
-        StatusCodes.NOT_FOUND,
-        'No active subscription found. Please subscribe to a package.'
-      );
-    }
-
-    const packageData: any = subscription.package;
-    const carLimit = packageData.carLimit || 4;
-    const currentCarsAdded = subscription.carsAdded || 0;
-
-    // ⚠️ STRICT CHECK - Cannot exceed package limit
-    if (currentCarsAdded >= carLimit) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        `Your package limit is over! You have already added ${currentCarsAdded} cars (Limit: ${carLimit}). Please purchase another package or upgrade your current package to add more cars.`
-      );
-    }
-
-    // Increment car count
-    subscription.carsAdded = currentCarsAdded + 1;
-    await subscription.save();
-
-    console.log(`✅ [SELLER] Car added: ${subscription.carsAdded}/${carLimit}`);
-  } else {
-    // Only SELLER can use this endpoint
-    throw new ApiError(
-      StatusCodes.FORBIDDEN,
-      'This endpoint is only for SELLER. DEALER should use bulk upload endpoint.'
-    );
+  // Convert brand/model to ObjectId
+  if (parsedData.basicInformation?.brand) {
+    parsedData.basicInformation.brand = new Types.ObjectId(parsedData.basicInformation.brand);
+  }
+  if (parsedData.basicInformation?.model) {
+    parsedData.basicInformation.model = new Types.ObjectId(parsedData.basicInformation.model);
   }
 
-  // Add createdBy to parsed data
   parsedData.createdBy = userId;
 
-  // Create service
-  let service;
-  try {
-    service = await ServiceModelInstance.create(parsedData);
-    if (!service) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create service');
-    }
-  } catch (error: any) {
-    // Rollback car count if service creation fails
-    const subscription = await Subscription.findOne({
-      user: userId,
-      status: 'active'
-    });
-    
-    if (subscription && subscription.carsAdded > 0) {
-      subscription.carsAdded -= 1;
-      await subscription.save();
-      console.log('🔄 [SELLER] Rolled back car count');
-    }
-    
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `Failed to create service: ${error.message}`
-    );
-  }
+  // Create the service
+  const service = await ServiceModelInstance.create(parsedData);
 
-  // Populate relationships
+  // Populate references
   await service.populate([
-    { path: 'user', select: 'name email' },
-    { path: 'createdBy', select: 'name email' },
     { path: 'basicInformation.brand', select: 'brand image' },
-    { path: 'basicInformation.model', select: 'model' },
-    // { path: 'Category', select: 'name' },
+    { path: 'basicInformation.model', select: 'model brand' },
+    { path: 'createdBy', select: 'name email' }
   ]);
 
+  // Clear cache
   await RedisCacheService.deletePattern(`${CACHE_PREFIXES.SERVICES}:*`);
 
   return service;
 };
+
 
 const getAllServicesFromDB = async (query: any) => {
   const {
@@ -834,8 +689,8 @@ export const getServiceByIdFromDB = async (id: string) => {
   const service = await ServiceModelInstance.findById(id)
     .populate('user', 'name email profile')
     .populate('brand', 'name logo')
-    .populate('model', 'name')
-    .populate('Category', 'name')
+    .populate('model', 'model')
+    // .populate('Category', 'name')
     .populate('createdBy', 'name email profile')
     .lean();
 
@@ -888,80 +743,55 @@ const updateServiceInDB = async (
   payload: any,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
-  if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID');
-  }
+
+  if (!Types.ObjectId.isValid(id)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID');
 
   let parsedData = parseFormData(payload, files);
 
+  // Remove non-editable fields
   delete parsedData._id;
   delete parsedData.createdAt;
   delete parsedData.createdBy;
   delete parsedData.isDeleted;
 
-  const interior: string[] = [];
-  const exterior: string[] = [];
-  Object.keys(parsedData).forEach((key) => {
-    if (key.startsWith("colour[interior]")) {
-      interior.push(parsedData[key]);
-      delete parsedData[key];
-    }
-    if (key.startsWith("colour[exterior]")) {
-      exterior.push(parsedData[key]);
-      delete parsedData[key];
-    }
-  });
-  if (interior.length || exterior.length) {
-    parsedData.colour = parsedData.colour || {};
-    if (interior.length) parsedData.colour.interior = interior;
-    if (exterior.length) parsedData.colour.exterior = exterior;
+  // Convert brand/model to ObjectId if present
+  if (parsedData.basicInformation?.brand) {
+    parsedData.basicInformation.brand = new Types.ObjectId(parsedData.basicInformation.brand);
+  }
+  if (parsedData.basicInformation?.model) {
+    parsedData.basicInformation.model = new Types.ObjectId(parsedData.basicInformation.model);
   }
 
+  const service = await ServiceModelInstance.findById(id);
+  if (!service) throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found');
+
+  // Merge new files
   if (files) {
     Object.keys(files).forEach((field) => {
-      const parts = field.split(/[\[\]]/).filter(Boolean);
-      let target = parsedData;
-
-      for (let i = 0; i < parts.length - 1; i++) {
-        if (!target[parts[i]]) target[parts[i]] = {};
-        target = target[parts[i]];
+      const filePaths = files[field].map(f => `/uploads/${f.filename}`);
+      if (field.includes('basicInformation')) {
+        const name = field.match(/\[(\w+)\]/)?.[1] || 'productImage';
+        service.basicInformation = service.basicInformation || {};
+        (service.basicInformation as any)[name] = filePaths;
+      } else {
+        (service as any)[field] = filePaths;
       }
-
-      target[parts[parts.length - 1]] = files[field].map(f => f.path);
     });
   }
 
-  parsedData = removeConflictingMongoPaths(parsedData);
+  // Merge other parsedData
+  Object.assign(service, parsedData);
 
-const service = await ServiceModelInstance.findById(id);
-if (!service) throw new ApiError(StatusCodes.NOT_FOUND, "Service not found");
+  await service.save();
 
-if (files) {
-  Object.keys(files).forEach((field) => {
-    const parts = field.split(/[\[\]]/).filter(Boolean);
-    let target: any = service;
+  await service.populate([
+    { path: 'basicInformation.brand', select: 'brand image' },
+    { path: 'basicInformation.model', select: 'model brand' },
+    { path: 'createdBy', select: 'name email' }
+  ]);
 
-    for (let i = 0; i < parts.length - 1; i++) {
-      if (!target[parts[i]]) target[parts[i]] = {};
-      target = target[parts[i]];
-    }
-
-    target[parts[parts.length - 1]] = files[field].map(f => {
-      if (f.path.startsWith('uploads')) {
-        return '/' + f.path.replace(/\\/g, '/');
-      }
-      return `/productImage/${f.filename}`;
-    });
-  });
-}
-
-Object.assign(service, parsedData);
-
-await service.save();
-return service;
+  return service;
 };
-
-
 const updateServiceMilesInDB = async (id: string, miles: number) => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
