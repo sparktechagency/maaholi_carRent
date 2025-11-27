@@ -1,21 +1,17 @@
 export  const parseFormData = (body: any, files?: { [fieldname: string]: Express.Multer.File[] }) => {
   const parsedBody: any = {}
 
-  // Process regular form fields
   Object.keys(body).forEach(key => {
     const value = body[key]
     
-    // Skip if value is null or undefined
     if (value === null || value === undefined) {
       return
     }
-    
-    // Skip if value is a File object or array of Files
+
     if (typeof value === 'object' && value.constructor && (value.constructor.name === 'File' || Array.isArray(value))) {
       return
     }
     
-    // Handle nested objects: "basicInformation[make]"
     const nestedMatch = key.match(/^(\w+)\[(\w+)\]$/)
     if (nestedMatch) {
       const [, parent, child] = nestedMatch
@@ -24,7 +20,6 @@ export  const parseFormData = (body: any, files?: { [fieldname: string]: Express
       }
       parsedBody[parent][child] = parseValue(value)
     }
-    // Handle deep nesting: "location[coordinates][lat]"
     else if (key.includes('[') && key.includes(']')) {
       const parts = key.match(/(\w+)(?:\[(\w+)\])?(?:\[(\w+)\])?/)
       if (parts) {
@@ -40,7 +35,6 @@ export  const parseFormData = (body: any, files?: { [fieldname: string]: Express
         }
       }
     }
-    // Handle arrays: "assignedUsers[]"
     else if (key.endsWith('[]') || /\[\d+\]$/.test(key)) {
       const arrayKey = key.replace(/\[\d*\]$/, '')
       if (!parsedBody[arrayKey]) {
@@ -48,47 +42,42 @@ export  const parseFormData = (body: any, files?: { [fieldname: string]: Express
       }
       parsedBody[arrayKey].push(parseValue(value))
     }
-    // Regular fields
     else {
       parsedBody[key] = parseValue(value)
     }
   })
 
-  // Process uploaded files from fileUploadHandler
   if (files) {
-    // Handle productImage
     if (files['productImage']) {
       parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.productImage = `/uploads/productImage/${files['productImage'][0].filename}`
+      parsedBody.basicInformation.productImage = `/productImage/${files['productImage'][0].filename}`
     }
     
-    // Handle nested productImage
     if (files['basicInformation[productImage]']) {
       parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.productImage = `/uploads/productImage/${files['basicInformation[productImage]'][0].filename}`
+      parsedBody.basicInformation.productImage = `/productImage/${files['basicInformation[productImage]'][0].filename}`
     }
 
-    // Handle insuranceProof (multiple files)
     if (files['basicInformation[insuranceProof]']) {
       parsedBody.basicInformation = parsedBody.basicInformation || {}
-      parsedBody.basicInformation.insuranceProof = `/uploads/insuranceProof/${files['basicInformation[insuranceProof]'][0].filename}`
+      parsedBody.basicInformation.insuranceProof = `/insuranceProof/${files['basicInformation[insuranceProof]'][0].filename}`
       
     }
 
     // Handle other image fields
     if (files['image']) {
-      parsedBody.image = files['image'].map(file => `/uploads/images/${file.filename}`)
+      parsedBody.image = files['image'].map(file => `/images/${file.filename}`)
     }
 
     if (files['tradeLicences']) {
       parsedBody.tradeLicences = files['tradeLicences'].map(
-        file => `/uploads/tradeLicences/${file.filename}`
+        file => `/tradeLicences/${file.filename}`
       )
     }
 
     if (files['proofOwnerId']) {
       parsedBody.proofOwnerId = files['proofOwnerId'].map(
-        file => `/uploads/proofOwnerId/${file.filename}`
+        file => `/proofOwnerId/${file.filename}`
       )
     }
   }

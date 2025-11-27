@@ -127,16 +127,6 @@ const createServiceToDB = async (
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  if (files) {
-  Object.keys(files).forEach((field) => {
-    parsedData[field] = files[field].map(f => {
-      if (f.path.startsWith('uploads')) {
-        return '/' + f.path.replace(/\\/g, '/');
-      }
-      return `/productImage/${f.filename}`;
-    });
-  });
-}
   if (user.role === USER_ROLES.SELLER) {
     if (!user.isSubscribed) {
       throw new ApiError(
