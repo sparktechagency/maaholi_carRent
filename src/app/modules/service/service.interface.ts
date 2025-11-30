@@ -151,3 +151,12 @@ export interface GetServicesOptions {
 }
 
 export type ServiceModel = Model<IService, Record<string, unknown>>
+
+
+export type ICareCompare = {
+  user: Types.ObjectId;
+  car: Types.ObjectId;
+}
+
+
+export type CareCompareModel = Model<ICareCompare, Record<string, unknown>>;

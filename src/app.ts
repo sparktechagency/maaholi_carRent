@@ -9,7 +9,7 @@ import { logger } from "./shared/logger";
 const app = express();
 
 //body parser
-// app.use(cors());
+// cors({ origin: "*"})
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -18,7 +18,9 @@ app.use(
         "http://10.10.7.72:3000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://10.10.7.XX:3000" 
+        "http://10.10.7.47:3001",
+        "http://10.10.7.47:3003",
+        "http://127.0.0.1:3001",
       ];
       
       if (!origin) return callback(null, true);
@@ -32,7 +34,7 @@ app.use(
     },
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: false
+    credentials: true
   })
 );
 // morgan

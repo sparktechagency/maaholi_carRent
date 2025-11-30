@@ -22,6 +22,8 @@ import { OfferRoutes } from '../modules/offer/offer.routes';
 import { carModelsRoutes } from '../modules/Model/model.route';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.routes';
 import { DealerBulkRoutes } from '../modules/excel/excel.bulk.route';
+import { ContactRoutes } from '../modules/contact/contact.route';
+import { BlogRoutes } from '../modules/blog/blog.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -48,6 +50,14 @@ const apiRoutes = [
     { path: "/payment", route: PaymentRoutes },
     { path: "/subscription", route: SubscriptionRoutes },
     { path: "/offer", route: OfferRoutes },
+    {
+        path:"/contact",
+        route:ContactRoutes
+    },
+    {
+        path:"/blog",
+        route:BlogRoutes
+    }
 ]
 
 apiRoutes.forEach(route => router.use(route.path, route.route));

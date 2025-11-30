@@ -6,8 +6,9 @@ import { BookmarkService } from "./bookmark.service";
 const toggleBookmark = catchAsync(async(req: Request, res: Response)=>{
     const customer = req.user.id;
     const payload = req.body;
-    const payloadData:any = { customer, ...payload }
-    const result = await BookmarkService.toggleBookmark(payloadData);
+ 
+    
+    const result = await BookmarkService.toggleBookmark({ ...payload, user: customer });
     
     sendResponse(res, {
         statusCode: 200,
@@ -19,11 +20,13 @@ const toggleBookmark = catchAsync(async(req: Request, res: Response)=>{
 const getBookmark = catchAsync(async(req: Request, res: Response)=>{
     const user = req.user;
     const result = await BookmarkService.getBookmark(user, req.query);
+    console.log(result);
+    
     sendResponse(res, {
         statusCode: 200,
         success: true,
         message: "Bookmark Retrieved Successfully",
-        data: result
+        data: result.data,
     })
 });
 

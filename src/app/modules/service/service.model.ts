@@ -1,6 +1,6 @@
 import { Category } from './../category/category.model';
 import { HydratedDocument, Model, model, Schema, Types } from 'mongoose'
-import { IService, ServiceModel } from './service.interface'
+import { CareCompareModel, ICareCompare, IService, ServiceModel } from './service.interface'
 import { carStatus } from '../../../enums/car-status'
 
 const serviceSchema = new Schema<IService, ServiceModel>(
@@ -223,3 +223,14 @@ serviceSchema.pre('findOneAndUpdate', async function (this: any, next: (err?: an
 })
 
 export const ServiceModelInstance = model<IService, ServiceModel>('Service', serviceSchema)
+
+const careCompareSchema = new Schema<ICareCompare, CareCompareModel>(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    car: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+  },{
+    timestamps: true
+  })
+
+
+export const CareCompareModelInstance = model<ICareCompare, CareCompareModel>('CareCompare', careCompareSchema);

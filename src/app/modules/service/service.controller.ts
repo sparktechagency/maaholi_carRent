@@ -208,6 +208,44 @@ const getServiceStats = catchAsync(async (req: Request, res: Response, next: Nex
   });
 });
 
+
+const createCarCompare = catchAsync(async (req: Request, res: Response) => {
+  const { carId} = req.body;
+  console.log(carId);
+  
+  const user = req.user;
+  const result = await ServiceService.createCarCompareIntoDB(carId, user);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car compare created successfully",
+    data: result,
+  });
+});
+
+const getCarCompare = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  const result = await ServiceService.getCarCompareFromDB(user.id);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car statistics retrieved successfully",
+    data: result,
+  });
+});
+
+const deleteCarCompare = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const user = req.user;
+  const result = await ServiceService.deleteCarCompareFromDB(id, user.id);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car compare deleted successfully",
+    data: result,
+  });
+});
+
 export const ServiceController = {
   createService,
   checkCanAddCar,
@@ -222,5 +260,8 @@ export const ServiceController = {
   assignUsers,
   getServiceStats,
   getAllFilter,
-  compareTwoServices
+  compareTwoServices,
+  createCarCompare,
+  getCarCompare,
+  deleteCarCompare
 }

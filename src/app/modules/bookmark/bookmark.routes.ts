@@ -2,16 +2,19 @@ import express from "express";
 import { BookmarkController } from "./bookmark.controller";
 import auth from "../../middlewares/auth";
 import { USER_ROLES } from "../../../enums/user";
+import validateRequest from "../../middlewares/validateRequest";
+import { BookmarkValidation } from "./bookmark.validation";
 
 const router = express.Router();
 
 router.route("/")
     .post(
-        auth(USER_ROLES.CUSTOMER),
+        auth(),
+        validateRequest(BookmarkValidation.createBookmarkZodSchema),
         BookmarkController.toggleBookmark
     )
     .get(
-        auth(USER_ROLES.CUSTOMER),
+        auth(),
         BookmarkController.getBookmark
     );
 

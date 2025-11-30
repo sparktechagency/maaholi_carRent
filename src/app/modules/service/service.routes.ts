@@ -3,9 +3,25 @@ import { ServiceController } from './service.controller'
 import fileUploadHandler from '../../middlewares/fileUploaderHandler'
 import auth from "../../middlewares/auth";
 import { USER_ROLES } from '../../../enums/user'
+import validateRequest from '../../middlewares/validateRequest';
+import { ServiceValidation } from './service.validation';
 
 const router = Router()
-
+router.route('/compare')
+  .post(
+    auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+    validateRequest(ServiceValidation.createCarCompareZodSchema),
+    ServiceController.createCarCompare
+  )
+  .get(
+    auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+    ServiceController.getCarCompare
+  );
+router.route('/compare/:id')
+  .delete(
+    auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+    ServiceController.deleteCarCompare
+  );
 router.get('/stats',
    ServiceController.getServiceStats
   );
@@ -16,9 +32,9 @@ router.post('/' ,
    ServiceController.createService
   );
 
-router.get("/compare/:id1/:id2",
-   ServiceController.compareTwoServices
-  );
+// router.get("/compare/:id1/:id2",
+//    ServiceController.compareTwoServices
+//   );
 
 router.get(
   '/check-can-add',
@@ -38,6 +54,7 @@ router.get('/',
 router.get('/filter',
    ServiceController.getAllFilter
   );
+
 
 // Get single service
 router.get('/:id', 

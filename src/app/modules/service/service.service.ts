@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes'
 import { Request, Response } from 'express';
 import mongoose, { Types } from 'mongoose'
-import { ServiceModelInstance } from './service.model'
+import { CareCompareModelInstance, ServiceModelInstance } from './service.model'
 import { IService } from './service.interface'
 import ApiError from '../../../errors/ApiError'
 import { FilterQuery, SortOrder } from 'mongoose'
@@ -13,6 +13,7 @@ import { CACHE_PREFIXES, CACHE_TTL, RedisCacheService } from '../redis/cache';
 import { ServiceFilterQuery } from './service.query.filter';
 import { Subscription } from '../subscription/subscription.model';
 import { parseFormData } from '../../../helpers/nestedObject.helper';
+import { JwtPayload } from 'jsonwebtoken';
 
 
 export const createServiceToDB = async (
@@ -89,8 +90,6 @@ const getAllServicesFromDB = async (query: any) => {
 
   // Build query
   const searchQuery: any = { isDeleted: false }
-
-  // Search across multiple fields
   if (search) {
     searchQuery.$or = [
       { 'basicInformation.make': { $regex: search, $options: 'i' } },
@@ -101,20 +100,18 @@ const getAllServicesFromDB = async (query: any) => {
     ]
   }
 
-  // Filters
   if (status) searchQuery.status = status
   if (userId) searchQuery.user = new Types.ObjectId(userId as string)
   if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' }
   if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' }
 
-  // Execute query
   const [services, total] = await Promise.all([
     ServiceModelInstance
       .find(searchQuery)
       .populate('user', 'name email')
       .populate('basicInformation.brand', 'brand image')  
       .populate('basicInformation.model', 'model brand')
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'name email profile')
       .sort(sort as string)
       .skip(skip)
       .limit(limitNum)
@@ -985,6 +982,32 @@ const getServiceStatsFromDB = async () => {
   }
 }
 
+const createCarCompareIntoDB = async (carId: string,user:JwtPayload) => {
+  const compareAmount = await CareCompareModelInstance.countDocuments({user:user.id});
+  if(compareAmount >=4){
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'You can compare maximum 4 cars');
+  }
+  const isExist = await CareCompareModelInstance.findOne({user:user.id,car:carId});
+  if(isExist){
+    return isExist;
+  }
+
+  
+  const result = await CareCompareModelInstance.create({user:user.id,car:carId});
+  return result
+}
+
+
+const getCarCompareFromDB = async (userId:string) => {
+  const result = await CareCompareModelInstance.find({user:userId}).populate('car').lean()
+  return result?.map((item: any) => item.car)
+}
+
+
+const deleteCarCompareFromDB = async (compareId:string,userId:string) => {
+  const result = await CareCompareModelInstance.findOneAndDelete({user:userId,car:compareId});
+  return result
+}
 
 const ServiceService = {
   createServiceToDB,
@@ -999,7 +1022,10 @@ const ServiceService = {
   getServiceStatsFromDB,
   getAllFilterFromDB,
   getAllServicesFromDBFilter,
-  compareTwoServicesFromDB
+  compareTwoServicesFromDB,
+  createCarCompareIntoDB,
+  getCarCompareFromDB,
+  deleteCarCompareFromDB
 }
 
 export default ServiceService

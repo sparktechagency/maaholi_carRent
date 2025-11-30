@@ -28,9 +28,16 @@ const updateServiceZodSchema = z.object({
 
 })
 
+const createCarCompareZodSchema = z.object({
+    body: z.object({
+        carId: objectIdZodSchema("Car ID is required")
+    })
+})
+
 
 export const ServiceValidation = {
     createServiceZodSchema,
-    updateServiceZodSchema
+    updateServiceZodSchema,
+    createCarCompareZodSchema
 }
 
