@@ -276,19 +276,12 @@ const revenueStatisticsFromDB = async () => {
 };
 
 const userListFromDB = async (query: Record<string, any>) => {
-    const result = new QueryBuilder(User.find(), query).filter().search(['name', 'email', 'role']);
-    const users = await result.queryModel;
+//except super admin
+    const result = new QueryBuilder(User.find({ role: { $ne: "SUPER_ADMIN" } }), query).paginate().filter();
+    const users = await result.queryModel.select('name email profile contact location role createdAt');
 
     return { users };
 };
-
-// const userListFromDB = async (query: Record<string, any>) => {
-//     const result = await User.find({ role: { $ne: "SUPER_ADMIN" } });
-
-//     const users = result;
-
-//     return { users };
-// };
 
 const reservationListFromDB = async (query: Record<string, any>) => {
     const result = new QueryBuilder(Reservation.find(), query).paginate().filter();
