@@ -34,16 +34,16 @@ export const createServiceToDB = async (
   }
 
   // Check subscription limits
-  const subscription = await Subscription.findOne({ user: userId, status: 'active' }).populate('package');
-  if (!subscription) throw new ApiError(StatusCodes.FORBIDDEN, 'No active subscription found');
+  // const subscription = await Subscription.findOne({ user: userId, status: 'active' }).populate('package');
+  // if (!subscription) throw new ApiError(StatusCodes.FORBIDDEN, 'No active subscription found');
 
-  const packageData: any = subscription.package;
-  const carLimit = packageData?.carLimit || 4;
-  if ((subscription.carsAdded || 0) >= carLimit) {
-    throw new ApiError(StatusCodes.FORBIDDEN, `Package limit reached: ${carLimit}`);
-  }
-  subscription.carsAdded = (subscription.carsAdded || 0) + 1;
-  await subscription.save();
+  // const packageData: any = subscription.package;
+  // const carLimit = packageData?.carLimit || 4;
+  // if ((subscription.carsAdded || 0) >= carLimit) {
+  //   throw new ApiError(StatusCodes.FORBIDDEN, `Package limit reached: ${carLimit}`);
+  // }
+  // subscription.carsAdded = (subscription.carsAdded || 0) + 1;
+  // await subscription.save();
 
   // Convert brand/model to ObjectId
   if (parsedData.basicInformation?.brand) {
