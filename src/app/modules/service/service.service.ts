@@ -72,6 +72,63 @@ export const createServiceToDB = async (
 };
 
 
+// const getAllServicesFromDB = async (query: any) => {
+//   const {
+//     page = 1,
+//     limit = 10,
+//     sort = '-createdAt',
+//     search = '',
+//     status,
+//     userId,
+//     city,
+//     country
+//   } = query
+
+//   const pageNum = parseInt(page as string)
+//   const limitNum = parseInt(limit as string)
+//   const skip = (pageNum - 1) * limitNum
+
+//   // Build query
+//   const searchQuery: any = { isDeleted: false }
+//   if (search) {
+//     searchQuery.$or = [
+//       { 'basicInformation.make': { $regex: search, $options: 'i' } },
+//       { 'basicInformation.model': { $regex: search, $options: 'i' } },
+//       { 'basicInformation.vin': { $regex: search, $options: 'i' } },
+//       { 'basicInformation.tagNumber': { $regex: search, $options: 'i' } },
+//       { 'location.address': { $regex: search, $options: 'i' } }
+//     ]
+//   }
+
+//   if (status) searchQuery.status = status
+//   if (userId) searchQuery.user = new Types.ObjectId(userId as string)
+//   if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' }
+//   if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' }
+
+//   const [services, total] = await Promise.all([
+//     ServiceModelInstance
+//       .find(searchQuery)
+//       .populate('user', 'name email')
+//       .populate('basicInformation.brand', 'brand image')  
+//       .populate('basicInformation.model', 'model brand')
+//       .populate('createdBy', 'name email profile')
+//       .sort(sort as string)
+//       .skip(skip)
+//       .limit(limitNum)
+//       .lean(),
+//     ServiceModelInstance.countDocuments(searchQuery)
+//   ])
+
+//   return {
+//     data: services,
+//     meta: {
+//       total,
+//       page: pageNum,
+//       limit: limitNum,
+//       totalPages: Math.ceil(total / limitNum)
+//     }
+//   }
+// }
 const getAllServicesFromDB = async (query: any) => {
   const {
     page = 1,
@@ -82,14 +139,14 @@ const getAllServicesFromDB = async (query: any) => {
     userId,
     city,
     country
-  } = query
+  } = query;
 
-  const pageNum = parseInt(page as string)
-  const limitNum = parseInt(limit as string)
-  const skip = (pageNum - 1) * limitNum
+  const pageNum = parseInt(page as string);
+  const limitNum = parseInt(limit as string);
+  const skip = (pageNum - 1) * limitNum;
 
   // Build query
-  const searchQuery: any = { isDeleted: false }
+  const searchQuery: any = { isDeleted: false };
   if (search) {
     searchQuery.$or = [
       { 'basicInformation.make': { $regex: search, $options: 'i' } },
@@ -97,13 +154,13 @@ const getAllServicesFromDB = async (query: any) => {
       { 'basicInformation.vin': { $regex: search, $options: 'i' } },
       { 'basicInformation.tagNumber': { $regex: search, $options: 'i' } },
       { 'location.address': { $regex: search, $options: 'i' } }
-    ]
+    ];
   }
 
-  if (status) searchQuery.status = status
-  if (userId) searchQuery.user = new Types.ObjectId(userId as string)
-  if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' }
-  if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' }
+  if (status) searchQuery.status = status;
+  if (userId) searchQuery.user = new Types.ObjectId(userId as string);
+  if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' };
+  if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' };
 
   const [services, total] = await Promise.all([
     ServiceModelInstance
@@ -117,19 +174,32 @@ const getAllServicesFromDB = async (query: any) => {
       .limit(limitNum)
       .lean(),
     ServiceModelInstance.countDocuments(searchQuery)
-  ])
+  ]);
+
+  // ✅ Transform data to include only first image
+  const transformedServices = services.map((service: any) => {
+    const productImages = service.basicInformation?.productImage || [];
+    
+    return {
+      ...service,
+      // Add a new field with only the first image
+      featuredImage: productImages.length > 0 ? productImages[0] : null,
+      // Or keep all images but in a cleaner format
+      imageUrl: productImages.length > 0 ? productImages[0] : null,
+      allImages: productImages
+    };
+  });
 
   return {
-    data: services,
+    data: transformedServices,
     meta: {
       total,
       page: pageNum,
       limit: limitNum,
       totalPages: Math.ceil(total / limitNum)
     }
-  }
-}
-
+  };
+};
 const getAllFilterFromDB = async (requestData: any) => {
   const {
     page = 1,
