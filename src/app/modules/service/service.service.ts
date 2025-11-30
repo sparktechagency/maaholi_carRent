@@ -182,7 +182,6 @@ const getAllServicesFromDB = async (query: any) => {
     
     return {
       ...service,
-      // Add a new field with only the first image
       featuredImage: productImages.length > 0 ? productImages[0] : null,
       // Or keep all images but in a cleaner format
       imageUrl: productImages.length > 0 ? productImages[0] : null,
