@@ -11,12 +11,12 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       brand: { 
             type: Schema.Types.ObjectId,
             ref: "BrandModel",
-            required: true 
+            required: false 
           },
       model: { 
             type: Schema.Types.ObjectId,
             ref: "CarModel",
-            required: true 
+            required: false 
           },
       Category: {
             type: Schema.Types.ObjectId,
@@ -26,8 +26,8 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       vinNo: { type: String, required: false },
       year: { type: Number, required: false },
       productImage: { type: [String], required: false },
-      RegularPrice: { type: Number, required: true},
-      OfferPrice: { type: Number, required: true},
+      RegularPrice: { type: Number, required: false},
+      OfferPrice: { type: Number, required: false},
       leasingRate: {type: String, required: false},
       condition: { type: String, required: false },
       miles: { type: Number, default: 0 },
@@ -159,11 +159,14 @@ equipment: {
   { timestamps: true },
 )
 
-/**
- * When saving a doc directly (doc.save()):
- * - if new: ensure totalMiles equals initial miles
- * - if miles changed: compute delta from DB and increment totalMiles
- */
+const careCompareSchema = new Schema<ICareCompare, CareCompareModel>(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    car: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
+  },{
+    timestamps: true
+  })
+
 serviceSchema.pre('save', async function (this: HydratedDocument<IService>, next) {
   try {
     // If it's a new document, initialize totalMiles to miles (if present)
@@ -172,10 +175,8 @@ serviceSchema.pre('save', async function (this: HydratedDocument<IService>, next
       return next()
     }
 
-    // If miles didn't change, nothing to do
     if (!this.isModified('miles')) return next()
 
-    // Fetch previous document to compute delta
     const prev = await (this.constructor as Model<IService>).findById(this._id).select('miles totalMiles').lean()
     const prevMiles = (prev?.miles ?? 0) as number
     const newMiles = Number(this.miles ?? 0)
@@ -191,11 +192,7 @@ serviceSchema.pre('save', async function (this: HydratedDocument<IService>, next
   }
 })
 
-/**
- * When updating with findOneAndUpdate / findByIdAndUpdate:
- * - if the update sets miles to an absolute number, compute delta vs DB and add to $inc.totalMiles
- * - keep the set.miles in place so the actual miles field is updated
- */
+
 serviceSchema.pre('findOneAndUpdate', async function (this: any, next: (err?: any) => void) {
   try {
     const update = this.getUpdate() as any
@@ -223,14 +220,6 @@ serviceSchema.pre('findOneAndUpdate', async function (this: any, next: (err?: an
 })
 
 export const ServiceModelInstance = model<IService, ServiceModel>('Service', serviceSchema)
-
-const careCompareSchema = new Schema<ICareCompare, CareCompareModel>(
-  {
-    user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-    car: { type: Schema.Types.ObjectId, ref: 'Service', required: true },
-  },{
-    timestamps: true
-  })
 
 
 export const CareCompareModelInstance = model<ICareCompare, CareCompareModel>('CareCompare', careCompareSchema);

@@ -138,11 +138,8 @@ export const parseFormData = (
     }
   });
   
-  // 4️⃣ Handle file uploads
-  // ✅ FIXED: Changed path format from /uploads/ to /productImage/
   if (files) {
     Object.keys(files).forEach((field) => {
-      // Determine the correct path prefix based on field name
       let pathPrefix = '/uploads/';
       
       if (field === 'productImage' || field.includes('productImage')) {
