@@ -22,18 +22,18 @@ router.get('/profile',
     BarberController.barberDetails
 );
 
-router.get('/offer',
-    BarberController.specialOfferBarber
-);
+// router.get('/offer',
+//     BarberController.specialOfferBarber
+// );
 
-router.get('/',
-    BarberController.getBarberList
-);
+// router.get('/',
+//     BarberController.getBarberList
+// );
 
 
-router.get('/recommended',
-    BarberController.recommendedBarber
-);
+// router.get('/recommended',
+//     BarberController.recommendedBarber
+// );
 
 router.get('/customer/:id',
     BarberController.getBarberProfile

@@ -1,10 +1,6 @@
 import { redis } from './client';
 import CacheOptions  from 'redis';
 
-/**
- * Redis Cache Service
- * Handles all caching operations with automatic expiration
- */
 
 interface CacheOptions {
   ttl?: number; // Time to live in seconds (default: 5 minutes)

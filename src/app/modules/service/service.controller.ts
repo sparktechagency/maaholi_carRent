@@ -211,7 +211,7 @@ const getServiceStats = catchAsync(async (req: Request, res: Response, next: Nex
 
 const createCarCompare = catchAsync(async (req: Request, res: Response) => {
   const { carId} = req.body;
-  console.log(carId);
+
   
   const user = req.user;
   const result = await ServiceService.createCarCompareIntoDB(carId, user);

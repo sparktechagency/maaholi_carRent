@@ -685,8 +685,8 @@ export const getServiceByIdFromDB = async (id: string) => {
 
   const service = await ServiceModelInstance.findById(id)
     .populate('user', 'name email profile')
-    .populate('brand', 'name logo')
-    .populate('model', 'model')
+    .populate('basicInformation.brand', 'brand logo')  // <-- dot notation
+    .populate('basicInformation.model', 'model')
     // .populate('Category', 'name')
     .populate('createdBy', 'name email profile')
     .lean();
@@ -710,6 +710,8 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
     .findOne({ _id: id, isDeleted: false })
     .populate('user', 'name email')
     // .populate('assignedUsers', 'name email')
+.populate('basicInformation.brand', 'brand logo')  // <-- dot notation
+  .populate('basicInformation.model', 'model')
     .populate('createdBy', 'name email')
     .lean()
 
@@ -998,10 +1000,20 @@ const createCarCompareIntoDB = async (carId: string,user:JwtPayload) => {
 }
 
 
-const getCarCompareFromDB = async (userId:string) => {
-  const result = await CareCompareModelInstance.find({user:userId}).populate('car').lean()
-  return result?.map((item: any) => item.car)
-}
+const getCarCompareFromDB = async (userId: string) => {
+  const result = await CareCompareModelInstance.find({ user: userId })
+    .populate({
+      path: 'car',
+      populate: [
+        { path: 'basicInformation.brand', select: 'brand logo' },
+        { path: 'basicInformation.model', select: 'model' }
+      ]
+    })
+    .lean();
+
+  // Return just the populated cars
+  return result.map(item => item.car);
+};
 
 
 const deleteCarCompareFromDB = async (compareId:string,userId:string) => {

@@ -18,8 +18,8 @@ app.use(
         "http://10.10.7.72:3000",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://10.10.7.47:3001",
-        "http://10.10.7.47:3003",
+        "http://31.97.114.108:3003",
+        // "http://31.97.114.108:3003",
         "http://127.0.0.1:3001",
       ];
       
@@ -60,7 +60,7 @@ app.use(express.static('uploads'));
 app.use('/api/v1', router);
 
 app.get("/", (req: Request, res: Response)=>{
-    res.send("Hey Welcome to the Barber World. How can I assist you");
+    res.send("Hey Welcome to the API World. How can I assist you");
 })
 
 //global error handle

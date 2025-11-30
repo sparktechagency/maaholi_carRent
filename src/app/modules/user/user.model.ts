@@ -45,7 +45,7 @@ const userSchema = new Schema<IUser, UserModal>(
     password: {
       type: String,
       required: false,
-      select: 0,  // Password is not required for OTP-based login
+      select: 0, 
     },
 
     location: {

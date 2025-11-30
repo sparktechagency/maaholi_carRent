@@ -54,9 +54,9 @@ const login = async (req: Request, res: Response, next: NextFunction): Promise<v
   try {
     const { mobileNumber, deviceToken, deviceId, role, deviceType } = req.body;
 
-    if (!mobileNumber) {
-      throw new AppError("Mobile number is required", 400);
-    }
+    // if (!mobileNumber) {
+    //   throw new AppError("Mobile number is required", 400);
+    // }
 
     const validRoles = [USER_ROLES.BUYER, USER_ROLES.SELLER];
     if (!role || !validRoles.includes(role as USER_ROLES)) {

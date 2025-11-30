@@ -18,7 +18,7 @@ const getBarberProfile = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Barber profile found",
+        message: "profile found",
         data: result
     });
 });
@@ -45,55 +45,55 @@ const makeDiscount = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-const specialOfferBarber = catchAsync(async (req: Request, res: Response) => {
-    const token = req.body.token;
-    let user: any;
-    if(token) {
-        user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
-    }
-    const result = await BarberService.specialOfferBarberFromDB(user, req.query);
+// const specialOfferBarber = catchAsync(async (req: Request, res: Response) => {
+//     const token = req.body.token;
+//     let user: any;
+//     if(token) {
+//         user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
+//     }
+//     const result = await BarberService.specialOfferBarberFromDB(user, req.query);
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Special Offer Barber data retrieved Successfully",
-        data: result
-    })
-})
+//     sendResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         success: true,
+//         message: "Special Offer data retrieved Successfully",
+//         data: result
+//     })
+// })
 
-const recommendedBarber = catchAsync(async (req: Request, res: Response) => {
-    const token = req.body.token;
-    let user: any;
-    if(token) {
-        user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
-    }
-    const result = await BarberService.recommendedBarberFromDB(user, req.query);
+// const recommendedBarber = catchAsync(async (req: Request, res: Response) => {
+//     const token = req.body.token;
+//     let user: any;
+//     if(token) {
+//         user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
+//     }
+//     const result = await BarberService.recommendedBarberFromDB(user, req.query);
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Recommended Barber data retrieved Successfully",
-        data: result
-    })
-});
+//     sendResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         success: true,
+//         message: "Recommended  data retrieved Successfully",
+//         data: result
+//     })
+// });
 
 
-const getBarberList = catchAsync(async (req: Request, res: Response) => {
-    const token = req.body.token;
-    let user: any;
-    if(token) {
-        user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
-    }
+// const getBarberList = catchAsync(async (req: Request, res: Response) => {
+//     const token = req.body.token;
+//     let user: any;
+//     if(token) {
+//         user = jwtHelper.verifyToken(token as string, config.jwt.jwt_secret as Secret);
+//     }
 
-    const result = await BarberService.getBarberListFromDB(user, req.query);
+//     const result = await BarberService.getBarberListFromDB(user, req.query);
 
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Recommended Barber data retrieved Successfully",
-        data: result
-    })
-});
+//     sendResponse(res, {
+//         statusCode: StatusCodes.OK,
+//         success: true,
+//         message: "Recommended data retrieved Successfully",
+//         data: result
+//     })
+// });
 
 
 const barberDetails = catchAsync(async (req: Request, res: Response) => {
@@ -102,7 +102,7 @@ const barberDetails = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Recommended Barber data retrieved Successfully",
+        message: "Recommended data retrieved Successfully",
         data: result
     })
 });
@@ -112,8 +112,8 @@ export const BarberController = {
     getBarberProfile,
     getCustomerProfile,
     makeDiscount,
-    specialOfferBarber,
-    recommendedBarber,
-    getBarberList,
+    // specialOfferBarber,
+    // recommendedBarber,
+    // getBarberList,
     barberDetails
 }
