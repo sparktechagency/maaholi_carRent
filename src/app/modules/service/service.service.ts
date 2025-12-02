@@ -62,7 +62,7 @@ export const createServiceToDB = async (
   await service.populate([
     { path: 'basicInformation.brand', select: 'brand image' },
     { path: 'basicInformation.model', select: 'model brand' },
-    { path: 'createdBy', select: 'name email' }
+    { path: 'createdBy', select: 'name email location address' }
   ]);
 
   // Clear cache

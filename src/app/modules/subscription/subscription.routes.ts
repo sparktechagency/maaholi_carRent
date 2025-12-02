@@ -4,13 +4,13 @@ import { USER_ROLES } from "../../../enums/user";
 import { SubscriptionController } from "./subscription.controller";
 const router = express.Router();
 
-router.get("/details", 
+router.get("/my-subscription", 
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
-    SubscriptionController.subscriptionDetails
+    SubscriptionController.getMySubscription
 );
 router.get("/history", 
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
-    SubscriptionController.getSubscriptionHistory
+    SubscriptionController.getMySubscriptionHistory
 );
 router.get("/all", 
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
@@ -22,7 +22,7 @@ router.get("/:id",
 );
 router.get("/statistics", 
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
-    SubscriptionController.getSubscriptionStats
+    SubscriptionController.getMySubscriptionStats
 );
 
 export const SubscriptionRoutes = router;

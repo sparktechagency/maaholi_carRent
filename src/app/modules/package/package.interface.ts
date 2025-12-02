@@ -7,6 +7,10 @@ export type IPackage = {
     price: Number;
     adHocPricePerCar: Number;
     duration: 'month' | 'year';
+    targetRole: 'DELEAR' | 'SELLER';
+    allowCustomization: Boolean;
+    OnlineImmediately: Boolean;
+    VisibleToEveryone: Boolean;
     feature: [String];
     priceId: String;
     productId: String;

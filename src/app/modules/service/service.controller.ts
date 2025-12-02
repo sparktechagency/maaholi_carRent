@@ -60,6 +60,7 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
   })
 })
 
+
 // const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
 //   const requestData = req.body; // Changed from req.query to req.body
 //   const result = await ServiceService.getAllFilterFromDB(requestData);
@@ -74,6 +75,7 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
 //     // meta: result.meta,
 //   });
 // });
+
 
 const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const requestData = req.query; 
@@ -132,6 +134,7 @@ const updateServiceMiles = catchAsync(async (req: Request, res: Response, next: 
     data: result
   })
 })
+
 
 const deleteService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params

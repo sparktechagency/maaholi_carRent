@@ -1,4 +1,5 @@
-import { model, Schema } from "mongoose";
+
+import { Schema, model } from "mongoose";
 import { IPackage, PackageModel } from "./package.interface";
 
 const packageSchema = new Schema<IPackage, PackageModel>(
@@ -17,9 +18,20 @@ const packageSchema = new Schema<IPackage, PackageModel>(
         },
         duration: {
             type: String,
-            enum: ["month", "year"],
             required: true
         },
+        
+        OnlineImmediately: {
+            type: Boolean,
+            default: true,
+            required: false
+        },
+        VisibleToEveryone: {
+            type: Boolean,
+            default: true,
+            required: false
+        },
+
         priceId: {
             type: String,
             required: true
@@ -34,6 +46,12 @@ const packageSchema = new Schema<IPackage, PackageModel>(
                 required: true
             }
         ],
+        // Role this package is designed for
+        targetRole: {
+            type: String,
+            enum: ["DELEAR", "SELLER"],
+            required: true
+        },
         carLimit: {
             type: Number,
             required: true,
@@ -42,21 +60,19 @@ const packageSchema = new Schema<IPackage, PackageModel>(
         adHocPricePerCar: {
             type: Number,
             required: true,
-            default: 2.5  // $2.50 per additional car per month
+            default: 2.5  
+        },
+        allowCustomization: {
+            type: Boolean,
+            default: true  
         }
     },
     {
         timestamps: true
     }
-)
+);
 
 export const Package = model<IPackage, PackageModel>("Package", packageSchema);
-
-
-// import { model, Schema } from "mongoose";
-// import { IPackage, PackageModel } from "./package.interface";
-
-
 // const packageSchema = new Schema<IPackage, PackageModel>(
 //     {
 //         title: {
@@ -84,23 +100,27 @@ export const Package = model<IPackage, PackageModel>("Package", packageSchema);
 //             type: String,
 //             required: true
 //         },
-//         maxListings: {
-//             type: Number,
-//             required: true,
-//             default: 4
-//             },
 //         feature: [
 //             {
 //                 type: String,
 //                 required: true
 //             }
-//         ]
-        
+//         ],
+//         carLimit: {
+//             type: Number,
+//             required: true,
+//             default: 4
+//         },
+//         adHocPricePerCar: {
+//             type: Number,
+//             required: true,
+//             default: 2.5  // $2.50 per additional car per month
+//         }
 //     },
-    
 //     {
 //         timestamps: true
 //     }
 // )
 
 // export const Package = model<IPackage, PackageModel>("Package", packageSchema);
+

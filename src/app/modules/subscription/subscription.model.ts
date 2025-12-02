@@ -1,26 +1,18 @@
 import { model, Schema } from "mongoose";
-import { ISubscription, SubscriptionModel } from "./subscription.interface";
-const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
+
+const subscriptionSchema = new Schema(
     {
-        customerId: {
-            type: String,
-            required: true
-        },
-        price: {
-            type: Number,
-            required: true
-        },
         user: {
             type: Schema.Types.ObjectId,
-            ref: "User",
+            ref: 'User',
             required: true
         },
         package: {
             type: Schema.Types.ObjectId,
-            ref: "Package",
+            ref: 'Package',
             required: true
         },
-        trxId: {
+        customerId: {
             type: String,
             required: true
         },
@@ -28,30 +20,36 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
             type: String,
             required: true
         },
-        currentPeriodStart: {
-            type: String,
-            required: true
-        },
-        currentPeriodEnd: {
-            type: String,
-            required: true
-        },
         status: {
             type: String,
-            enum: ["expired", "active", "cancel"],
-            default: "active",
-            required: true
+            enum: ['active', 'cancelled', 'expired'],
+            default: 'active'
         },
-        carsAdded: {
+        // Base package details
+        price: {
             type: Number,
-            default: 0,
             required: true
         },
-        adHocCharges: {
+        // Custom car limit (only for DEALER)
+        customCarLimit: {
+            type: Number,  // Overrides package.carLimit if set
+            default: null
+        },
+        // Custom price per car (only for DEALER)
+        customAdHocPrice: {
+            type: Number,  // Overrides package.adHocPricePerCar if set
+            default: null
+        },
+        // Tracking
+        carsAdded: {
             type: Number,
             default: 0
         },
         adHocCars: {
+            type: Number,
+            default: 0
+        },
+        adHocCharges: {
             type: Number,
             default: 0
         }
@@ -59,6 +57,16 @@ const subscriptionSchema = new Schema<ISubscription, SubscriptionModel>(
     {
         timestamps: true
     }
-)
+);
 
-export const Subscription = model<ISubscription, SubscriptionModel>("Subscription", subscriptionSchema);
+// Helper method to get effective car limit
+subscriptionSchema.methods.getCarLimit = function() {
+    return this.customCarLimit ?? this.package.carLimit;
+};
+
+// Helper method to get effective ad-hoc price
+subscriptionSchema.methods.getAdHocPrice = function() {
+    return this.customAdHocPrice ?? this.package.adHocPricePerCar;
+};
+
+export const Subscription = model("Subscription", subscriptionSchema);

@@ -153,9 +153,10 @@ equipment: {
     },
     description: {type:String, required:false},
     isDeleted: { type: Boolean, default: false },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true,},
 
-    createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  },
+     },
+
   { timestamps: true },
 )
 

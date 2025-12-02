@@ -15,7 +15,7 @@ router
     )
     .get(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
-        PackageController.getPackage
+        PackageController.getAllPackages
     )
 
 router
@@ -26,7 +26,11 @@ router
     )
     .get(
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
-        PackageController.packageDetails
+        PackageController.getPackageDetails
     )
-
+router.patch(
+    "/:id/customize-my-subscription",
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
+    PackageController.customizeMySubscription
+);
 export const PackageRoutes = router;
