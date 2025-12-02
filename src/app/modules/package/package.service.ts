@@ -80,17 +80,21 @@ const updatePackageToDB = async (id: string, payload: Partial<IPackage>): Promis
     return result;
 };
 
-/**
- * Get all packages (optionally filtered by role)
- */
-const getPackageFromDB = async (role?: string): Promise<IPackage[]> => {
-    const query = role ? { targetRole: role } : {};
+
+const getPackageFromDB = async (role?: string | string[]): Promise<IPackage[]> => {
+    let query: any = {};
+
+    if (role) {
+        const normalizedRole = Array.isArray(role) ? role[0] : role;
+        if (normalizedRole && normalizedRole.trim() !== '') {
+            query.targetRole = normalizedRole;
+        }
+    }
+
     return await Package.find(query).lean();
 };
 
-/**
- * Get single package details
- */
+
 const getPackageDetailsFromDB = async (id: string): Promise<IPackage> => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid package ID");

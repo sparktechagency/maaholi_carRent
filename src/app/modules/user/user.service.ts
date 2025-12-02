@@ -155,33 +155,32 @@ const switchRoleService = async (userId: string) => {
   };
 };
 
-const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
-    const { id } = user;
-    const isExistUser = await User.isExistUserById(id);
-    if (!isExistUser) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-    }
+// const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
+//     const { id } = user;
+//     const isExistUser = await User.isExistUserById(id);
+//     if (!isExistUser) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+//     }
 
-    //unlink file here
-    if (payload.profile) {
-        unlinkFile(isExistUser.profile);
-    }
-    if (payload.tradeLicences) {
-        unlinkFile(isExistUser.tradeLicences);
-    }
-    delete isExistUser.sallonPhoto;
-    delete isExistUser.proofOwnerId;
-    delete isExistUser.tradeLicences;
-    delete isExistUser.password;
-    delete isExistUser.authentication;
+//     //unlink file here
+//     if (payload.profile) {
+//         unlinkFile(isExistUser.profile);
+//     }
+//     if (payload.tradeLicences) {
+//         unlinkFile(isExistUser.tradeLicences);
+//     }
+//     delete isExistUser.sallonPhoto;
+//     delete isExistUser.proofOwnerId;
+//     delete isExistUser.password;
+//     delete isExistUser.authentication;
 
-    const updateDoc = await User.findOneAndUpdate(
-        { _id: id },
-        payload,
-        { new: true }
-    );
-    return updateDoc;
-};
+//     const updateDoc = await User.findOneAndUpdate(
+//         { _id: id },
+//         payload,
+//         { new: true }
+//     );
+//     return updateDoc;
+// };
 
 
 // const updateProfileToDB = async (
@@ -226,6 +225,52 @@ const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Pro
 //   return userWithoutPassword;
 // };
 
+const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
+    const { id } = user;
+    
+    const isExistUser = await User.isExistUserById(id);
+    if (!isExistUser) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
+    }
+    
+    console.log('Existing user data:', {
+        profile: isExistUser.profile,
+        tradeLicences: isExistUser.tradeLicences
+    }); 
+    
+    console.log('Payload:', payload); 
+    
+    if (payload.profile && isExistUser.profile && typeof isExistUser.profile === 'string') {
+        unlinkFile(isExistUser.profile);
+    }
+    
+    if (payload.tradeLicences && Array.isArray(payload.tradeLicences) && payload.tradeLicences.length > 0) {
+        if (isExistUser.tradeLicences && Array.isArray(isExistUser.tradeLicences)) {
+            isExistUser.tradeLicences.forEach((file: string) => {
+                if (file && typeof file === 'string') {
+                    unlinkFile(file);
+                }
+            });
+        } else if (isExistUser.tradeLicences && typeof isExistUser.tradeLicences === 'string') {
+            unlinkFile(isExistUser.tradeLicences);
+        }
+    }
+    
+  
+
+    delete payload.password;
+    delete payload.authentication;
+    
+    const updateDoc = await User.findOneAndUpdate(
+        { _id: id },
+        { $set: payload }, 
+        { new: true, runValidators: true } 
+    ).select('-password -authentication'); 
+    
+    console.log('Updated document:', updateDoc);
+    
+    return updateDoc;
+};
 const updateLocationToDB = async (user: JwtPayload, payload: { longitude: number; latitude: number }): Promise<IUser | null> => {
 
     const result = await User.findByIdAndUpdate(

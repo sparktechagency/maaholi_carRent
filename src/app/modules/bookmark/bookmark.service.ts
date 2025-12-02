@@ -29,19 +29,31 @@ const toggleBookmark = async (payload:IBookmark): Promise<string> => {
     }
 };
 
+const getBookmark = async (user: JwtPayload, query: Record<string, any>) => {
+    const bookMarkQuery = new QueryBuilder(
+        Bookmark.find({ user: user.id }).populate({
+            path: 'car',
+            populate: [
+                { path: 'createdBy', select: 'name email profile location address' },
+                { path: 'location' },
 
-const getBookmark = async (user: JwtPayload, query: Record<string, any>)=> {
-    const bookMarkQuery = new QueryBuilder(Bookmark.find({ user: user.id }), query).paginate()
-    const [data,pagination] = await Promise.all([
-        bookMarkQuery.queryModel.populate('car'),
-        bookMarkQuery.getPaginationInfo()
-    ])
+                { path: 'basicInformation.brand', select: 'brand image' },
+                { path: 'basicInformation.model', select: 'model year image' },
 
-    
+            ],
+        }),
+        query
+    ).paginate();
+
+    const [data, pagination] = await Promise.all([
+        bookMarkQuery.queryModel.lean(),
+        bookMarkQuery.getPaginationInfo(),
+    ]);
+
     return {
         data,
-        pagination
-    }
-}
+        pagination,
+    };
+};
 
 export const BookmarkService = { toggleBookmark, getBookmark }

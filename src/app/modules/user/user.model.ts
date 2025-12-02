@@ -81,9 +81,8 @@ const userSchema = new Schema<IUser, UserModal>(
       default: 'https://res.cloudinary.com/ddqovbzxy/image/upload/v1736572642/avatar_ziy9mp.jpg',
     },
     tradeLicences: {
-      type: String,
+      type: [String],
       required:false,
-      default:""
     },
 
     isUpdate: {

@@ -33,19 +33,29 @@ const updatePackage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/**
- * Get all packages (optionally filtered by role)
- */
-const getAllPackages = catchAsync(async (req: Request, res: Response) => {
-  const { role } = req.query;
-  const result = await PackageService.getPackageFromDB(role as string);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: 'Packages retrieved successfully',
-    data: result
-  });
+const getAllPackages = catchAsync(async (req: Request, res: Response) => {
+    const targetRole = req.query.targetRole;
+
+    let role: string | undefined;
+
+    if (targetRole) {
+        const roleCandidate = Array.isArray(targetRole) ? targetRole[0] : targetRole;
+        if (typeof roleCandidate === 'string') {
+            role = roleCandidate.trim() === '' ? undefined : roleCandidate;
+        } else {
+            role = undefined;
+        }
+    }
+
+    const result = await PackageService.getPackageFromDB(role);
+
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'Packages retrieved successfully',
+        data: result
+    });
 });
 
 /**

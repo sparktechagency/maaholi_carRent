@@ -34,7 +34,7 @@ export type IUser = {
     dateOfBirth:string;
     gender: "Male" | "Female" | "Children" | "Others";
     profile: string;
-    tradeLicences?: string;
+    tradeLicences?: string[];
     isUpdate: boolean;
     verified: boolean;
     isLocked: boolean;
