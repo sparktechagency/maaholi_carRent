@@ -28,19 +28,19 @@ export type IUser = {
     location: {};
     address:string
     about:string
+    city:string;
+    zipCode:string;
+    country:string;
     dateOfBirth:string;
     gender: "Male" | "Female" | "Children" | "Others";
     profile: string;
     tradeLicences?: string;
-    proofOwnerId?: string;
-    sallonPhoto?: string;
     isUpdate: boolean;
     verified: boolean;
     isLocked: boolean;
     discount?: number;
     deviceToken?: string;
-    // authentication?: IAuthenticationProps;
-    // authentication: IAuthenticationProps;
+
     authentication: {
         isResetPassword: boolean;
         oneTimeCode: string;

@@ -60,46 +60,43 @@ const getUserProfile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-//update profile
-const updateProfile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+
+const updateProfile = catchAsync(async (req: Request, res: Response) => {
     const user = req.user;
-       
-       
-        
-    let profile,tradeLicences, proofOwnerId, sallonPhoto;
-    if (req.files && 'image' in req.files && req.files.image[0]) {
+
+    let profile: string | undefined;
+
+    if (req.files && "image" in req.files && Array.isArray(req.files.image) && req.files.image[0]) {
         profile = `/images/${req.files.image[0].filename}`;
     }
-    
-    if (req.files && 'tradeLicences' in req.files && req.files.tradeLicences[0]) {
-    tradeLicences = `/tradeLicences/${req.files.tradeLicences[0].filename}`;
+
+    let parsedLocation = undefined;
+    if (req.body.location) {
+        try {
+            parsedLocation = JSON.parse(req.body.location);
+        } catch (e) {
+            console.log("Invalid location JSON:", req.body.location);
+        }
     }
 
-    if (req.files && 'proofOwnerId' in req.files && req.files.proofOwnerId[0]) {
-        proofOwnerId = `/proofOwnerIds/${req.files.proofOwnerId[0].filename}`
-    }
-    if (req.files && 'sallonPhoto' in req.files && req.files.sallonPhoto[0]) {
-        sallonPhoto = `/sallonPhotos/${req.files.sallonPhoto[0].filename}`
-     }
-
-    const data = {
-        profile,
-        tradeLicences,
-        proofOwnerId,
-        sallonPhoto,
+    const data: any = {
         ...req.body,
+        ...(profile && { profile }),     
+        ...(parsedLocation && { location: parsedLocation }),
     };
+
+    delete data.image; 
+
     const result = await UserService.updateProfileToDB(user, data);
 
     sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
-        message: 'Profile updated successfully',
-        data: result
+        message: "Profile updated successfully",
+        data: result,
     });
 });
 
-//update profile
 const updateLocation = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user;
     const payload = {

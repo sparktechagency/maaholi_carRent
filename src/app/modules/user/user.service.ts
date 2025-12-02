@@ -96,31 +96,21 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
 
-    const holderStatus = await ServiceModelInstance.findOne({ user: user.id, status: "Inactive" });
+    // const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed"});
 
-    const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed"});
-
-    const totalSpend = await Reservation.aggregate([
-        {
-            $match: {
-                customer: user.id,
-                status: "Completed",
-                paymentStatus: "Paid"
-            }
-        },
-        {
-            $group: {
-                _id: null,
-                totalSpend: { $sum: "$price" }
-            }
-        }
-    ]);
+// response remove sallonphoto, proofOwnerId, tradeLicences
+    delete isExistUser.sallonPhoto;
+    delete isExistUser.proofOwnerId;
+    delete isExistUser.tradeLicences;
+    delete isExistUser.password;
+    delete isExistUser.authentication;
 
     const data = {
         ...isExistUser,
-        totalServiceCount,
-        hold: !!holderStatus,
-        totalSpend: totalSpend[0]?.totalSpend || 0
+      
+        // totalServiceCount,
+        // hold: !!holderStatus,
+        // totalSpend: totalSpend[0]?.totalSpend || 0
     }
 
     return data;
@@ -179,6 +169,11 @@ const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Pro
     if (payload.tradeLicences) {
         unlinkFile(isExistUser.tradeLicences);
     }
+    delete isExistUser.sallonPhoto;
+    delete isExistUser.proofOwnerId;
+    delete isExistUser.tradeLicences;
+    delete isExistUser.password;
+    delete isExistUser.authentication;
 
     const updateDoc = await User.findOneAndUpdate(
         { _id: id },
@@ -289,7 +284,7 @@ const getDealerCompleteProfile = async (dealerId: string) => {
   }
 
   // Verify user is DEALER
-  if (dealer.role !== USER_ROLES.DEALER) {
+  if (dealer.role !== USER_ROLES.DELEAR) {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
       'This endpoint is only for DEALER role'
@@ -431,9 +426,9 @@ const getDealerCompleteProfile = async (dealerId: string) => {
       location: dealer.location,
       verified: dealer.verified,
       isSubscribed: dealer.isSubscribed,
-      tradeLicences: dealer.tradeLicences,
-      proofOwnerId: dealer.proofOwnerId,
-      sallonPhoto: dealer.sallonPhoto,
+      // tradeLicences: dealer.tradeLicences,
+      // proofOwnerId: dealer.proofOwnerId,
+      // sallonPhoto: dealer.sallonPhoto,
       isUpdate: dealer.isUpdate,
       accountInformation: dealer.accountInformation,
       createdAt: dealer,

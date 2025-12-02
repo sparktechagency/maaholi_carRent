@@ -41,6 +41,19 @@ const userSchema = new Schema<IUser, UserModal>(
       type: String,
       required: false, 
     },
+    city:{
+      type: String,
+      required: false, 
+    },
+    zipCode:{
+      type: String,
+      required: false, 
+    },
+    country: {
+      type: String,
+      required: false, 
+    },
+
     
     password: {
       type: String,
@@ -72,17 +85,7 @@ const userSchema = new Schema<IUser, UserModal>(
       required:false,
       default:""
     },
-    proofOwnerId: {
-      type: String,
-      required:false,
-      default: ""
-    },
-    sallonPhoto:{
-      type: String,
-      required:false,
-      default:""
 
-    },
     isUpdate: {
       type:Boolean,
       default: false,
@@ -147,9 +150,6 @@ const userSchema = new Schema<IUser, UserModal>(
       type: Number,
     },
 
-    deviceToken: {
-      type: String,
-    },
   },
   {
     timestamps: true,
@@ -221,11 +221,11 @@ userSchema.pre('save', async function (next) {
     }
   }
 
-  const hasTradelicences = user.tradeLicences && user.tradeLicences.trim() !== '';
-  const hasProofOwnerId = user.proofOwnerId && user.proofOwnerId.trim() !== '';
-  const hasSallonPhoto = user.sallonPhoto && user.sallonPhoto.trim() !== '';
+  // const hasTradelicences = user.tradeLicences && user.tradeLicences.trim() !== '';
+  // const hasProofOwnerId = user.proofOwnerId && user.proofOwnerId.trim() !== '';
+  // const hasSallonPhoto = user.sallonPhoto && user.sallonPhoto.trim() !== '';
 
-  user.isUpdate = !!(hasTradelicences && hasProofOwnerId && hasSallonPhoto);
+  // user.isUpdate = !!(hasTradelicences && hasProofOwnerId && hasSallonPhoto);
 
   // ✅ FIX: Only hash password if it exists and is modified
   if (this.password && this.isModified('password')) {
