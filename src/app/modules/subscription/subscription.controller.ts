@@ -86,7 +86,7 @@ const getMySubscriptionStats = catchAsync(async (req: Request, res: Response) =>
  */
 const customizeMySubscription = catchAsync(async (req: Request, res: Response) => {
     const user = (req as any).user;
-    const { customCarLimit, customAdHocPrice } = req.body;
+    const { customCarLimit } = req.body;
 
     // Validate input
     if (!customCarLimit || typeof customCarLimit !== 'number' || customCarLimit < 1) {
@@ -96,19 +96,10 @@ const customizeMySubscription = catchAsync(async (req: Request, res: Response) =
         );
     }
 
-    if (customAdHocPrice !== undefined && customAdHocPrice !== null) {
-        if (typeof customAdHocPrice !== 'number' || customAdHocPrice < 0) {
-            throw new ApiError(
-                StatusCodes.BAD_REQUEST,
-                'customAdHocPrice must be a positive number'
-            );
-        }
-    }
 
     const result = await SubscriptionService.customizeSubscriptionInDB(
         user,
         customCarLimit,
-        customAdHocPrice
     );
 
     sendResponse(res, {

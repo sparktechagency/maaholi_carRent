@@ -148,8 +148,8 @@ equipment: {
 
     status: {
       type: String,
-      enum: ['active', 'inactive'],
-      default: 'active',
+      enum: Object.values(carStatus),
+      default: carStatus.ACTIVE,
     },
     description: {type:String, required:false},
     isDeleted: { type: Boolean, default: false },

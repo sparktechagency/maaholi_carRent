@@ -315,9 +315,7 @@ const getSubscriptionStatsFromDB = async (user: JwtPayload) => {
  * Customize subscription (DEALER only)
  */
 const customizeSubscriptionInDB = async (
-    user: JwtPayload,
-    customCarLimit: number
-) => {
+user: JwtPayload, customCarLimit: number,) => {
     const subscription = await Subscription.findOne({
         user: user.id,
         status: 'active'

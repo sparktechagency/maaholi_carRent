@@ -10,6 +10,7 @@ import stripe from '../../../config/stripe';
 import * as XLSX from 'xlsx';
 
 interface BulkUploadResult {
+  [x: string]: any;
   success: number;
   failed: number;
   totalCars: number;
@@ -40,16 +41,26 @@ const bulkUploadCarsForDealer = async (
     );
   }
 
+  console.log('👤 [Bulk Upload] User:', userId);
+  console.log('📋 [Bulk Upload] User role:', user.role);
+
   // Get active subscription
   const subscription = await Subscription.findOne({
     user: userId,
     status: 'active'
   }).populate('package');
 
+  console.log('📊 [Bulk Upload] Subscription found:', !!subscription);
+  console.log('📊 [Bulk Upload] Subscription status:', subscription?.status);
+
   if (!subscription) {
+    // Debug: Check for any subscription
+    const anySubscription = await Subscription.findOne({ user: userId }).sort({ createdAt: -1 });
+    console.log('🔍 [Debug] Latest subscription status:', anySubscription?.status);
+    
     throw new ApiError(
       StatusCodes.FORBIDDEN,
-      'Please purchase a subscription to add cars'
+      `No active subscription found. Current status: ${anySubscription?.status || 'none'}`
     );
   }
 
@@ -57,6 +68,10 @@ const bulkUploadCarsForDealer = async (
   const carLimit = (subscription as any).getCarLimit(); 
   const adHocPrice = (subscription as any).getAdHocPrice();
   const currentCars = subscription.carsAdded || 0;
+
+  console.log('📈 [Limits] Car limit:', carLimit);
+  console.log('📈 [Limits] Current cars:', currentCars);
+  console.log('💰 [Limits] Ad-hoc price:', adHocPrice);
 
   // Parse Excel file
   let carsData: any[];
@@ -68,6 +83,8 @@ const bulkUploadCarsForDealer = async (
     if (carsData.length === 0) {
       throw new ApiError(StatusCodes.BAD_REQUEST, 'Excel file is empty');
     }
+    
+    console.log('📄 [Excel] Parsed cars:', carsData.length);
   } catch (error: any) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -75,8 +92,84 @@ const bulkUploadCarsForDealer = async (
     );
   }
 
-  // Calculate charges
-  const totalCarsToAdd = carsData.length;
+  // ========== NEW: CHECK FOR DUPLICATES ==========
+  // Extract VIN numbers and vehicle names from Excel
+  const vinNumbers = carsData
+    .map(car => car['VIN Number'] || car['vinNo'])
+    .filter(Boolean);
+
+  console.log('🔍 [Duplicate Check] Checking', vinNumbers.length, 'VIN numbers');
+
+  const existingCars = await ServiceModelInstance.find({
+    createdBy: userId,
+    $or: [
+      { 'basicInformation.vinNo': { $in: vinNumbers } },
+      ...carsData.map(car => ({
+        'basicInformation.vehicleName': car['Vehicle Name'] || car['vehicleName'],
+        'basicInformation.brand': car['Brand ID'] || car['brand'],
+        'basicInformation.model': car['Model ID'] || car['model']
+      })).filter(query => query['basicInformation.vehicleName'])
+    ]
+  }).select('basicInformation.vinNo basicInformation.vehicleName basicInformation.brand basicInformation.model');
+
+  const existingVINs = new Set(
+    existingCars
+      .map(car => car.basicInformation?.vinNo)
+      .filter(Boolean)
+  );
+
+  const existingCarKeys = new Set(
+    existingCars.map(car => 
+      `${car.basicInformation?.vehicleName}_${car.basicInformation?.brand}_${car.basicInformation?.model}`
+    )
+  );
+
+  console.log('🔍 [Duplicate Check] Found', existingVINs.size, 'existing VINs');
+  console.log('🔍 [Duplicate Check] Found', existingCarKeys.size, 'existing car combinations');
+
+  // Filter out new cars only
+  const newCarsOnly = carsData.filter((carData, index) => {
+    const vin = carData['VIN Number'] || carData['vinNo'];
+    const vehicleName = carData['Vehicle Name'] || carData['vehicleName'];
+    const brand = carData['Brand ID'] || carData['brand'];
+    const model = carData['Model ID'] || carData['model'];
+    const carKey = `${vehicleName}_${brand}_${model}`;
+
+    // Check if car already exists
+    const isDuplicateVIN = vin && existingVINs.has(vin);
+    const isDuplicateCar = existingCarKeys.has(carKey);
+
+    if (isDuplicateVIN || isDuplicateCar) {
+      console.log(`⏭️ [Row ${index + 2}] Skipping duplicate: ${vehicleName} (VIN: ${vin || 'N/A'})`);
+      return false;
+    }
+
+    return true;
+  });
+
+  console.log('✅ [Filter] New cars to add:', newCarsOnly.length);
+  console.log('⏭️ [Filter] Duplicates skipped:', carsData.length - newCarsOnly.length);
+
+  // Calculate charges based on NEW cars only
+  const totalCarsToAdd = newCarsOnly.length;
+  
+  if (totalCarsToAdd === 0) {
+    return {
+      success: 0,
+      failed: 0,
+      totalCars: carsData.length,
+      carsWithinLimit: 0,
+      adHocCars: 0,
+      adHocCharges: 0,
+      errors: [{
+        row: 0,
+        error: `All ${carsData.length} car(s) already exist. No new cars to add.`
+      }],
+      successfulCars: [],
+      skipped: carsData.length
+    };
+  }
+
   const newTotal = currentCars + totalCarsToAdd;
   
   let carsWithinLimit = 0;
@@ -93,6 +186,10 @@ const bulkUploadCarsForDealer = async (
 
   const adHocCharges = adHocCars * adHocPrice;
 
+  console.log('💳 [Charges] Cars within limit:', carsWithinLimit);
+  console.log('💳 [Charges] Ad-hoc cars:', adHocCars);
+  console.log('💳 [Charges] Ad-hoc charges:', adHocCharges);
+
   // Create Stripe invoice if needed
   if (adHocCars > 0) {
     try {
@@ -103,6 +200,7 @@ const bulkUploadCarsForDealer = async (
         description: `Bulk upload: ${adHocCars} ad-hoc car(s)`,
         subscription: subscription.subscriptionId
       });
+      console.log('✅ [Stripe] Invoice item created');
     } catch (error: any) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
@@ -111,22 +209,29 @@ const bulkUploadCarsForDealer = async (
     }
   }
 
-  // Process each car
+  // Process each NEW car only
   const result: BulkUploadResult = {
     success: 0,
     failed: 0,
-    totalCars: totalCarsToAdd,
+    totalCars: carsData.length,
     carsWithinLimit,
     adHocCars,
     adHocCharges,
     errors: [],
-    successfulCars: []
+    successfulCars: [],
+    skipped: carsData.length - newCarsOnly.length
   };
 
-  for (let i = 0; i < carsData.length; i++) {
-    const carData = carsData[i];
-    const rowNumber = i + 2;
+  // Get the original row numbers for new cars
+  const newCarsWithRowNumbers = newCarsOnly.map(carData => {
+    const originalIndex = carsData.findIndex(original => original === carData);
+    return {
+      data: carData,
+      rowNumber: originalIndex + 2
+    };
+  });
 
+  for (const { data: carData, rowNumber } of newCarsWithRowNumbers) {
     try {
       const serviceData = {
         basicInformation: {
@@ -161,7 +266,7 @@ const bulkUploadCarsForDealer = async (
         },
         description: carData['Description'] || carData['description'],
         createdBy: userId,
-        status: 'PENDING'
+        status: 'ACTIVE'
       };
 
       // Validate required fields
@@ -171,6 +276,8 @@ const bulkUploadCarsForDealer = async (
         throw new Error('Missing required: Brand, Model, or Vehicle Name');
       }
 
+      console.log(`🚗 [Row ${rowNumber}] Creating car:`, serviceData.basicInformation.vehicleName);
+
       const service = await ServiceModelInstance.create(serviceData);
       
       result.success++;
@@ -179,25 +286,30 @@ const bulkUploadCarsForDealer = async (
         vehicleName: serviceData.basicInformation.vehicleName,
         _id: service._id
       });
+
+      console.log(`✅ [Row ${rowNumber}] Car created successfully`);
     } catch (error: any) {
       result.failed++;
       result.errors.push({
         row: rowNumber,
         error: error.message
       });
+      console.error(`❌ [Row ${rowNumber}] Error:`, error.message);
     }
   }
 
-  // Update subscription
+  console.log('📊 [Summary] Success:', result.success, 'Failed:', result.failed, 'Skipped:', result.skipped);
+
   if (result.success > 0) {
     subscription.carsAdded = currentCars + result.success;
     subscription.adHocCars = (subscription.adHocCars || 0) + adHocCars;
     subscription.adHocCharges = (subscription.adHocCharges || 0) + adHocCharges;
     await subscription.save();
+    console.log('✅ [Subscription] Updated - Total cars:', subscription.carsAdded);
   }
 
-  // Clear cache
   await RedisCacheService.deletePattern(`${CACHE_PREFIXES.SERVICES}:*`);
+  console.log('🗑️ [Cache] Cleared');
 
   return result;
 };
@@ -205,6 +317,7 @@ const bulkUploadCarsForDealer = async (
 /**
  * Download Excel template
  */
+
 const getExcelTemplate = (): Buffer => {
   const templateData = [{
     'Vehicle Name': 'BMW X5 2023',

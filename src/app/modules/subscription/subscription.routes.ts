@@ -24,5 +24,9 @@ router.get("/statistics",
     auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
     SubscriptionController.getMySubscriptionStats
 );
+router.patch("/customized-subscription", 
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
+    SubscriptionController.customizeMySubscription
+);
 
 export const SubscriptionRoutes = router;

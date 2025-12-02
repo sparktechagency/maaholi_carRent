@@ -43,7 +43,7 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                         { 
                             user: userId,
                             trxId: session.id 
-                        },
+                        } as any,
                         {
                             subscriptionId: subscriptionId,
                             customerId: customerId,
@@ -154,7 +154,7 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                 
                 // Check if this is for a subscription
                 if (invoice.subscription) {
-                    const subscription = await Subscription.findOne({
+                    const subscription: any = await Subscription.findOne({
                         subscriptionId: invoice.subscription
                     }).populate('package', 'title');
 
