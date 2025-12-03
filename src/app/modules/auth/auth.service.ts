@@ -114,6 +114,7 @@ const forgetPasswordToDB = async (email: string) => {
 
     return { message: 'Password reset OTP sent successfully' };
 };
+
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
     const { email, oneTimeCode } = payload;
     const isExistUser = await User.findOne({ email }).select('+authentication');
@@ -167,7 +168,6 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
 
     return { data, message };
 };
-
 
 const verifyLoginOTPService = async (mobileNumber: string, otpCode: string) => {
   const formattedNumber = formatPhoneNumber(mobileNumber);
