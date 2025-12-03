@@ -6,9 +6,7 @@ import { User } from '../user/user.model';
 import { USER_ROLES } from '../../../enums/user';
 import { ServiceModelInstance } from '../service/service.model';
 
-/**
- * Check if user can add more cars and get pricing info
- */
+
 const checkCarAddPermission = async (req: Request) => {
   const userId = (req as any).user?.id || (req as any).user?._id;
 
@@ -21,7 +19,6 @@ const checkCarAddPermission = async (req: Request) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
   }
 
-  // Only check for SELLERS
   if (user.role !== USER_ROLES.SELLER) {
     return {
       canAdd: true,
@@ -31,7 +28,6 @@ const checkCarAddPermission = async (req: Request) => {
     };
   }
 
-  // Check if user is subscribed
   if (!user.isSubscribed) {
     return {
       canAdd: false,
@@ -42,7 +38,6 @@ const checkCarAddPermission = async (req: Request) => {
   }
 
   try {
-    // Get current car status
     const carStatus = await CarManagementService.getCarLimitStatus({
       id: userId,
       role: user.role
@@ -74,17 +69,13 @@ const checkCarAddPermission = async (req: Request) => {
   }
 };
 
-/**
- * Get user's current service count
- */
+
 const getUserServiceCount = async (userId: string) => {
   const count = await ServiceModelInstance.countDocuments({ createdBy: userId });
   return count;
 };
 
-/**
- * Get detailed car statistics for a seller
- */
+
 const getSellerCarStatistics = async (req: Request) => {
   const userId = (req as any).user?.id || (req as any).user?._id;
 
