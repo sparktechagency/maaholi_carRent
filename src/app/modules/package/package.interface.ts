@@ -11,7 +11,7 @@ export type IPackage = {
     allowCustomization: Boolean;
     OnlineImmediately: Boolean;
     VisibleToEveryone: Boolean;
-    feature: [String];
+    feature?: [String];
     priceId: String;
     productId: String;
     carLimit: Number;

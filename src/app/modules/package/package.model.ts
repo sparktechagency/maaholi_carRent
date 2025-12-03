@@ -43,7 +43,7 @@ const packageSchema = new Schema<IPackage, PackageModel>(
         feature: [
             {
                 type: String,
-                required: true
+                required: false
             }
         ],
         // Role this package is designed for

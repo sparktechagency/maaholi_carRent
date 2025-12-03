@@ -8,6 +8,7 @@ import { USER_ROLES } from '../../../enums/user';
 import { RedisCacheService, CACHE_PREFIXES } from '../redis/cache';
 import stripe from '../../../config/stripe';
 import * as XLSX from 'xlsx';
+import getBrandAndModelIds from '../../../helpers/mode.brand.helper';
 
 interface BulkUploadResult {
   [x: string]: any;
@@ -31,7 +32,7 @@ const bulkUploadCarsForDealer = async (
   if (!userId) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
   }
-  
+
   const user = await User.findById(userId);
   if (!user || user.role !== USER_ROLES.DELEAR) {
     throw new ApiError(
@@ -100,11 +101,12 @@ const bulkUploadCarsForDealer = async (
       { 'basicInformation.vinNo': { $in: vinNumbers } },
       ...carsData.map(car => ({
         'basicInformation.vehicleName': car['Vehicle Name'] || car['vehicleName'],
-        'basicInformation.brand': car['Brand ID'] || car['brand'],
-        'basicInformation.model': car['Model ID'] || car['model']
+        'basicInformation.brand.brand': car['Brand'] || car['brand'],
+        'basicInformation.model.model': car['Model'] || car['model'],
+        'basicInformation.productImage': car['Product Image'] || car['productImage']
       })).filter(query => query['basicInformation.vehicleName'])
     ]
-  }).select('basicInformation.vinNo basicInformation.vehicleName basicInformation.brand basicInformation.model');
+  }).select('basicInformation.vinNo basicInformation.vehicleName basicInformation.brand.brand basicInformation.model.model basicInformation.productImage');
 
   const existingVINs = new Set(
     existingCars
@@ -125,9 +127,10 @@ const bulkUploadCarsForDealer = async (
   const newCarsOnly = carsData.filter((carData, index) => {
     const vin = carData['VIN Number'] || carData['vinNo'];
     const vehicleName = carData['Vehicle Name'] || carData['vehicleName'];
-    const brand = carData['Brand ID'] || carData['brand'];
-    const model = carData['Model ID'] || carData['model'];
-    const carKey = `${vehicleName}_${brand}_${model}`;
+    const brand = carData['Brand'] || carData['brand.brand'];
+    const model = carData['Model'] || carData['model.model'];
+    const productImage = carData['Product Image'] || carData['productImage'];
+    const carKey = `${vehicleName}_${brand}_${model}_${productImage}`;
 
     // Check if car already exists
     const isDuplicateVIN = vin && existingVINs.has(vin);
@@ -227,41 +230,71 @@ const bulkUploadCarsForDealer = async (
 
   for (const { data: carData, rowNumber } of newCarsWithRowNumbers) {
     try {
-      const serviceData = {
-        basicInformation: {
-          vehicleName: carData['Vehicle Name'] || carData['vehicleName'],
-          brand: carData['Brand ID'] || carData['brand'],
-          model: carData['Model ID'] || carData['model'],
-          vinNo: carData['VIN Number'] || carData['vinNo'],
-          year: Number(carData['Year'] || carData['year']),
-          RegularPrice: Number(carData['Regular Price'] || carData['RegularPrice']),
-          OfferPrice: Number(carData['Offer Price'] || carData['OfferPrice']),
-          condition: carData['Condition'] || carData['condition'],
-          miles: Number(carData['Miles'] || carData['miles'] || 0),
-          BodyType: carData['Body Type'] || carData['BodyType'],
-        },
-        technicalInformation: {
-          fuelType: carData['Fuel Type'] || carData['fuelType'],
-          transmission: carData['Transmission'] || carData['transmission'],
-          driveType: carData['Drive Type'] || carData['driveType'],
-        },
-        colour: {
-          exterior: carData['Exterior Color'] || carData['exterior'],
-          interior: carData['Interior Color'] || carData['interior'],
-        },
-        seatsAndDoors: {
-          seats: Number(carData['Seats'] || carData['seats'] || 0),
-          doors: Number(carData['Doors'] || carData['doors'] || 0),
-        },
-        location: {
-          city: carData['City'] || carData['city'],
-          country: carData['Country'] || carData['country'],
-          address: carData['Address'] || carData['address'],
-        },
-        description: carData['Description'] || carData['description'],
-        createdBy: userId,
-        status: 'ACTIVE'
-      };
+      
+      // Convert brand/model strings to ObjectIDs
+const { brandId, modelId } = await getBrandAndModelIds(
+  carData['Brand'] || carData['brand'],
+  carData['Model'] || carData['model']
+);
+
+const serviceData = {
+  basicInformation: {
+    vehicleName: carData['Vehicle Name'] || carData['vehicleName'],
+    brand: brandId,  
+    model: modelId,         
+    vinNo: carData['VIN Number'] || carData['vinNo'],
+    productImage: carData['Product Image'] || carData['productImage'],
+    year: Number(carData['Year'] || carData['year']),
+    RegularPrice: Number(carData['Regular Price'] || carData['RegularPrice']),
+    OfferPrice: Number(carData['Offer Price'] || carData['OfferPrice']),
+    condition: carData['Condition'] || carData['condition'],
+    miles: Number(carData['Miles'] || carData['miles'] || 0),
+    BodyType: carData['Body Type'] || carData['BodyType'],
+  },
+  technicalInformation: {
+    fuelType: carData['Fuel Type'] || carData['fuelType'],
+    transmission: carData['Transmission'] || carData['transmission'],
+    driveType: carData['Drive Type'] || carData['driveType'],
+  },
+  createdBy: userId,
+};
+
+      // const serviceData = {
+      //   basicInformation: {
+      //     vehicleName: carData['Vehicle Name'] || carData['vehicleName'],
+      //     brand: carData['Brand'] || carData['brand'],
+      //     model: carData['Model'] || carData['model'],
+      //     vinNo: carData['VIN Number'] || carData['vinNo'],
+      //     productImage: carData['Product Image'] || carData['productImage'],
+      //     year: Number(carData['Year'] || carData['year']),
+      //     RegularPrice: Number(carData['Regular Price'] || carData['RegularPrice']),
+      //     OfferPrice: Number(carData['Offer Price'] || carData['OfferPrice']),
+      //     condition: carData['Condition'] || carData['condition'],
+      //     miles: Number(carData['Miles'] || carData['miles'] || 0),
+      //     BodyType: carData['Body Type'] || carData['BodyType'],
+      //   },
+      //   technicalInformation: {
+      //     fuelType: carData['Fuel Type'] || carData['fuelType'],
+      //     transmission: carData['Transmission'] || carData['transmission'],
+      //     driveType: carData['Drive Type'] || carData['driveType'],
+      //   },
+      //   colour: {
+      //     exterior: carData['Exterior Color'] || carData['exterior'],
+      //     interior: carData['Interior Color'] || carData['interior'],
+      //   },
+      //   seatsAndDoors: {
+      //     seats: Number(carData['Seats'] || carData['seats'] || 0),
+      //     doors: Number(carData['Doors'] || carData['doors'] || 0),
+      //   },
+      //   location: {
+      //     city: carData['City'] || carData['city'],
+      //     country: carData['Country'] || carData['country'],
+      //     address: carData['Address'] || carData['address'],
+      //   },
+      //   description: carData['Description'] || carData['description'],
+      //   createdBy: userId,
+      //   status: 'ACTIVE'
+      // };
 
       // Validate required fields
       if (!serviceData.basicInformation.brand || 
