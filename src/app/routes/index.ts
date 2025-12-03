@@ -2,7 +2,6 @@ import express from 'express';
 import { UserRoutes } from '../modules/user/user.routes';
 import { AuthRoutes } from '../modules/auth/auth.routes';
 import { BookmarkRoutes } from '../modules/bookmark/bookmark.routes';
-import { CategoryRoutes } from '../modules/category/category.route';
 import { RuleRoutes } from '../modules/rule/rule.route';
 import { FaqRoutes } from '../modules/faq/faq.route';
 import { AdminRoutes } from '../modules/admin/admin.route';
@@ -31,7 +30,6 @@ const apiRoutes = [
     { path: "/auth", route: AuthRoutes },
     { path: "/admin", route: AdminRoutes },
     { path: "/bookmark", route: BookmarkRoutes },
-    { path: "/category", route: CategoryRoutes },
     { path: "/brand", route: SubCategoryRoutes },
     { path: "/models", route: carModelsRoutes },
     { path: "/rule", route: RuleRoutes },
