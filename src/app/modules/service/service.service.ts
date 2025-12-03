@@ -29,8 +29,8 @@ export const createServiceToDB = async (
   const user = await User.findById(userId);
   if (!user) throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
 
-  if (user.role !== USER_ROLES.SELLER) {
-    throw new ApiError(StatusCodes.FORBIDDEN, 'Only SELLER can create services');
+  if (user.role !== USER_ROLES.SELLER && user.role !== USER_ROLES.DELEAR) {
+    throw new ApiError(StatusCodes.FORBIDDEN, 'Only SELLER and DELEAR can create services');
   }
 
   // Check subscription limits

@@ -27,7 +27,7 @@ router.get('/stats',
   );
 
 router.post('/' ,
-  auth(USER_ROLES.SELLER),
+  auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
   fileUploadHandler(),
    ServiceController.createService
   );

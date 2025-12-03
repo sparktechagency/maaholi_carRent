@@ -20,7 +20,7 @@ const createService = catchAsync(async(req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.CREATED,
-    message: 'Service created successfully',
+    message: 'car created successfully',
     data: result
   })
 })
