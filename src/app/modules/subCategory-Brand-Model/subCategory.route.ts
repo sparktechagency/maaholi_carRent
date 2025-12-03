@@ -1,8 +1,6 @@
 import express from 'express';
 import { USER_ROLES } from '../../../enums/user'
 import auth from '../../middlewares/auth'
-import validateRequest from '../../middlewares/validateRequest';
-import { SubCategoryValidation } from './subCategory.validation';
 import { BrandController } from './subCategory.controller';
 import fileUploadHandler from '../../middlewares/fileUploaderHandler';
 const router = express.Router()
@@ -29,5 +27,10 @@ router.route("/:id")
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
         BrandController.deleteBrand
     );
+router.get(
+    '/models-by-brand/:id',
+    auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.SELLER, USER_ROLES.BUYER),
+    BrandController.getBrandIdByAllmodel
+);
 
 export const SubCategoryRoutes = router

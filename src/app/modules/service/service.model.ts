@@ -1,4 +1,3 @@
-import { Category } from './../category/category.model';
 import { HydratedDocument, Model, model, Schema, Types } from 'mongoose'
 import { CareCompareModel, ICareCompare, IService, ServiceModel } from './service.interface'
 import { carStatus } from '../../../enums/car-status'

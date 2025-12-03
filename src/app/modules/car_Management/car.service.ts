@@ -204,7 +204,7 @@ const getCarLimitStatus = async (user: JwtPayload) => {
     };
 };
 
-export const CarManagementService = {
+export const CarManagementService = { 
     checkCarLimitAndAddCar,
     removeCarFromSubscription,
     getCarLimitStatus

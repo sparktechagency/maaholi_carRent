@@ -129,7 +129,7 @@ export interface IService extends Document {
   service?: Types.ObjectId
   assignedUsers?: Types.ObjectId[]
 
-  status: string;
+  status: carStatus;
   miles: number
   totalMiles: number
   price: number
@@ -140,7 +140,6 @@ export interface IService extends Document {
   updatedAt?: Date
 }
 
-// export type ServiceModel = Model<IService>
 
 export interface GetServicesOptions {
   limit?: number;

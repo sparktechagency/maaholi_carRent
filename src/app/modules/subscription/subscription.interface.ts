@@ -14,8 +14,6 @@ export interface ISubscription {
     carsAdded: number;
     adHocCharges: number;
     adHocCars: number;
-    
-
     customCarLimit?: number | null;
     customAdHocPrice?: number | null;
     totalMonthlyPrice?: number;
@@ -55,20 +53,3 @@ export interface ISubscriptionModel extends Model<ISubscription, {}, ISubscripti
 export type SubscriptionDocument = ISubscription & ISubscriptionMethods;
 
 export type SubscriptionModel = ISubscriptionModel;
-
-// export interface ISubscription {
-//     customerId: string;
-//     price: number;
-//     user: Types.ObjectId;
-//     package: Types.ObjectId;
-//     trxId: string;
-//     subscriptionId: string;
-//     currentPeriodStart: string;
-//     currentPeriodEnd: string;
-//     status: "expired" | "active" | "cancel";
-//     carsAdded: number;
-//     adHocCharges: number;
-//     adHocCars: number;
-// }
-
-// export type SubscriptionModel = Model<ISubscription>;

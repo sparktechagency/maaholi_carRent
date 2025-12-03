@@ -23,7 +23,7 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                     const customerId = session.customer as string;
                     const userId = session.metadata?.userId;
                     const packageId = session.metadata?.packageId;
-                    const targetRole = session.metadata?.targetRole; // ✅ Get targetRole
+                    const targetRole = session.metadata?.targetRole;
 
                     console.log('💳 [Checkout] Subscription ID:', subscriptionId);
                     console.log('👤 [Checkout] Customer ID:', customerId);
@@ -49,7 +49,9 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                             $or: [
                                 { trxId: session.id },
                                 { subscriptionId: "pending" },
-                                { status: "pending" }
+                                { status: "pending" },
+                                
+                                
                             ]
                         } as any,
                         {
@@ -86,7 +88,9 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                                 role: targetRole,
                                 currentRole: targetRole,
                                 isSubscribed: true,
-                                subscribedPackage: packageId
+                                subscribedPackage: packageId,
+                                expiryDate: new Date(stripeSubscription.current_period_end * 1000)
+
                             }
                         },
                         { new: true }

@@ -3,6 +3,7 @@ import ApiError from '../../../errors/ApiError'
 import { IBrand } from './subCategory.interface'
 import { BrandModel } from './subCategory.model' 
 import unlinkFile from '../../../shared/unlinkFile'
+import { CarModel } from '../Model/models.model'
 
 type CreateBrandDto = Omit<IBrand, '_id' | 'createdAt' | 'updatedAt'> 
 
@@ -64,10 +65,17 @@ const deleteBrandToDB = async (id: string): Promise<IBrand | null> => {
   }
   return deleted
 }
+//getbrandIdByAllmodel
+const getBrandIdByAllmodel = async (brandId: string) => {
+  return await CarModel.find({ brand: brandId })
+  .populate("brand", "brand image")
+  .lean();
+};
 
 export const BrandService = {
   createBrandToDB,
   getBrandsFromDB,
   updateBrandToDB,
-  deleteBrandToDB
+  deleteBrandToDB,
+  getBrandIdByAllmodel
 }

@@ -259,54 +259,13 @@ const serviceData = {
   createdBy: userId,
 };
 
-      // const serviceData = {
-      //   basicInformation: {
-      //     vehicleName: carData['Vehicle Name'] || carData['vehicleName'],
-      //     brand: carData['Brand'] || carData['brand'],
-      //     model: carData['Model'] || carData['model'],
-      //     vinNo: carData['VIN Number'] || carData['vinNo'],
-      //     productImage: carData['Product Image'] || carData['productImage'],
-      //     year: Number(carData['Year'] || carData['year']),
-      //     RegularPrice: Number(carData['Regular Price'] || carData['RegularPrice']),
-      //     OfferPrice: Number(carData['Offer Price'] || carData['OfferPrice']),
-      //     condition: carData['Condition'] || carData['condition'],
-      //     miles: Number(carData['Miles'] || carData['miles'] || 0),
-      //     BodyType: carData['Body Type'] || carData['BodyType'],
-      //   },
-      //   technicalInformation: {
-      //     fuelType: carData['Fuel Type'] || carData['fuelType'],
-      //     transmission: carData['Transmission'] || carData['transmission'],
-      //     driveType: carData['Drive Type'] || carData['driveType'],
-      //   },
-      //   colour: {
-      //     exterior: carData['Exterior Color'] || carData['exterior'],
-      //     interior: carData['Interior Color'] || carData['interior'],
-      //   },
-      //   seatsAndDoors: {
-      //     seats: Number(carData['Seats'] || carData['seats'] || 0),
-      //     doors: Number(carData['Doors'] || carData['doors'] || 0),
-      //   },
-      //   location: {
-      //     city: carData['City'] || carData['city'],
-      //     country: carData['Country'] || carData['country'],
-      //     address: carData['Address'] || carData['address'],
-      //   },
-      //   description: carData['Description'] || carData['description'],
-      //   createdBy: userId,
-      //   status: 'ACTIVE'
-      // };
-
-      // Validate required fields
       if (!serviceData.basicInformation.brand || 
           !serviceData.basicInformation.model || 
           !serviceData.basicInformation.vehicleName) {
         throw new Error('Missing required: Brand, Model, or Vehicle Name');
       }
-
       console.log(`🚗 [Row ${rowNumber}] Creating car:`, serviceData.basicInformation.vehicleName);
-
-      const service = await ServiceModelInstance.create(serviceData);
-      
+      const service = await ServiceModelInstance.create(serviceData);      
       result.success++;
       result.successfulCars.push({
         row: rowNumber,

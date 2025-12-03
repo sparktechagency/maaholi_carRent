@@ -101,9 +101,11 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
 // response remove sallonphoto, proofOwnerId, tradeLicences
     delete isExistUser.sallonPhoto;
     delete isExistUser.proofOwnerId;
-    delete isExistUser.tradeLicences;
     delete isExistUser.password;
     delete isExistUser.authentication;
+//populate subscribedPackage
+    await User.populate(isExistUser, { path: 'subscribedPackage' });
+    
 
     const data = {
         ...isExistUser,

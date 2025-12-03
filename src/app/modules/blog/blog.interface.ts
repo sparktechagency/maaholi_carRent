@@ -1,7 +1,11 @@
+import { Model } from "mongoose";
+
 export type IBlog = {
-    title: String;
+    title: string;
     type:string,
-    description: String;
-    image: String;
-    tags: [String];
+    description: string;
+    image: string;
+    tags: string[];
 }
+
+export type BlogModel = Model<IBlog, Record<string, unknown>>;

@@ -115,19 +115,19 @@ const subscriptionSchema = new Schema({
         default: 0
     },
     customCarLimit: {
-            type: Number,  // Overrides package.carLimit if set
+            type: Number,  
             default: null
         },
-        // Custom price per car (only for DEALER)
         customAdHocPrice: {
-            type: Number,  // Overrides package.adHocPricePerCar if set
+            type: Number,  
             default: null
         },
-        // Tracking
+
         adHocCars: {
             type: Number,
             default: 0
         },
+
         adHocCharges: {
             type: Number,
             default: 0

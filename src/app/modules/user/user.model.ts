@@ -33,6 +33,10 @@ subscribedPackage: {
     ref: 'Package',
     required: false
 },
+expiryDate: {
+  type: Date,
+  required: false,
+},
     email: {
       type: String,
       required: false, 

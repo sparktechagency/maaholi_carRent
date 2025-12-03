@@ -12,7 +12,6 @@ import { IUser } from "../user/user.interface";
 import getBarberCategory from "../../../shared/getCategoryForBarber";
 import { Bookmark } from "../bookmark/bookmark.model";
 import getRatingForBarber from "../../../shared/getRatingForBarber";
-import { Category } from "../category/category.model";
 import {  BrandModel} from "../subCategory-Brand-Model/subCategory.model";
 import { Subscription } from '../subscription/subscription.model';
 

@@ -13,7 +13,7 @@ router.route("/")
         fileUploadHandler(),
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
      
-        // validateRequest(BlogValidation.createBlogZodSchema),
+        validateRequest(BlogValidation.createBlogZodSchema),
         BlogController.createBlog
     )
     .get(
