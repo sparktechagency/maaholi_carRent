@@ -6,23 +6,7 @@ import { AuthService } from './auth.service';
 import { twilioClient, twilioServiceSid } from '../../../helpers/twillo';
 import { AppError } from '../../../errors/error.app';
 import { USER_ROLES } from '../../../enums/user';
-// const verifyMobile = catchAsync(async (req: Request, res: Response) => {
-//   const { mobileNumber, otpCode } = req.body;
 
-//   if (!mobileNumber || !otpCode) {
-//     throw new AppError('Mobile number and OTP code are required', 400);
-//   }
- 
-
-//   const result = await verifyOTP({ mobileNumber, otpCode });
-
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: 200,
-//     message: result.message,
-//     data: result.data,
-//   });
-// });
 
 const verifyEmail = catchAsync(async (req: Request, res: Response) => {
     const { ...verifyData } = req.body;
@@ -49,39 +33,6 @@ const loginUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 
-
-const login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const { mobileNumber, deviceToken, deviceId, role, deviceType } = req.body;
-
-    // if (!mobileNumber) {
-    //   throw new AppError("Mobile number is required", 400);
-    // }
-
-    const validRoles = [USER_ROLES.BUYER, USER_ROLES.SELLER];
-    if (!role || !validRoles.includes(role as USER_ROLES)) {
-      throw new AppError(`Invalid role. Must be either ${USER_ROLES.BUYER} or ${USER_ROLES.SELLER}`, 400);
-    }
-
-    const result = await AuthService.loginService(
-      mobileNumber,
-      deviceToken || '',
-      deviceId || '',
-      deviceType || '',
-      role as USER_ROLES 
-    );
-
-    res.status(200).json({
-      status: "success",
-      message: result.message,
-      userId: result.userId,
-    //   accessToken: result.accessToken,
-    //   refreshToken: result.refreshToken
-    });
-  } catch (error) {
-    next(error);
-  }
-};
 
 
  const verifyLoginOTP = async (req: Request, res: Response, next: NextFunction) => {
@@ -213,7 +164,6 @@ export const AuthController = {
     socialLogin,
     deleteUser,
     verifyEmail,
-    login,
     verifyLoginOTP,
     // verifyOTP
 };

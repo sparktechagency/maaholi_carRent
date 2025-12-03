@@ -30,6 +30,4 @@ router.post(
 );
 
 router.get("/create-connected-account", auth(USER_ROLES.SELLER), PaymentController.createAccountToStripe);
-router.patch("/transfer-payouts/:id", auth(USER_ROLES.SELLER), PaymentController.transferAndPayout);
-
 export const PaymentRoutes = router;

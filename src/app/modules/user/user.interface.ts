@@ -25,6 +25,7 @@ export type IUser = {
     email?: string;
     password: string;
     isSubscribed?: boolean;
+    subscribedPackage?: string;
     location: {};
     address:string
     about:string

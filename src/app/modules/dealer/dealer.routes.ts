@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import auth from '../../middlewares/auth';
 import { USER_ROLES } from '../../../enums/user';
-import { BarberController } from './barber.controller';
+import { DealerController } from './dealer.controller';
 const router = express.Router();
 
 router.post('/discount',
@@ -14,34 +14,34 @@ router.post('/discount',
             next(error);
         }
     },
-    BarberController.makeDiscount
+    DealerController.makeDiscount
 );
 
 router.get('/profile',
     auth(USER_ROLES.SELLER),
-    BarberController.barberDetails
+    DealerController.DealerDetails
 );
 
 // router.get('/offer',
-//     BarberController.specialOfferBarber
+//     DealerController.specialOfferDealer  
 // );
 
 // router.get('/',
-//     BarberController.getBarberList
+//     DealerController.getDealerList
 // );
 
 
 // router.get('/recommended',
-//     BarberController.recommendedBarber
+//     DealerController.recommendedDealer
 // );
 
 router.get('/customer/:id',
-    BarberController.getBarberProfile
+    DealerController.getDealerProfile
 );
 
 router.get('/:id',
     auth(USER_ROLES.SELLER),
-    BarberController.getCustomerProfile
+    DealerController.getBuyerProfile
 );
 
-export const BarberRoutes = router;
+export const DealerRoutes = router;

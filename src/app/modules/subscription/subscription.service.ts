@@ -56,8 +56,8 @@ const subscriptionDetailsFromDB = async (
 
     // Add computed fields for easier frontend use
     const packageData: any = subscription.package;
-    const effectiveCarLimit = subscription.customCarLimit ?? packageData?.carLimit;
-    const effectiveAdHocPrice = subscription.customAdHocPrice ?? packageData?.adHocPricePerCar;
+    const effectiveCarLimit = (subscription as any).customCarLimit ?? packageData?.carLimit;
+    const effectiveAdHocPrice = (subscription as any).customAdHocPrice ?? packageData?.adHocPricePerCar;
 
     return { 
         subscription: {
@@ -65,7 +65,7 @@ const subscriptionDetailsFromDB = async (
             // Add computed fields
             effectiveCarLimit,
             effectiveAdHocPrice,
-            isCustomized: !!subscription.customCarLimit,
+            isCustomized: !!(subscription as any).customCarLimit,
             remainingSlots: Math.max(0, effectiveCarLimit - (subscription.carsAdded || 0))
         }
     };
@@ -198,7 +198,7 @@ const getSubscriptionByIdFromDB = async (id: string) => {
 
     // Add computed fields
     const packageData: any = subscription.package;
-    const effectiveCarLimit = subscription.customCarLimit ?? packageData?.carLimit;
+    const effectiveCarLimit = (subscription as any).customCarLimit ?? packageData?.carLimit;
     const effectiveAdHocPrice = packageData?.adHocPricePerCar; // Always package price
 
     return {
@@ -206,7 +206,7 @@ const getSubscriptionByIdFromDB = async (id: string) => {
             ...subscription,
             effectiveCarLimit,
             effectiveAdHocPrice,
-            isCustomized: !!subscription.customCarLimit,
+            isCustomized: !!(subscription as any).customCarLimit,
             totalCost: ((subscription as any).totalMonthlyPrice || subscription.price) + (subscription.adHocCharges || 0)
         },
         stripeDetails
@@ -280,7 +280,7 @@ const getSubscriptionStatsFromDB = async (user: JwtPayload) => {
             status: subscription.status,
             currentPeriodStart: (subscription as any).currentPeriodStart,
             currentPeriodEnd: (subscription as any).currentPeriodEnd,
-            isCustomized: !!subscription.customCarLimit,
+            isCustomized: !!(subscription as any).customCarLimit,
             allowsCustomization: packageData.allowCustomization,
         },
         cars: {
@@ -302,9 +302,9 @@ const getSubscriptionStatsFromDB = async (user: JwtPayload) => {
             adHocPricePerCar: effectiveAdHocPrice,
             totalMonthly: basePrice + (subscription.adHocCharges || 0),
         },
-        customization: subscription.customCarLimit ? {
-            customCarLimit: subscription.customCarLimit,
-            additionalCarsIncluded: subscription.customCarLimit - packageData.carLimit,
+        customization: (subscription as any).customCarLimit ? {
+            customCarLimit: (subscription as any).customCarLimit,
+            additionalCarsIncluded: (subscription as any).customCarLimit - packageData.carLimit,
             pricePerAdditionalCar: packageData.adHocPricePerCar
         } : null,
         nextBillingDate: (subscription as any).currentPeriodEnd,
@@ -355,8 +355,6 @@ user: JwtPayload, customCarLimit: number,) => {
 
     await subscription.save();
 
-    // TODO: Update Stripe subscription if needed
-    // You might want to create a metered billing item or adjust the subscription
 
     return {
         success: true,

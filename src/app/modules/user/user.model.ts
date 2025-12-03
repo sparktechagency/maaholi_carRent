@@ -28,7 +28,11 @@ const userSchema = new Schema<IUser, UserModal>(
   enum: Object.values(USER_ROLES),
   required: false,
 },
-
+subscribedPackage: {
+    type: Schema.Types.ObjectId,
+    ref: 'Package',
+    required: false
+},
     email: {
       type: String,
       required: false, 

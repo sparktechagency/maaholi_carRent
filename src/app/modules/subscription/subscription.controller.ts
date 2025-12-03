@@ -23,6 +23,7 @@ const getMySubscription = catchAsync(async (req: Request, res: Response) => {
 /**
  * Get all subscriptions (Admin only)
  */
+
 const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
     const result = await SubscriptionService.getAllSubscriptionsFromDB(req.query);
 
@@ -37,6 +38,7 @@ const getAllSubscriptions = catchAsync(async (req: Request, res: Response) => {
 /**
  * Get subscription by ID (Admin only)
  */
+
 const getSubscriptionById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
     const result = await SubscriptionService.getSubscriptionByIdFromDB(id);

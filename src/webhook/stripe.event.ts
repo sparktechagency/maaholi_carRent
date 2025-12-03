@@ -5,6 +5,7 @@ import { Subscription } from '../app/modules/subscription/subscription.model';
 import { User } from '../app/modules/user/user.model';
 import { sendNotifications } from '../helpers/notificationsHelper';
 import stripe from '../config/stripe';
+import { Package } from '../app/modules/package/package.model';
 
 export const handleSubscriptionEvent = async (event: Stripe.Event) => {
     console.log('🎯 [Subscription Event] Type:', event.type);
@@ -17,18 +18,20 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                 console.log('📦 [Checkout] Mode:', session.mode);
                 console.log('📦 [Checkout] Payment Status:', session.payment_status);
                 
-                if (session.mode === "subscription") {
+                if (session.mode === "subscription" && session.payment_status === 'paid') {
                     const subscriptionId = session.subscription as string;
                     const customerId = session.customer as string;
                     const userId = session.metadata?.userId;
                     const packageId = session.metadata?.packageId;
+                    const targetRole = session.metadata?.targetRole; // ✅ Get targetRole
 
                     console.log('💳 [Checkout] Subscription ID:', subscriptionId);
                     console.log('👤 [Checkout] Customer ID:', customerId);
                     console.log('🆔 [Checkout] User ID:', userId);
                     console.log('📦 [Checkout] Package ID:', packageId);
+                    console.log('🎭 [Checkout] Target Role:', targetRole);
 
-                    if (!userId || !packageId) {
+                    if (!userId || !packageId || !targetRole) {
                         logger.error(colors.bgRed.bold('❌ Missing metadata in checkout session'));
                         console.error('Session Metadata:', session.metadata);
                         return;
@@ -38,49 +41,74 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                     const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
                     console.log('✅ [Stripe] Retrieved subscription:', stripeSubscription.id);
 
-                    // Update subscription in database
-                    const updatedSubscription = await Subscription.findOneAndUpdate(
+                    // ✅ Update subscription in database
+                    // First, try to find the subscription by user and status
+                    let updatedSubscription = await Subscription.findOneAndUpdate(
                         { 
                             user: userId,
-                            trxId: session.id 
+                            $or: [
+                                { trxId: session.id },
+                                { subscriptionId: "pending" },
+                                { status: "pending" }
+                            ]
                         } as any,
                         {
                             subscriptionId: subscriptionId,
                             customerId: customerId,
-                            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                            currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+                            currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
                             status: "active",
                             trxId: stripeSubscription.latest_invoice as string
                         },
-                        { new: true }
+                        { new: true, sort: { createdAt: -1 } }
                     );
 
                     console.log('💾 [Database] Subscription updated:', !!updatedSubscription);
                     
-                    if (updatedSubscription) {
-                        // Update user subscription status
-                        const updatedUser = await User.findByIdAndUpdate(
-                            userId, 
-                            { isSubscribed: true },
-                            { new: true }
-                        );
-                        console.log('✅ [Database] User isSubscribed:', updatedUser?.isSubscribed);
-
-                        // Send notification
-                        const notificationData = {
-                            text: "Congratulations! Your subscription is now active. You can now add cars to your account.",
-                            receiver: userId,
-                            referenceId: subscriptionId,
-                            screen: "SUBSCRIPTION"
-                        };
-                        sendNotifications(notificationData);
-                        console.log('📧 [Notification] Sent successfully');
-
-                        logger.info(colors.bgGreen.bold(`✅ Subscription activated for user: ${userId}`));
-                    } else {
+                    if (!updatedSubscription) {
+                        // Debug: Let's see what subscriptions exist for this user
+                        const existingSubs = await Subscription.find({ user: userId }).sort({ createdAt: -1 }).limit(3);
+                        console.error('🔍 [Debug] Existing subscriptions for user:', userId);
+                        existingSubs.forEach(sub => {
+                            console.error(`  - ID: ${sub._id}, trxId: ${sub.trxId}, subscriptionId: ${sub.subscriptionId}, status: ${sub.status}`);
+                        });
+                        
                         logger.error(colors.bgRed.bold(`❌ Failed to find pending subscription for session: ${session.id}`));
                         console.error('Searched for subscription with user:', userId, 'and trxId:', session.id);
+                        return;
                     }
+
+                    // ✅ UPDATE USER ROLE & SUBSCRIPTION STATUS
+                    const updatedUser = await User.findByIdAndUpdate(
+                        userId,
+                        {
+                            $set: {
+                                role: targetRole,
+                                currentRole: targetRole,
+                                isSubscribed: true,
+                                subscribedPackage: packageId
+                            }
+                        },
+                        { new: true }
+                    );
+
+                    if (updatedUser) {
+                        console.log('✅ [Role Upgraded] User:', updatedUser.name || userId);
+                        console.log('✅ [New Role]:', updatedUser.role);
+                        logger.info(colors.bgGreen.bold(`🎉 ROLE UPGRADED → ${updatedUser.name || userId} is now ${targetRole}`));
+                    }
+
+                    // ✅ Send notification
+                    const notificationData = {
+                        text: `Congratulations! Your subscription is now active and your account has been upgraded to ${targetRole}. You can now add cars to your account.`,
+                        receiver: userId,
+                        referenceId: subscriptionId,
+                        screen: "SUBSCRIPTION"
+                    };
+                    sendNotifications(notificationData);
+                    console.log('📧 [Notification] Sent successfully');
+
+                    logger.info(colors.bgGreen.bold(`✅ Subscription activated for user: ${userId}`));
                 }
                 break;
             }
@@ -93,25 +121,36 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                     { subscriptionId: subscription.id },
                     {
                         status: subscription.status === "active" ? "active" : "expired",
-                        currentPeriodStart: new Date(subscription.current_period_start * 1000).toISOString(),
-                        currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
+                        currentPeriodStart: new Date(subscription.current_period_start * 1000),
+                        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
                     },
                     { new: true }
                 );
 
                 if (updatedSub) {
-                    // Update user status based on subscription status
-                    await User.findByIdAndUpdate(
-                        updatedSub.user,
-                        { isSubscribed: subscription.status === "active" }
-                    );
+                    // ✅ If subscription becomes inactive, downgrade role to BUYER
+                    if (subscription.status !== "active") {
+                        await User.findByIdAndUpdate(
+                            updatedSub.user,
+                            { 
+                                isSubscribed: false,
+                                role: 'BUYER', // ✅ Downgrade to BUYER
+                                currentRole: 'BUYER'
+                            }
+                        );
+                        logger.info(colors.bgYellow.bold(`⬇️ User ${updatedSub.user} downgraded to BUYER`));
+                    } else {
+                        await User.findByIdAndUpdate(
+                            updatedSub.user,
+                            { isSubscribed: true }
+                        );
+                    }
 
                     logger.info(colors.bgBlue.bold(`Subscription updated: ${subscription.id} - Status: ${subscription.status}`));
 
-                    // Notify user if subscription is no longer active
                     if (subscription.status !== "active") {
                         const notificationData = {
-                            text: "Your subscription status has been updated. Please check your subscription details.",
+                            text: "Your subscription status has been updated. Your account has been reverted to BUYER role.",
                             receiver: updatedSub.user.toString(),
                             referenceId: subscription.id,
                             screen: "SUBSCRIPTION"
@@ -133,17 +172,25 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                 );
 
                 if (deletedSub) {
-                    await User.findByIdAndUpdate(deletedSub.user, { isSubscribed: false });
+                    // ✅ Downgrade to BUYER when subscription is cancelled
+                    await User.findByIdAndUpdate(
+                        deletedSub.user,
+                        { 
+                            isSubscribed: false,
+                            role: 'BUYER',
+                            currentRole: 'BUYER'
+                        }
+                    );
                     
                     const notificationData = {
-                        text: "Your subscription has been cancelled. You will no longer be able to add new cars.",
+                        text: "Your subscription has been cancelled. Your account has been reverted to BUYER role. You will no longer be able to add new cars.",
                         receiver: deletedSub.user.toString(),
                         referenceId: subscription.id,
                         screen: "SUBSCRIPTION"
                     };
                     sendNotifications(notificationData);
 
-                    logger.info(colors.bgYellow.bold(`Subscription cancelled: ${subscription.id}`));
+                    logger.info(colors.bgYellow.bold(`Subscription cancelled: ${subscription.id} - User reverted to BUYER`));
                 }
                 break;
             }
@@ -152,21 +199,18 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                 const invoice = event.data.object as Stripe.Invoice;
                 console.log('💰 [Invoice Payment Succeeded]', invoice.id);
                 
-                // Check if this is for a subscription
                 if (invoice.subscription) {
                     const subscription: any = await Subscription.findOne({
                         subscriptionId: invoice.subscription
                     }).populate('package', 'title');
 
                     if (subscription) {
-                        // Update transaction ID for recurring payments
                         await Subscription.findByIdAndUpdate(subscription._id, {
                             trxId: invoice.payment_intent as string
                         });
 
                         logger.info(colors.bgGreen.bold(`Invoice payment succeeded for subscription: ${invoice.subscription}`));
 
-                        // Check for ad-hoc charges (bulk upload additional cars)
                         const hasAdHocCharges = invoice.lines.data.some(
                             line => line.description?.toLowerCase().includes('ad-hoc') || 
                                    line.description?.toLowerCase().includes('additional car') ||
@@ -174,7 +218,6 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                         );
 
                         if (hasAdHocCharges) {
-                            // Extract ad-hoc details
                             const adHocItems = invoice.lines.data.filter(
                                 line => line.description?.toLowerCase().includes('ad-hoc') || 
                                        line.description?.toLowerCase().includes('additional car') ||
@@ -185,7 +228,6 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
 
                             console.log(`💳 [Ad-hoc Payment] $${adHocTotal} for ${adHocItems.length} item(s)`);
 
-                            // Send detailed notification
                             const notificationData = {
                                 text: `Payment successful! You've been charged $${(invoice.amount_paid / 100).toFixed(2)} (Subscription: $${((invoice.amount_paid - adHocTotal * 100) / 100).toFixed(2)} + Ad-hoc cars: $${adHocTotal.toFixed(2)})`,
                                 receiver: subscription.user.toString(),
@@ -194,7 +236,6 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                             };
                             sendNotifications(notificationData);
                         } else {
-                            // Regular recurring payment notification
                             const notificationData = {
                                 text: `Payment successful! Your subscription payment of $${(invoice.amount_paid / 100).toFixed(2)} has been processed.`,
                                 receiver: subscription.user.toString(),
@@ -204,12 +245,10 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                             sendNotifications(notificationData);
                         }
 
-                        // Reset ad-hoc charges for the new billing period (if this is a new period)
                         const stripeSubscription = await stripe.subscriptions.retrieve(
                             invoice.subscription as string
                         );
                         
-                        // Check if this is the start of a new billing period
                         const isNewPeriod = 
                             new Date(subscription.currentPeriodStart).getTime() < 
                             new Date(stripeSubscription.current_period_start * 1000).getTime();
@@ -219,8 +258,8 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                             await Subscription.findByIdAndUpdate(subscription._id, {
                                 adHocCars: 0,
                                 adHocCharges: 0,
-                                currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-                                currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
+                                currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
+                                currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
                             });
                         }
                     }
@@ -256,7 +295,6 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                 const invoice = event.data.object as Stripe.Invoice;
                 console.log('📄 [Invoice Created]', invoice.id);
                 
-                // Log upcoming charges for transparency
                 if (invoice.subscription) {
                     const subscription = await Subscription.findOne({
                         subscriptionId: invoice.subscription
@@ -265,7 +303,6 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
                     if (subscription && invoice.total > 0) {
                         console.log(`📊 [Upcoming Invoice] Subscription: ${invoice.subscription}, Amount: $${(invoice.total / 100).toFixed(2)}`);
                         
-                        // Check for ad-hoc items
                         const hasAdHocItems = invoice.lines.data.some(
                             line => line.description?.toLowerCase().includes('ad-hoc') || 
                                    line.description?.toLowerCase().includes('additional car') ||
@@ -289,211 +326,3 @@ export const handleSubscriptionEvent = async (event: Stripe.Event) => {
         throw error;
     }
 };
-// export const handleSubscriptionEvent = async (event: Stripe.Event) => {
-//     console.log('🎯 [Subscription Event] Type:', event.type);
-    
-//     try {
-//         switch (event.type) {
-//             case 'checkout.session.completed': {
-//                 console.log('✅ [Checkout] Processing session completed');
-//                 const session = event.data.object as Stripe.Checkout.Session;
-//                 console.log('📦 [Checkout] Mode:', session.mode);
-//                 console.log('📦 [Checkout] Payment Status:', session.payment_status);
-                
-//                 if (session.mode === "subscription") {
-//                     const subscriptionId = session.subscription as string;
-//                     const customerId = session.customer as string;
-//                     const userId = session.metadata?.userId;
-//                     const packageId = session.metadata?.packageId;
-
-//                     console.log('💳 [Checkout] Subscription ID:', subscriptionId);
-//                     console.log('👤 [Checkout] Customer ID:', customerId);
-//                     console.log('🆔 [Checkout] User ID:', userId);
-//                     console.log('📦 [Checkout] Package ID:', packageId);
-
-//                     if (!userId || !packageId) {
-//                         logger.error(colors.bgRed.bold('❌ Missing metadata in checkout session'));
-//                         console.error('Session Metadata:', session.metadata);
-//                         return;
-//                     }
-
-//                     // Get subscription details from Stripe
-//                     const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
-//                     console.log('✅ [Stripe] Retrieved subscription:', stripeSubscription.id);
-
-//                     // Update subscription in database
-//                     const updatedSubscription = await Subscription.findOneAndUpdate(
-//                         { 
-//                             user: userId,
-//                             trxId: session.id 
-//                         },
-//                         {
-//                             subscriptionId: subscriptionId,
-//                             customerId: customerId,
-//                             currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000).toISOString(),
-//                             currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000).toISOString(),
-//                             status: "active",
-//                             trxId: stripeSubscription.latest_invoice as string
-//                         },
-//                         { new: true }
-//                     );
-
-//                     console.log('💾 [Database] Subscription updated:', !!updatedSubscription);
-                    
-//                     if (updatedSubscription) {
-//                         // Update user subscription status
-//                         const updatedUser = await User.findByIdAndUpdate(
-//                             userId, 
-//                             { isSubscribed: true },
-//                             { new: true }
-//                         );
-//                         console.log('✅ [Database] User isSubscribed:', updatedUser?.isSubscribed);
-
-//                         // Send notification
-//                         const notificationData = {
-//                             text: "Congratulations! Your subscription is now active. You can now add cars to your account.",
-//                             receiver: userId,
-//                             referenceId: subscriptionId,
-//                             screen: "SUBSCRIPTION"
-//                         };
-//                         sendNotifications(notificationData);
-//                         console.log('📧 [Notification] Sent successfully');
-
-//                         logger.info(colors.bgGreen.bold(`✅ Subscription activated for user: ${userId}`));
-//                     } else {
-//                         logger.error(colors.bgRed.bold(`❌ Failed to find pending subscription for session: ${session.id}`));
-//                         console.error('Searched for subscription with barber:', userId, 'and trxId:', session.id);
-//                     }
-//                 }
-//                 break;
-//             }
-
-//             case 'customer.subscription.updated': {
-//                 const subscription = event.data.object as Stripe.Subscription;
-                
-//                 const updatedSub = await Subscription.findOneAndUpdate(
-//                     { subscriptionId: subscription.id },
-//                     {
-//                         status: subscription.status === "active" ? "active" : "expired",
-//                         currentPeriodStart: new Date(subscription.current_period_start * 1000).toISOString(),
-//                         currentPeriodEnd: new Date(subscription.current_period_end * 1000).toISOString(),
-//                     },
-//                     { new: true }
-//                 );
-
-//                 if (updatedSub) {
-//                     // Update user status based on subscription status
-//                     await User.findByIdAndUpdate(
-//                         updatedSub.user,
-//                         { isSubscribed: subscription.status === "active" }
-//                     );
-
-//                     logger.info(colors.bgBlue.bold(`Subscription updated: ${subscription.id} - Status: ${subscription.status}`));
-
-//                     // Notify user if subscription is no longer active
-//                     if (subscription.status !== "active") {
-//                         const notificationData = {
-//                             text: "Your subscription status has been updated. Please check your subscription details.",
-//                             receiver: updatedSub.user.toString(),
-//                             referenceId: subscription.id,
-//                             screen: "SUBSCRIPTION"
-//                         };
-//                         sendNotifications(notificationData);
-//                     }
-//                 }
-//                 break;
-//             }
-
-//             case 'customer.subscription.deleted': {
-//                 const subscription = event.data.object as Stripe.Subscription;
-                
-//                 const deletedSub = await Subscription.findOneAndUpdate(
-//                     { subscriptionId: subscription.id },
-//                     { status: "cancel" },
-//                     { new: true }
-//                 );
-
-//                 if (deletedSub) {
-//                     await User.findByIdAndUpdate(deletedSub.user, { isSubscribed: false });
-                    
-//                     const notificationData = {
-//                         text: "Your subscription has been cancelled. You will no longer be able to add new cars.",
-//                         receiver: deletedSub.user.toString(),
-//                         referenceId: subscription.id,
-//                         screen: "SUBSCRIPTION"
-//                     };
-//                     sendNotifications(notificationData);
-
-//                     logger.info(colors.bgYellow.bold(`Subscription cancelled: ${subscription.id}`));
-//                 }
-//                 break;
-//             }
-
-//             case 'invoice.payment_succeeded': {
-//                 const invoice = event.data.object as Stripe.Invoice;
-                
-//                 // Check if this is for a subscription
-//                 if (invoice.subscription) {
-//                     const subscription = await Subscription.findOne({
-//                         subscriptionId: invoice.subscription
-//                     });
-
-//                     if (subscription) {
-//                         // Update transaction ID for recurring payments
-//                         await Subscription.findByIdAndUpdate(subscription._id, {
-//                             trxId: invoice.payment_intent as string
-//                         });
-
-//                         logger.info(colors.bgGreen.bold(`Invoice payment succeeded for subscription: ${invoice.subscription}`));
-
-//                         // If there are ad-hoc charges (additional cars), notify user
-//                         const hasAdHocCharges = invoice.lines.data.some(
-//                             line => line.description?.includes('Additional car')
-//                         );
-
-//                         if (hasAdHocCharges) {
-//                             const notificationData = {
-//                                 text: `Payment successful! Your monthly subscription payment of $${(invoice.amount_paid / 100).toFixed(2)} has been processed.`,
-//                                 receiver: subscription.user.toString(),
-//                                 referenceId: invoice.subscription as string,
-//                                 screen: "SUBSCRIPTION"
-//                             };
-//                             sendNotifications(notificationData);
-//                         }
-//                     }
-//                 }
-//                 break;
-//             }
-
-//             case 'invoice.payment_failed': {
-//                 const invoice = event.data.object as Stripe.Invoice;
-                
-//                 if (invoice.subscription) {
-//                     const subscription = await Subscription.findOne({
-//                         subscriptionId: invoice.subscription
-//                     });
-
-//                     if (subscription) {
-//                         const notificationData = {
-//                             text: "Your subscription payment failed. Please update your payment method to avoid service interruption.",
-//                             receiver: subscription.user.toString(),
-//                             referenceId: invoice.subscription as string,
-//                             screen: "SUBSCRIPTION"
-//                         };
-//                         sendNotifications(notificationData);
-
-//                         logger.warn(colors.bgRed.bold(`Invoice payment failed for subscription: ${invoice.subscription}`));
-//                     }
-//                 }
-//                 break;
-//             }
-
-//             default:
-//                 logger.warn(colors.bgYellow.bold(`Unhandled subscription event: ${event.type}`));
-//         }
-//     } catch (error: any) {
-//         logger.error(colors.bgRed.bold(`Error in handleSubscriptionEvent: ${error.message}`));
-//         throw error;
-//     }
-// };
-

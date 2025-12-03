@@ -108,86 +108,96 @@ const createAccountToStripe = async (user: JwtPayload) => {
     return accountLink?.url;
 }
 
-// transfer and payout credit
-const transferAndPayoutToBarber = async (id: string) => {
 
-    if (!mongoose.Types.ObjectId.isValid(id)) throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid Reservation ID');
 
-    const isExistReservation: IReservation | any = await Reservation.findById(id);
-    if (!isExistReservation) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Reservation doesn't exist!");
-    }
+// const createSubscriptionCheckoutToStripe = async (
+//     user: JwtPayload,
+//     packageId: string
+// ): Promise<string | null> => {
+//     if (!mongoose.Types.ObjectId.isValid(packageId)) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid Package ID");
+//     }
 
-    const isExistBarber = await User.isAccountCreated(isExistReservation.barber);
-    if (!isExistBarber) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Sorry, you are didn't provide bank information. Please create a bank account");
-    }
+//     const packageData = await Package.findById(packageId);
+//     if (!packageData) {
+//         throw new ApiError(StatusCodes.NOT_FOUND, "Package not found");
+//     }
 
-    //check completed payment and barber transfer
-    if (isExistReservation.status === "Completed" && isExistReservation.paymentStatus === "Paid") {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "The payment has already been transferred to your account.");
-    }
+//     const userData = await User.findById(user.id);
+//     if (!userData) {
+//         throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+//     }
 
-    //check completed payment and barber transfer
-    if (isExistReservation.transfer === true) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "The payment has already been transferred to your account.");
-    }
+//     const existingSubscription = await Subscription.findOne({
+//         user: user.id,
+//         status: "active"
+//     });
 
-    const { accountId, externalAccountId } = isExistBarber?.accountInformation;
-    const { price } = isExistReservation;
+//     if (existingSubscription) {
+//         throw new ApiError(StatusCodes.BAD_REQUEST, "You already have an active subscription.");
+//     }
 
-    const charge = (parseInt(price.toString()) * 10) / 100;
-    const amount = parseInt(price.toString()) - charge;
+//     let customerId = "";
 
-    const transfer = await stripe.transfers.create({
-        amount: amount * 100,
-        currency: "usd",
-        destination: accountId,
-    });
+//     const canceledSub = await Subscription.findOne({
+//         user: user.id,
+//         status: { $in: ["canceled", "expired"] }
+//     }).sort({ createdAt: -1 });
 
-    if (!transfer) throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to transfer payment');
+//     if (canceledSub?.customerId) {
+//         customerId = canceledSub.customerId;
+//     } else {
+//         const customer = await stripe.customers.create({
+//             email: userData.email,
+//             name: userData.name,
+//             metadata: { userId: user.id.toString() }
+//         });
+//         customerId = customer.id;
+//     }
 
-    const payouts = await stripe.payouts.create(
-        {
-            amount: amount * 100,
-            currency: "usd",
-            destination: externalAccountId,
-        },
-        {
-            stripeAccount: accountId,
-        }
-    );
+//     const session = await stripe.checkout.sessions.create({
+//         mode: "subscription",
+//         customer: customerId,
+//         line_items: [{ price: packageData.priceId as string, quantity: 1 }],
+//         metadata: {
+//             userId: user.id.toString(),
+//             packageId: packageId,
+//             targetRole: packageData.targetRole, // ← Important!
+//         },
+//         success_url: `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+//         cancel_url: `${process.env.FRONTEND_URL}/subscription/cancel`,
+//         subscription_data: {
+//             metadata: {
+//                 userId: user.id.toString(),
+//                 packageId: packageId,
+//                 targetRole: packageData.targetRole,
+//             }
+//         }
+//     });
 
-    if (payouts.status !== "paid") throw new Error("Failed to complete payout");
+//     // Save pending subscription + targetRole
+//     await Subscription.create({
+//         user: user.id,
+//         package: packageId,
+//         customerId,
+//         price: packageData.price,
+//         trxId: session.id,
+//         subscriptionId: "pending",
+//         status: "active", // ← Change from "expired" to "pending"
+//         targetRole: packageData.targetRole, // ← Save it here!
+//         currentPeriodStart: new Date(),
+//         currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // temp
+//         carsAdded: 0,
+//         adHocCharges: 0,
+//         adHocCars: 0
+//     });
 
-    if (payouts.status === "paid") {
-        await Reservation.findOneAndUpdate(
-            { _id: id },
-            { transfer: true },
-            { new: true });
-
-        const data = {
-            text: "Congratulations! Your payment has been transferred to your account.",
-            receiver: isExistReservation.barber,
-            referenceId: id,
-            screen: "RESERVATION"
-        }
-        sendNotifications(data);
-
-    }
-
-    return;
-}
-
-/**
- * Create Subscription Checkout Session for Package Payment
- */
+//     return session.url || null;
+// };
 const createSubscriptionCheckoutToStripe = async (
     user: JwtPayload,
     packageId: string
 ): Promise<string | null> => {
-    
-    // 1. Validate package
     if (!mongoose.Types.ObjectId.isValid(packageId)) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid Package ID");
     }
@@ -197,106 +207,89 @@ const createSubscriptionCheckoutToStripe = async (
         throw new ApiError(StatusCodes.NOT_FOUND, "Package not found");
     }
 
-    // 2. Get user details
     const userData = await User.findById(user.id);
     if (!userData) {
         throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
     }
 
-    // 3. Check if user already has active subscription
     const existingSubscription = await Subscription.findOne({
         user: user.id,
         status: "active"
     });
 
     if (existingSubscription) {
-        throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            "You already have an active subscription. Please cancel it first."
-        );
+        throw new ApiError(StatusCodes.BAD_REQUEST, "You already have an active subscription.");
     }
 
-    try {
-        // 4. Create or get Stripe customer
-        let customerId = "";
-        
-        const canceledSubscription = await Subscription.findOne({
-            user: user.id,
-            status: { $in: ["cancel", "expired"] }
-        }).sort({ createdAt: -1 });
+    let customerId = "";
+    const canceledSub = await Subscription.findOne({
+        user: user.id,
+        status: { $in: ["canceled", "expired", "cancel"] }
+    }).sort({ createdAt: -1 });
 
-        if (canceledSubscription?.customerId) {
-            // Reuse existing customer
-            customerId = canceledSubscription.customerId;
-        } else {
-            // Create new customer
-            const customer = await stripe.customers.create({
-                email: userData.email,
-                name: userData.name,
-                metadata: {
-                    userId: user.id.toString(),
-                    role: userData.role
-                }
-            });
-            customerId = customer.id;
-        }
+    if (canceledSub?.customerId) {
+        customerId = canceledSub.customerId;
+        console.log('♻️ [Reusing Customer ID]:', customerId);
+    } else {
+        const customer = await stripe.customers.create({
+            email: userData.email,
+            name: userData.name,
+            metadata: { userId: user.id.toString() }
+        });
+        customerId = customer.id;
+        console.log('🆕 [Created New Customer]:', customerId);
+    }
 
-        // 5. Create Checkout Session for Subscription
-        const sessionParams: Stripe.Checkout.SessionCreateParams = {
-            mode: "subscription",
-            customer: customerId,
-            line_items: [
-                {
-                    price: packageData.priceId as string,
-                    quantity: 1,
-                },
-            ],
+    const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        customer: customerId,
+        line_items: [{ price: packageData.priceId as string, quantity: 1 }],
+        metadata: {
+            userId: user.id.toString(),
+            packageId: packageId,
+            targetRole: packageData.targetRole,
+        },
+        success_url: `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.FRONTEND_URL}/subscription/cancel`,
+        subscription_data: {
             metadata: {
                 userId: user.id.toString(),
-                packageId: packageId.toString(),
-                packageTitle: packageData.title as string,
-            },
-            success_url: `https://dashboard.stripe.com/public/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: "https://www.admin.barbermeus.com/public/subscription-failed",
-            subscription_data: {
-                metadata: {
-                    userId: user.id.toString(),
-                    packageId: packageId.toString(),
-                }
+                packageId: packageId,
+                targetRole: packageData.targetRole,
             }
-        };
-
-        const session = await stripe.checkout.sessions.create(sessionParams);
-
-        if (!session) {
-            throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create subscription checkout");
         }
+    });
 
-        // 6. Save pending subscription (will be activated by webhook)
-        await Subscription.create({
-            customerId: customerId,
-            price: packageData.price,
-            user: user.id,
-            package: packageId,
-            trxId: session.id,
-            subscriptionId: "pending",
-            currentPeriodStart: new Date().toISOString(),
-            currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            status: "expired",
-            carsAdded: 0,
-            adHocCharges: 0,
-            adHocCars: 0
-        });
+    console.log('✅ [Checkout Session Created]:', session.id);
+    console.log('🎯 [Target Role]:', packageData.targetRole);
 
-        return session.url;
-    } catch (error: any) {
-        throw new ApiError(
-            StatusCodes.BAD_REQUEST,
-            `Subscription checkout failed: ${error.message}`
-        );
-    }
+    // ✅ CRITICAL FIX: Save with status "pending" and correct trxId
+    const newSubscription = await Subscription.create({
+        user: user.id,
+        package: packageId,
+        customerId,
+        price: packageData.price,
+        trxId: session.id,              
+        subscriptionId: "pending",   
+        status: "pending",             
+        targetRole: packageData.targetRole,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        carsAdded: 0,
+        adHocCharges: 0,
+        adHocCars: 0
+    });
+
+    console.log('💾 [Pending Subscription Created]:', newSubscription._id);
+    console.log('📝 [Subscription Details]:', {
+        userId: user.id,
+        trxId: session.id,
+        status: newSubscription.status,
+        targetRole: packageData.targetRole
+    });
+
+    return session.url || null;
 };
-
 /**
  * Cancel user's subscription
  */
@@ -341,7 +334,6 @@ const cancelSubscriptionFromStripe = async (user: JwtPayload) => {
 export const PaymentService = {
     createPaymentCheckoutToStripe,
     createAccountToStripe,
-    transferAndPayoutToBarber,
     createSubscriptionCheckoutToStripe,
     cancelSubscriptionFromStripe
 };

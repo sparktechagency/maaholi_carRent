@@ -14,7 +14,7 @@ import { ReviewRoutes } from '../modules/review/review.routes';
 import { ServiceRoutes } from '../modules/service/service.routes';
 import { SubCategoryRoutes } from '../modules/subCategory-Brand-Model/subCategory.route';
 import { PortfolioRoutes } from '../modules/portfolio/portfolio.route';
-import { BarberRoutes } from '../modules/barber/barber.routes';
+import { DealerRoutes } from '../modules/dealer/dealer.routes';
 import { ReservationRoutes } from '../modules/reservation/reservation.routes';
 import { ReportRoutes } from '../modules/report/report.routes';
 import { PaymentRoutes } from '../modules/payment/payment.routes';
@@ -44,7 +44,7 @@ const apiRoutes = [
     { path: "/car", route: ServiceRoutes },
     { path: "/bulk", route: DealerBulkRoutes },
     { path: "/portfolio", route: PortfolioRoutes },
-    { path: "/barber", route: BarberRoutes },
+    { path: "/dealer", route: DealerRoutes },
     { path: "/reservation", route: ReservationRoutes },
     { path: "/report", route: ReportRoutes },
     { path: "/payment", route: PaymentRoutes },

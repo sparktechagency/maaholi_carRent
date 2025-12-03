@@ -9,31 +9,28 @@ import stripe from '../config/stripe';
 import { handleCheckoutSession } from '../handlers/handleCheckoutSession';
 import { handleAccountConnectEvent } from '../handlers';
 import { handleSubscriptionEvent } from './stripe.event';
+import { User } from '../app/modules/user/user.model';
+import { Subscription } from '../app/modules/subscription/subscription.model';
+import { sendNotifications } from '../helpers/notificationsHelper';
 const handleStripeWebhook = async (req: Request, res: Response) => {
-
-    // Extract Stripe signature and webhook secret
     const signature = req.headers['stripe-signature'] as string;
     const webhookSecret = config.stripe.webhookSecret as string;
 
     let event: Stripe.Event | undefined;
 
-    // Verify the event signature
     try {
         event = stripe.webhooks.constructEvent(req.body, signature, webhookSecret);
     } catch (error) {
         throw new ApiError(StatusCodes.BAD_REQUEST, `Webhook signature verification failed. ${error}`);
     }
 
-    // Check if the event is valid
     if (!event) {
         throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid event received!');
     }
 
-    // Extract event data and type
     const data = event.data.object as Stripe.Subscription | Stripe.Account | Stripe.Checkout.Session;
     const eventType = event.type;
 
-    // Handle the event based on its type
     try {
         switch (eventType) {
             case 'account.updated':
@@ -43,21 +40,10 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 break;
 
             case 'checkout.session.completed':
-                const session = event.data.object as Stripe.Checkout.Session;
-
-                if (session.payment_status === "paid") {
-                    // Check if this is a subscription checkout
-                    if (session.mode === "subscription") {
-                        await handleSubscriptionEvent(event);
-                        logger.info(colors.bgGreen.bold(`Subscription checkout completed: ${session.id}`));
-                    } else {
-                        // Handle regular payment checkout
-                        await handleCheckoutSession(session);
-                    }
-                }
+                // ✅ Delegate to the unified handler
+                await handleSubscriptionEvent(event);
                 break;
 
-            // New subscription events
             case 'customer.subscription.updated':
                 await handleSubscriptionEvent(event);
                 logger.info(colors.bgBlue.bold(`Subscription updated: ${(data as Stripe.Subscription).id}`));
@@ -78,6 +64,10 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
                 logger.warn(colors.bgRed.bold(`Invoice payment failed`));
                 break;
 
+            case 'invoice.created':
+                await handleSubscriptionEvent(event);
+                break;
+
             default:
                 logger.warn(colors.bgGreen.bold(`Unhandled event type: ${eventType}`));
         }
@@ -88,6 +78,7 @@ const handleStripeWebhook = async (req: Request, res: Response) => {
 
     res.sendStatus(200);
 };
+
 
 
 export default handleStripeWebhook;

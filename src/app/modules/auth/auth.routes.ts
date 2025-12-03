@@ -12,10 +12,6 @@ router.post(
     AuthController.loginUser
 );
 
-router.post(
-    '/login',
-    AuthController.login
-);
 
 router.post(
     '/forgot-password',
@@ -71,5 +67,6 @@ router.delete(
     auth(USER_ROLES.DELEAR, USER_ROLES.SELLER, USER_ROLES.BUYER, USER_ROLES.SUPER_ADMIN),
     AuthController.deleteUser
 );
+
 
 export const AuthRoutes = router;

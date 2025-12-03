@@ -26,16 +26,6 @@ const createAccountToStripe = catchAsync(async(req: Request, res: Response)=>{
     })
 });
 
-const transferAndPayout = catchAsync(async(req: Request, res: Response)=>{
-
-    const result = await PaymentService.transferAndPayoutToBarber(req.params.id);
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "Booking Has Completed",
-        data: result
-    })
-});
 
 const createSubscriptionCheckout = catchAsync(async (req: Request, res: Response) => {
     const user = req.user;
@@ -74,7 +64,6 @@ const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
 export const PaymentController = {
     createPaymentCheckoutToStripe,
     createAccountToStripe,
-    transferAndPayout,
     createSubscriptionCheckout,
     cancelSubscription
 }

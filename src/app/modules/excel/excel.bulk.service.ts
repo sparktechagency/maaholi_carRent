@@ -31,8 +31,7 @@ const bulkUploadCarsForDealer = async (
   if (!userId) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, 'User not authenticated');
   }
-
-  // Verify user is DEALER
+  
   const user = await User.findById(userId);
   if (!user || user.role !== USER_ROLES.DELEAR) {
     throw new ApiError(
@@ -44,7 +43,6 @@ const bulkUploadCarsForDealer = async (
   console.log('👤 [Bulk Upload] User:', userId);
   console.log('📋 [Bulk Upload] User role:', user.role);
 
-  // Get active subscription
   const subscription = await Subscription.findOne({
     user: userId,
     status: 'active'
@@ -54,7 +52,6 @@ const bulkUploadCarsForDealer = async (
   console.log('📊 [Bulk Upload] Subscription status:', subscription?.status);
 
   if (!subscription) {
-    // Debug: Check for any subscription
     const anySubscription = await Subscription.findOne({ user: userId }).sort({ createdAt: -1 });
     console.log('🔍 [Debug] Latest subscription status:', anySubscription?.status);
     
@@ -64,7 +61,6 @@ const bulkUploadCarsForDealer = async (
     );
   }
 
-  // Get effective limits
   const carLimit = (subscription as any).getCarLimit(); 
   const adHocPrice = (subscription as any).getAdHocPrice();
   const currentCars = subscription.carsAdded || 0;
@@ -92,8 +88,6 @@ const bulkUploadCarsForDealer = async (
     );
   }
 
-  // ========== NEW: CHECK FOR DUPLICATES ==========
-  // Extract VIN numbers and vehicle names from Excel
   const vinNumbers = carsData
     .map(car => car['VIN Number'] || car['vinNo'])
     .filter(Boolean);
