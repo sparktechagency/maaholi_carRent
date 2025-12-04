@@ -1,7 +1,7 @@
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '../../../errors/ApiError'
-import { IBrand } from './subCategory.interface'
-import { BrandModel } from './subCategory.model' 
+import { IBrand } from './brand.interface'
+import { BrandModel } from './brand.model' 
 import unlinkFile from '../../../shared/unlinkFile'
 import { CarModel } from '../Model/models.model'
 import * as XLSX from "xlsx";

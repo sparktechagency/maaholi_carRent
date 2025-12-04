@@ -12,7 +12,7 @@ import { IUser } from "../user/user.interface";
 import getBarberCategory from "../../../shared/getCategoryForBarber";
 import { Bookmark } from "../bookmark/bookmark.model";
 import getRatingForBarber from "../../../shared/getRatingForBarber";
-import {  BrandModel} from "../subCategory-Brand-Model/subCategory.model";
+import {  BrandModel} from "../Brand/brand.model";
 import { Subscription } from '../subscription/subscription.model';
 
 const getBarberProfileFromDB = async (user: JwtPayload, id: string, query: Record<string, any>): Promise<{}> => {

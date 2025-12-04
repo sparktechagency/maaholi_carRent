@@ -11,7 +11,7 @@ import { NotificationRoutes } from '../modules/notification/notification.routes'
 import { PackageRoutes } from '../modules/package/package.routes';
 import { ReviewRoutes } from '../modules/review/review.routes';
 import { ServiceRoutes } from '../modules/service/service.routes';
-import { SubCategoryRoutes } from '../modules/subCategory-Brand-Model/subCategory.route';
+import { BrandRoutes } from '../modules/Brand/brand.route';
 import { PortfolioRoutes } from '../modules/portfolio/portfolio.route';
 import { DealerRoutes } from '../modules/dealer/dealer.routes';
 import { ReservationRoutes } from '../modules/reservation/reservation.routes';
@@ -30,7 +30,7 @@ const apiRoutes = [
     { path: "/auth", route: AuthRoutes },
     { path: "/admin", route: AdminRoutes },
     { path: "/bookmark", route: BookmarkRoutes },
-    { path: "/brand", route: SubCategoryRoutes },
+    { path: "/brand", route: BrandRoutes },
     { path: "/models", route: carModelsRoutes },
     { path: "/rule", route: RuleRoutes },
     { path: "/faq", route: FaqRoutes },

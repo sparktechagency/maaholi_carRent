@@ -4,7 +4,7 @@ import { ICarModel } from './model.interface';
 import { CarModel } from './models.model';
 import * as XLSX from "xlsx";
 import mongoose from "mongoose";
-import { BrandModel } from '../subCategory-Brand-Model/subCategory.model';
+import { BrandModel } from '../Brand/brand.model';
 
 const createModelTDB = async (payload: ICarModel) => {
   const { model } = payload;

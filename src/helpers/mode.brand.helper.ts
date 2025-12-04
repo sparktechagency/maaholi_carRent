@@ -1,5 +1,5 @@
 import { CarModel } from "../app/modules/Model/models.model";
-import { BrandModel } from "../app/modules/subCategory-Brand-Model/subCategory.model";
+import { BrandModel } from "../app/modules/Brand/brand.model";
 
 const getBrandAndModelIds = async (brandName: string, modelName: string) => {
   if (!brandName || !modelName) return { brandId: null, modelId: null };

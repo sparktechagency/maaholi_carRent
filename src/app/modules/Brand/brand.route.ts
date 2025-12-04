@@ -1,7 +1,7 @@
 import express from 'express';
 import { USER_ROLES } from '../../../enums/user'
 import auth from '../../middlewares/auth'
-import { BrandController } from './subCategory.controller';
+import { BrandController } from './brand.controller';
 import fileUploadHandler from '../../middlewares/fileUploaderHandler';
 const router = express.Router()
 
@@ -33,4 +33,4 @@ router.get(
     BrandController.getBrandIdByAllmodel
 );
 
-export const SubCategoryRoutes = router
+export const BrandRoutes = router

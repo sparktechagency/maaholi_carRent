@@ -1,4 +1,4 @@
-import { BrandsI } from "../app/modules/subCategory-Brand-Model/subCategory.interface";
+import { BrandsI } from "../app/modules/Brand/brand.interface";   
 
 interface PaginationOptions {
   page: number;

@@ -1,5 +1,5 @@
 import { model, Schema } from 'mongoose'
-import { BrandsI, IBrand } from './subCategory.interface' 
+import { BrandsI, IBrand } from './brand.interface' 
 
 const BrandSchema = new Schema<IBrand, BrandsI>(
   {
