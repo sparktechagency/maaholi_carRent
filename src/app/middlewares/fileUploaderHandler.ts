@@ -5,6 +5,7 @@ import multer, { FileFilterCallback } from 'multer';
 import path from 'path';
 import ApiError from '../../errors/ApiError';
 
+
 const fileUploadHandler = () => {
 
     // Base upload folder
@@ -128,6 +129,24 @@ const fileUploadHandler = () => {
 
     return upload;
 };
+const storage = multer.memoryStorage();
+export const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    // Accept only Excel files
+    if (
+      file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+      file.mimetype === 'application/vnd.ms-excel'
+    ) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only Excel files (.xlsx, .xls) are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 10 * 1024 * 1024 
+  }
+});
 
 // const fileUploadHandler = () => {
 
@@ -231,4 +250,4 @@ const fileUploadHandler = () => {
 
 // };
 
-export default fileUploadHandler;
+export default fileUploadHandler ;

@@ -27,7 +27,9 @@ export type IUser = {
     isSubscribed?: boolean;
     subscribedPackage?: string;
     expiryDate?: Date;
-    location: {};
+    // location: {};
+    latitude?: number;
+    longitude?: number;
     address:string
     about:string
     city:string;

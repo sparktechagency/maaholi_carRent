@@ -470,7 +470,7 @@ const getDealerCompleteProfile = async (dealerId: string) => {
       profile: dealer.profile,
       about: dealer.about,
       address: dealer.address,
-      location: dealer.location,
+      location: dealer.address,
       verified: dealer.verified,
       isSubscribed: dealer.isSubscribed,
       // tradeLicences: dealer.tradeLicences,

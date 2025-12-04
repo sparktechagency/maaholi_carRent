@@ -69,16 +69,24 @@ expiryDate: {
       select: 0, 
     },
 
-    location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        required: false,
-      },
-      coordinates: {
-        type: [Number],
-        required: false,
-      },
+    // location: {
+    //   type: {
+    //     type: String,
+    //     enum: ['Point'],
+    //     required: false,
+    //   },
+    //   coordinates: {
+    //     type: [Number],
+    //     required: false,
+    //   },
+    // },
+    latitude: {
+      type: Number,
+      required: false
+    },
+    longitude: {
+      type: Number,
+      required: false
     },
     isLocked: {
       type: Boolean,

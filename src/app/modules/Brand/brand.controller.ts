@@ -75,7 +75,7 @@ const getBrandIdByAllmodel = catchAsync(async (req: Request, res: Response) => {
 const bulkUpload = catchAsync(async (req, res) => {
   if (!req.file) throw new Error("Excel file not provided");
 
-  const result = await BrandService.bulkUpload(req.file.buffer);
+    const result = await BrandService.bulkUpload(req.file.buffer, req.file);
 
   sendResponse(res, {
     statusCode: 200,

@@ -76,58 +76,89 @@ const getBrandIdByAllmodel = async (brandId: string) => {
 
 
 
-const bulkUpload = async (fileBuffer: Buffer) => {
+const bulkUpload = async (fileBuffer: Buffer, file: Express.Multer.File) => {
   const workbook = XLSX.read(fileBuffer, { type: "buffer" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   const rows: any[] = XLSX.utils.sheet_to_json(sheet);
 
   if (!rows.length) throw new Error("Excel file is empty");
 
-  const createdBrands = [];
+  const createdBrands: any[] = [];
+  const skippedRows: any[] = [];
 
-  for (const row of rows) {
-    const brandName = row.Brand || row.brand;
-    const modelName = row.ModelName || row.modelName;
+  for (const [index, row] of rows.entries()) {
+    const rawBrand = row.Brand || row.brand;
+    const modelName = row.Model || row.model || row.ModelName || row.modelName;
     const modelIdValue = row.ModelId || row.modelId;
     const image = row.Image || row.image;
 
-    if (!brandName) continue;
+    if (!rawBrand || !modelName) {
+      skippedRows.push({ row: index + 2, reason: "Missing brand or model" });
+      continue;
+    }
 
-    const existingBrand = await BrandModel.findOne({
-      brand: brandName.toLowerCase(),
-    });
+    const brandName = rawBrand.toString().trim().toLowerCase();
 
-    if (existingBrand) continue;
+    // Find or create brand first
+    let brand = await BrandModel.findOne({ brand: brandName });
+    if (!brand) {
+      brand = await BrandModel.create({
+        brand: brandName,
+        model: null,
+        image: image || null,
+      });
+      createdBrands.push(brand);
+      console.log(`✅ Row ${index + 2}: Brand created - ${brandName}`);
+    }
 
-    let finalModelId = null;
+    // Resolve model by id or by name (for this brand)
+    let resolvedModelId: any = null;
 
     if (modelIdValue && mongoose.isValidObjectId(modelIdValue)) {
-      finalModelId = modelIdValue;
-    }
-
-    else if (modelName) {
-      let model = await CarModel.findOne({ model: modelName });
-
-      if (!model) {
-        model = await CarModel.create({
-          brand: null,
-          model: modelName,
-        });
+      // try to find model with that id and brand
+      const foundById = await CarModel.findOne({ _id: modelIdValue, brand: brand._id });
+      if (foundById) {
+        resolvedModelId = foundById._id;
+      } else {
+        // if id not found or doesn't belong to brand, fallback to lookup by name/create
+        const carModelByName = await CarModel.findOne({ model: modelName, brand: brand._id });
+        if (carModelByName) {
+          resolvedModelId = carModelByName._id;
+        } else {
+          const createdModel = await CarModel.create({ model: modelName, brand: brand._id });
+          resolvedModelId = createdModel._id;
+          console.log(`✅ Row ${index + 2}: Model created - ${modelName}`);
+        }
       }
+    } else {
+      // lookup by name within brand
+let carModel = await CarModel.findOne({ model: modelName, brand: brand._id });
 
-      finalModelId = model._id;
-    }
-
-    const newBrand = await BrandModel.create({
-      brand: brandName.toLowerCase(),
-      model: finalModelId || null,
-      image: image || null,
+if (!carModel) {
+  // Check if this model name already exists under ANY brand
+  const existsGlobally = await CarModel.findOne({ model: modelName });
+  if (existsGlobally) {
+    skippedRows.push({
+      row: index + 2,
+      reason: `Model "${modelName}" already exists under another brand`
     });
+    continue; 
+  }
+}
 
-    createdBrands.push(newBrand);
+  carModel = await CarModel.create({ model: modelName, brand: brand._id });
+  console.log(`Row ${index + 2}: Model created - ${modelName}`);
+}
+
+    // Update brand with model reference if not already linked
+    if (!brand.model) {
+      brand.model = resolvedModelId;
+      await brand.save();
+    }
   }
 
-  return createdBrands;
+  console.log(`📊 Bulk upload completed. Brands created: ${createdBrands.length}, Rows skipped: ${skippedRows.length}`);
+  return { createdBrands, skippedRows };
 };
 
 export const BrandService = {
