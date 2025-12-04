@@ -52,55 +52,51 @@ const deleteModelToDB = async (id: string): Promise<ICarModel | null> => {
   }
   return deleteCategory
 }
-
-
-
 const bulkUpload = async (fileBuffer: Buffer) => {
   const workbook = XLSX.read(fileBuffer, { type: "buffer" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
 
   if (!rows.length) throw new Error("Excel file is empty");
 
-  const createdModels = [];
+  const createdModels: any[] = [];
+  const skippedRows: any[] = [];
 
-  for (const row of rows) {
-    const brandValue = row.Brand || row.BrandName || row.brand || row.brandName;
-    const modelName = row.Model || row.ModelName;
+  for (const [index, row] of rows.entries()) {
+    const brandName = row.Brand || row.brand;
+    const modelName = row.Model || row.model;
 
-    if (!brandValue || !modelName) continue;
-
-    let brandId;
-
-    if (mongoose.isValidObjectId(brandValue)) {
-      brandId = brandValue;
-    } 
-    else {
-      let brand = await BrandModel.findOne({ brand: brandValue.toLowerCase() });
-
-      if (!brand) {
-        brand = await BrandModel.create({
-          brand: brandValue.toLowerCase(),
-        });
-      }
-
-      brandId = brand._id;
+    if (!brandName || !modelName) {
+      skippedRows.push({ row: index + 2, reason: "Brand or model missing" });
+      continue;
     }
 
-    const exists = await CarModel.findOne({ model: modelName });
-    if (exists) continue;
+    // 1️⃣ Find or create brand
+    let brand = await BrandModel.findOne({ brand: brandName.toLowerCase() });
+    if (!brand) {
+      brand = await BrandModel.create({ brand: brandName.toLowerCase() });
+      console.log(`✅ Row ${index + 2}: Brand created - ${brandName}`);
+    }
 
-    const newModel = await CarModel.create({
-      brand: brandId,
-      model: modelName,
+    // 2️⃣ Check if model exists under this brand
+    const exists = await CarModel.findOne({ model: modelName.toLowerCase(), brand: brand._id });
+    if (exists) {
+      skippedRows.push({ row: index + 2, reason: "Model already exists under this brand" });
+      continue;
+    }
+
+    // 3️⃣ Create model with brand id
+    const createdModel = await CarModel.create({
+      model: modelName.toLowerCase(),
+      brand: brand._id
     });
-
-    createdModels.push(newModel);
+    createdModels.push(createdModel);
+    console.log(`✅ Row ${index + 2}: Model created - ${modelName} for brand ${brandName}`);
   }
 
-  return createdModels;
+  return { createdModels, skippedRows };
 };
-
 
 export const CarModelService = {
   createModelTDB,

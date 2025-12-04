@@ -87,77 +87,26 @@ const bulkUpload = async (fileBuffer: Buffer, file: Express.Multer.File) => {
   const skippedRows: any[] = [];
 
   for (const [index, row] of rows.entries()) {
-    const rawBrand = row.Brand || row.brand;
-    const modelName = row.Model || row.model || row.ModelName || row.modelName;
-    const modelIdValue = row.ModelId || row.modelId;
-    const image = row.Image || row.image;
+    const brandValue = row.Brand || row.BrandName || row.brand || row.brandName;
+    const image = row.Image || row.image || null;
 
-    if (!rawBrand || !modelName) {
-      skippedRows.push({ row: index + 2, reason: "Missing brand or model" });
+    if (!brandValue) {
+      skippedRows.push({ row: index + 2, reason: "Brand name is missing" });
       continue;
     }
 
-    const brandName = rawBrand.toString().trim().toLowerCase();
-
-    // Find or create brand first
-    let brand = await BrandModel.findOne({ brand: brandName });
-    if (!brand) {
-      brand = await BrandModel.create({
-        brand: brandName,
-        model: null,
-        image: image || null,
-      });
-      createdBrands.push(brand);
-      console.log(`✅ Row ${index + 2}: Brand created - ${brandName}`);
+    const existingBrand = await BrandModel.findOne({ brand: brandValue.toLowerCase() });
+    if (existingBrand) {
+      skippedRows.push({ row: index + 2, reason: "Brand already exists" });
+      continue;
     }
 
-    // Resolve model by id or by name (for this brand)
-    let resolvedModelId: any = null;
-
-    if (modelIdValue && mongoose.isValidObjectId(modelIdValue)) {
-      // try to find model with that id and brand
-      const foundById = await CarModel.findOne({ _id: modelIdValue, brand: brand._id });
-      if (foundById) {
-        resolvedModelId = foundById._id;
-      } else {
-        // if id not found or doesn't belong to brand, fallback to lookup by name/create
-        const carModelByName = await CarModel.findOne({ model: modelName, brand: brand._id });
-        if (carModelByName) {
-          resolvedModelId = carModelByName._id;
-        } else {
-          const createdModel = await CarModel.create({ model: modelName, brand: brand._id });
-          resolvedModelId = createdModel._id;
-          console.log(`✅ Row ${index + 2}: Model created - ${modelName}`);
-        }
-      }
-    } else {
-      // lookup by name within brand
-let carModel = await CarModel.findOne({ model: modelName, brand: brand._id });
-
-if (!carModel) {
-  // Check if this model name already exists under ANY brand
-  const existsGlobally = await CarModel.findOne({ model: modelName });
-  if (existsGlobally) {
-    skippedRows.push({
-      row: index + 2,
-      reason: `Model "${modelName}" already exists under another brand`
-    });
-    continue; 
-  }
-}
-
-  carModel = await CarModel.create({ model: modelName, brand: brand._id });
-  console.log(`Row ${index + 2}: Model created - ${modelName}`);
-}
-
-    // Update brand with model reference if not already linked
-    if (!brand.model) {
-      brand.model = resolvedModelId;
-      await brand.save();
-    }
+    const createdBrand = await BrandModel.create({ brand: brandValue.toLowerCase(),
+      image: image ? `/images/${image}` : undefined
+     });
+    createdBrands.push(createdBrand);
   }
 
-  console.log(`📊 Bulk upload completed. Brands created: ${createdBrands.length}, Rows skipped: ${skippedRows.length}`);
   return { createdBrands, skippedRows };
 };
 

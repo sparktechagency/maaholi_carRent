@@ -4,6 +4,7 @@ import auth from '../../middlewares/auth'
 import validateRequest from '../../middlewares/validateRequest';
 import { SubCategoryValidation } from './models.validation';
 import { carModelsController } from './model.controller';
+import { upload } from '../../middlewares/fileUploaderHandler';
 const router = express.Router()
 
 router.route("/")
@@ -29,6 +30,7 @@ router.route("/:id")
 router.post(
   '/bulk-upload',
   auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
+  upload.single('file'),
   carModelsController.bulkUpload
 );
 export const carModelsRoutes = router
