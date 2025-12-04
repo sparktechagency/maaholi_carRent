@@ -20,7 +20,7 @@ import { PaymentRoutes } from '../modules/payment/payment.routes';
 import { OfferRoutes } from '../modules/offer/offer.routes';
 import { carModelsRoutes } from '../modules/Model/model.route';
 import { SubscriptionRoutes } from '../modules/subscription/subscription.routes';
-import { DealerBulkRoutes } from '../modules/excel/excel.bulk.route';
+import { DealerBulkRoutes } from '../modules/excel-car/excel.bulk.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
 const router = express.Router();
