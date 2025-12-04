@@ -26,5 +26,9 @@ router.route("/:id")
         auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
         carModelsController.deletecarModels
     );
-
+router.post(
+  '/bulk-upload',
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR),
+  carModelsController.bulkUpload
+);
 export const carModelsRoutes = router

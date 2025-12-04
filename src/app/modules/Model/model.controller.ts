@@ -52,10 +52,24 @@ const deletecarModels = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
+const bulkUpload = catchAsync(async (req, res) => {
+  if (!req.file) throw new Error("Excel file not provided");
+
+  const result = await CarModelService.bulkUpload(req.file.buffer);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car models uploaded successfully",
+    data: result,
+  });
+});
+
 
 export const carModelsController = {
     createcarModels,
     getcarModels,
     updatecarModels,
-    deletecarModels
+    deletecarModels,
+    bulkUpload
 }

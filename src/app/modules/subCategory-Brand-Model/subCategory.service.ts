@@ -4,7 +4,9 @@ import { IBrand } from './subCategory.interface'
 import { BrandModel } from './subCategory.model' 
 import unlinkFile from '../../../shared/unlinkFile'
 import { CarModel } from '../Model/models.model'
-
+import * as XLSX from "xlsx";
+import mongoose from "mongoose";
+import { model } from 'mongoose';
 type CreateBrandDto = Omit<IBrand, '_id' | 'createdAt' | 'updatedAt'> 
 
 const createBrandToDB = async (payload: CreateBrandDto) => {
@@ -72,10 +74,67 @@ const getBrandIdByAllmodel = async (brandId: string) => {
   .lean();
 };
 
+
+
+const bulkUpload = async (fileBuffer: Buffer) => {
+  const workbook = XLSX.read(fileBuffer, { type: "buffer" });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows: any[] = XLSX.utils.sheet_to_json(sheet);
+
+  if (!rows.length) throw new Error("Excel file is empty");
+
+  const createdBrands = [];
+
+  for (const row of rows) {
+    const brandName = row.Brand || row.brand;
+    const modelName = row.ModelName || row.modelName;
+    const modelIdValue = row.ModelId || row.modelId;
+    const image = row.Image || row.image;
+
+    if (!brandName) continue;
+
+    const existingBrand = await BrandModel.findOne({
+      brand: brandName.toLowerCase(),
+    });
+
+    if (existingBrand) continue;
+
+    let finalModelId = null;
+
+    if (modelIdValue && mongoose.isValidObjectId(modelIdValue)) {
+      finalModelId = modelIdValue;
+    }
+
+    else if (modelName) {
+      let model = await CarModel.findOne({ model: modelName });
+
+      if (!model) {
+        model = await CarModel.create({
+          brand: null,
+          model: modelName,
+        });
+      }
+
+      finalModelId = model._id;
+    }
+
+    const newBrand = await BrandModel.create({
+      brand: brandName.toLowerCase(),
+      model: finalModelId || null,
+      image: image || null,
+    });
+
+    createdBrands.push(newBrand);
+  }
+
+  return createdBrands;
+};
+
 export const BrandService = {
   createBrandToDB,
   getBrandsFromDB,
   updateBrandToDB,
   deleteBrandToDB,
-  getBrandIdByAllmodel
+  getBrandIdByAllmodel,
+  bulkUpload,
 }

@@ -72,11 +72,24 @@ const getBrandIdByAllmodel = catchAsync(async (req: Request, res: Response) => {
     })
 })
 
+const bulkUpload = catchAsync(async (req, res) => {
+  if (!req.file) throw new Error("Excel file not provided");
+
+  const result = await BrandService.bulkUpload(req.file.buffer);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Brands uploaded successfully",
+    data: result,
+  });
+});
 
 export const BrandController = {
     createBrand,
     getBrand,
     updateBrand,
     deleteBrand,
-    getBrandIdByAllmodel
+    getBrandIdByAllmodel,
+    bulkUpload,
 }
