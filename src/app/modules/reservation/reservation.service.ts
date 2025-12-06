@@ -4,184 +4,125 @@ import { Reservation } from "./reservation.model";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiError";
 import { Report } from "../report/report.model";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { sendNotifications } from "../../../helpers/notificationsHelper";
 import getDistanceFromCoordinates from "../../../shared/getDistanceFromCoordinates";
 import getRatingForBarber from "../../../shared/getRatingForBarber";
 import { Review } from "../review/review.model";
 import { User } from "../user/user.model";
+import { ServiceModelInstance } from "../service/service.model";
 
 const createReservationToDB = async (payload: IReservation): Promise<IReservation> => {
-    const reservation = await Reservation.create(payload);
-    //already exist this car reservation and status not completed show please completed your previous reservation
-    const existingReservation = await Reservation.findOne({ car: payload.car, status: { $ne: "Completed" } });
-    if (existingReservation) {
-        throw new Error('Please complete your previous reservation');
+    if (!payload.car) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "Car ID is required");
     }
-    if (!reservation) {
-        throw new Error('Failed to created Reservation ');
-    } 
-    
-    else {
-        const data = {
-            text: "You receive a new reservation request",
-            receiver: payload.seller || payload.dealer,
-            referenceId: reservation._id,
-            screen: "RESERVATION"
-        }
 
-        sendNotifications(data);
+    const car = await ServiceModelInstance.findById(new Types.ObjectId(payload.car)).select('createdBy').lean();
+
+    if (!car) throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
+
+    payload.seller = car.createdBy; 
+    payload.dealer = car.createdBy; 
+    const isExistReservation = await Reservation.findOne({
+        car: new Types.ObjectId(payload.car),
+        status: { $in: ["Upcoming", "Confirmed"] }
+    });
+
+    if (isExistReservation) {
+        throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You already have a booking for this car");
     }
+
+    const reservation = await Reservation.create(payload);
+
+    sendNotifications({
+        text: "You have a new reservation request",
+        receiver: payload.seller || payload.dealer,
+        referenceId: reservation._id,
+        screen: "RESERVATION"
+    });
 
     return reservation;
 };
 
-const sellerReservationFromDB = async (user: JwtPayload, query: Record<string, any>): Promise<any> => {
+const sellerReservationFromDB = async (user: JwtPayload, query: Record<string, any>) => {
     const { page, limit, status } = query;
-
-
-    const condition: any = {
-        seller: user.id
-    }
-
-    if (status) {
-        condition['status'] = status;
-    }
+    const cars = await ServiceModelInstance.find({ createdBy: user.id }).select('_id').lean();
+    const carIds = cars.map(car => car._id);
+    const condition: any = { car: { $in: carIds } };
+    if (status) condition.status = status;
 
     const pages = parseInt(page as string) || 1;
     const size = parseInt(limit as string) || 10;
     const skip = (pages - 1) * size;
 
-const reservations = await Reservation.find(condition)
-    .populate([
-        {
-            path: 'buyer',
-            select: "name profile address"
-        },
-        {
-            path: 'service',
-            select: "basicInformation",
+    const reservations = await Reservation.find(condition)
+        .populate({ path: 'createdBy', select: 'name email profile' }) 
+        .populate({
+            path: 'car',
+            select: 'basicInformation',
+            // strictPopulate: false,
             populate: [
-                {
-                    path: "basicInformation.brand",
-                    select: "brand image"
-                },
-                {
-                    path: "basicInformation.model",
-                    select: "model image"
-                }
+                { path: 'basicInformation.brand', model: 'BrandModel', select: 'brand image' },
+                { path: 'basicInformation.model', model: 'CarModel', select: 'model image' }
             ]
-        }
-    ])
-    .select("buyer car createdAt status tips travelFee appCharge paymentStatus cancelByCustomer price")
-    .skip(skip)
-    .limit(size)
-    .lean();
+        })
+        .select('createdBy car status date cancelByCustomer')
+        .skip(skip)
+        .limit(size)
+        .lean();
 
     const count = await Reservation.countDocuments(condition);
 
-    // check how many reservation in each status
-    const allStatus = await Promise.all(["Upcoming", "Accepted", "Canceled", "Completed"].map(
-        async (status: string) => {
-            return {
-                status,
-                count: await Reservation.countDocuments({ seller: user.id, status })
-            }
-        })
+    const allStatus = await Promise.all(
+        ['Upcoming', 'Confirmed', 'Canceled', 'Completed'].map(async s => ({
+            status: s,
+            count: await Reservation.countDocuments({ car: { $in: carIds }, status: s })
+        }))
     );
 
-    const reservationsWithDistance = await Promise.all(reservations.map(async (reservation: any) => {
-        // const distance = await getDistanceFromCoordinates(reservation?.customer?.location?.coordinates, JSON?.parse(coordinates));
-        const report = await Report.findOne({reservation: reservation?._id});
-
-        const rating = await Review.findOne({ customer: reservation?.customer?._id,  service: reservation?.service?._id }).select("rating").lean();
-        return {
-            ...reservation,
-            report: report || {},
-            rating: rating || {},
-            // distance: distance ? distance : {}
-        };
-    }));
-
-    const data = {
-        reservations: reservationsWithDistance,
-        allStatus
-    }
-    const meta = {
-        page: pages,
-        totalPage: Math.ceil(count / size),
-        total: count,
-        limit: size
-    }
+    return {
+        data: { reservations, allStatus },
+        meta: { page: pages, totalPage: Math.ceil(count / size), total: count, limit: size }
+    };
+};
 
 
-    return { data, meta };
-}
-
-const BuyerReservationFromDB = async (user: JwtPayload, query: Record<string, any>): Promise<{}> => {
+const BuyerReservationFromDB = async (user: JwtPayload, query: Record<string, any>) => {
     const { page, limit, status } = query;
 
-    const condition: any = {
-        customer: user.id
-    }
-
-    if (status) {
-        condition['status'] = status;
-    }
+    const condition: any = { buyer: user.id };
+    if (status) condition.status = status;
 
     const pages = parseInt(page as string) || 1;
     const size = parseInt(limit as string) || 10;
     const skip = (pages - 1) * size;
 
     const reservations:any = await Reservation.find(condition)
-        .populate([
-            {
-                path: 'barber',
-                select: "name location profile discount"
-            },
-            {
-                path: 'service',
-                select: "title category",
-                populate: [
-                    {
-                        path: "title",
-                        select: "title"
-                    },
-                    {
-                        path: "category",
-                        select: "name"
-                    },
-                ]
-            }
-        ])
-        .select("barber service createdAt status travelFee appCharge tips price paymentStatus cancelByCustomer")
+        .populate({ path: 'buyer', select: 'name email profile address' })
+        .populate({
+            path: 'car',
+            select: 'basicInformation',
+            strictPopulate: false,
+            populate: [
+                { path: 'basicInformation.brand', model: 'BrandModel', select: 'brand image' },
+                { path: 'basicInformation.model', model: 'CarModel', select: 'model image' }
+            ]
+        })
+        .select('buyer car createdAt status cancelByCustomer date name email contactNumber')
         .skip(skip)
         .limit(size)
         .lean();
 
-        const reservationsWithDistance = await Promise.all(reservations.map(async (reservation: any) => {
-            // const distance = await getDistanceFromCoordinates(reservation?.barber?.location?.coordinates, JSON?.parse(coordinates));
-            const rating = await getRatingForBarber(reservation?.barber?._id);
-            const review = await Review.findOne({ service : reservation?.service?._id, customer: user.id }).select("rating").lean();
-            return {
-                ...reservation,
-                rating: rating,
-                review: review || {},
-                // distance: distance ? distance : {}
-            };
-        }));
+    const reservationsWithExtra = await Promise.all(reservations.map(async (reservation: any) => {
+        const review = await Review.findOne({ service: reservation?.car?._id, customer: user.id }).select('rating').lean();
+        return { ...reservation, review: review || {} };
+    }));
 
     const count = await Reservation.countDocuments(condition);
-    const meta = {
-        page: pages,
-        totalPage: Math.ceil(count / size),
-        total: count,
-        limit: size
-    }
+    const meta = { page: pages, totalPage: Math.ceil(count / size), total: count, limit: size };
 
-
-    return { reservations: reservationsWithDistance, meta };
-}
+    return { reservations: reservationsWithExtra, meta };
+};
 
 const reservationSummerForSellerFromDB = async (user: JwtPayload): Promise<{}> => {
 
@@ -244,16 +185,25 @@ const reservationDetailsFromDB = async (id: string): Promise<{ reservation: IRes
     const reservation: IReservation | null = await Reservation.findById(id)
         .populate([
             {
-                path: 'customer',
-                select: "name profile location"
+                path: 'buyer',
+                select: "name profile address"
             },
             {
-                path: 'service',
-                select: "title category"
+                path: 'car',
+                select: " basicInformation",
+                populate: [
+                    {
+                        path: "basicInformation.brand",
+                        select: "brand image"
+                    },
+                    {
+                        path: "basicInformation.model",
+                        select: "model image"
+                    },
+                ]
             }
         ])
-        .select("customer service createdAt status price");
-
+        .select("buyer car createdAt status date name email contactNumber cancelByCustomer");
     if (!reservation) throw new ApiError(StatusCodes.NOT_FOUND, 'Reservation not found');
 
     const report = await Report.findOne({ reservation: id }).select("reason");

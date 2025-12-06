@@ -21,7 +21,6 @@ const sellerReservation = catchAsync(async (req: Request, res: Response) => {
         success: true,
         message: "test-drive reservation retrieved successfully",
         data: result.data,
-        // pagination: result.meta
     })
 }); 
 
@@ -30,7 +29,7 @@ const buyerReservation = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Reservation created successfully",
+        message: "Reservation retrieved successfully",
         data: reservation
     })
 }); 

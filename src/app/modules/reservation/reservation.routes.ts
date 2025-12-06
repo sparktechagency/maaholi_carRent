@@ -9,10 +9,10 @@ router.route("/")
         auth(USER_ROLES.BUYER),
         async (req: Request, res: Response, next: NextFunction) => {
             try {
-                const { appCharge, ...othersPayload } = req.body;
+                const { ...othersPayload } = req.body;
 
 
-                req.body = { ...othersPayload, customer: req.user.id };
+                req.body = { ...othersPayload,  buyer: req.user.id };
                 next();
 
             } catch (error) {

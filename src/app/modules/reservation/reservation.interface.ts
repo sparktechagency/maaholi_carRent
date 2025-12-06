@@ -5,10 +5,12 @@ export type IReservation = {
     buyer: Types.ObjectId;
     dealer: Types.ObjectId;
     car: Types.ObjectId;
-    status: "Upcoming" | "Accepted" | "Canceled" | "CONFIRMED" | "Completed";
+    createdBy: Types.ObjectId;
+    status: "Upcoming" | "Accepted" | "Canceled" | "Confirmed" | "Completed";
     name?: string;
     email?: string;
     contactNumber: string;
+    date?: Date;
     cancelByCustomer: boolean;
     isReported: boolean;
 

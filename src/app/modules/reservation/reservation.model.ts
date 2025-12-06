@@ -22,10 +22,12 @@ const ReservationSchema = new Schema<IReservation, ReservationModel>(
             role: "DELEAR",
             required: false
         },
+        createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+        
         car: {
             type: Schema.Types.ObjectId,
             ref: "Service",
-            required: true
+            required: false
         },
         name: {
             type:String,
@@ -39,9 +41,13 @@ const ReservationSchema = new Schema<IReservation, ReservationModel>(
             type: String,
             required: false
         },
+        date : {
+            type: Date,
+            required: false
+        },
         status: {
             type: String,
-            enum: ["Upcoming", "Accepted", "Canceled", "Completed"],
+            enum: ["Upcoming", "Confirmed", "Canceled", "Completed"],
             default: "Upcoming",
             required: true
         },
