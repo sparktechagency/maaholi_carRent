@@ -406,9 +406,8 @@ const getAllFilterFromDB = async (requestData: any) => {
 
   // Execute query
   const populateOptions: any = [
-    { path: 'basicInformation.brand', select: 'name' },
-    { path: 'basicInformation.model', select: 'name' },
-    { path: 'basicInformation.Category', select: 'name' },
+    { path: 'basicInformation.brand', select: 'brand' },
+    { path: 'basicInformation.model', select: 'model' },
     { path: 'user', select: 'name email' },
     { path: 'createdBy', select: 'name email' }
   ];
@@ -582,7 +581,6 @@ const getAllFilterFromDB = async (requestData: any) => {
   const fieldMap: Record<string, string> = {
     brand: 'basicInformation.brand',
     model: 'basicInformation.model',
-    Category: 'basicInformation.Category',
     condition: 'basicInformation.condition',
     status: 'status',
     BodyType: 'basicInformation.BodyType',
@@ -680,9 +678,8 @@ const getAllFilterFromDB = async (requestData: any) => {
   const [data, total] = await Promise.all([
     ServiceModelInstance.find(mongoQuery)
       .populate('user', 'name email profile')
-      .populate('brand', 'name logo')
-      .populate('model', 'name')
-      .populate('Category', 'name')
+      .populate('basicInformation.brand', 'brand logo')
+      .populate('basicInformation.model', 'model logo')
       .populate('createdBy', 'name email profile')
       .sort(sortOptions)
       .skip(skip)
