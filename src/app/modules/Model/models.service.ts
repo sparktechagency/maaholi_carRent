@@ -72,21 +72,21 @@ const bulkUpload = async (fileBuffer: Buffer) => {
       continue;
     }
 
-    // 1️⃣ Find or create brand
+    // Find or create brand
     let brand = await BrandModel.findOne({ brand: brandName.toLowerCase() });
     if (!brand) {
       brand = await BrandModel.create({ brand: brandName.toLowerCase() });
       console.log(`✅ Row ${index + 2}: Brand created - ${brandName}`);
     }
 
-    // 2️⃣ Check if model exists under this brand
+    // Check if model exists under this brand
     const exists = await CarModel.findOne({ model: modelName.toLowerCase(), brand: brand._id });
     if (exists) {
       skippedRows.push({ row: index + 2, reason: "Model already exists under this brand" });
       continue;
     }
 
-    // 3️⃣ Create model with brand id
+    // Create model with brand id
     const createdModel = await CarModel.create({
       model: modelName.toLowerCase(),
       brand: brand._id

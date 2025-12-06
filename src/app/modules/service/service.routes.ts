@@ -17,6 +17,10 @@ router.route('/compare')
     auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
     ServiceController.getCarCompare
   );
+router.get('/self-added',
+  auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+  ServiceController.getSelfAddedCarDetails
+);
 router.route('/compare/:id')
   .delete(
     auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),

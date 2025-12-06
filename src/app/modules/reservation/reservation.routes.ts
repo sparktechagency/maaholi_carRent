@@ -23,21 +23,21 @@ router.route("/")
     )
     .get(
         auth(USER_ROLES.BUYER), 
-        ReservationController.customerReservation
+        ReservationController.buyerReservation
     );
 
-router.get("/barber",
-    auth(USER_ROLES.SELLER),
-    ReservationController.barberReservation
+router.get("/seller",
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+    ReservationController.sellerReservation
 );
 
-router.get("/barber-summery",
-    auth(USER_ROLES.SELLER),
-    ReservationController.reservationSummerForBarber
+router.get("/seller-summery",
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+    ReservationController.reservationSummerForSeller
 );
 
 router.patch("/confirm/:id",
-    auth(USER_ROLES.BUYER),
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
     ReservationController.confirmReservation
 )
 

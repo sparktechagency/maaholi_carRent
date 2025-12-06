@@ -14,19 +14,19 @@ const createReservation = catchAsync(async (req: Request, res: Response) => {
     })
 }); 
 
-const barberReservation = catchAsync(async (req: Request, res: Response) => {
-    const result = await ReservationService.barberReservationFromDB(req.user, req.query);
+const sellerReservation = catchAsync(async (req: Request, res: Response) => {
+    const result = await ReservationService.sellerReservationFromDB(req.user, req.query);
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: "Reservation created successfully",
+        message: "test-drive reservation retrieved successfully",
         data: result.data,
-        pagination: result.meta
+        // pagination: result.meta
     })
 }); 
 
-const customerReservation = catchAsync(async (req: Request, res: Response) => {
-    const reservation = await ReservationService.customerReservationFromDB(req.user, req.query);
+const buyerReservation = catchAsync(async (req: Request, res: Response) => {
+    const reservation = await ReservationService.BuyerReservationFromDB(req.user, req.query);
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
@@ -36,8 +36,8 @@ const customerReservation = catchAsync(async (req: Request, res: Response) => {
 }); 
 
 
-const reservationSummerForBarber = catchAsync(async (req: Request, res: Response) => {
-    const reservation = await ReservationService.reservationSummerForBarberFromDB(req.user);
+const reservationSummerForSeller = catchAsync(async (req: Request, res: Response) => {
+    const reservation = await ReservationService.reservationSummerForSellerFromDB(req.user);
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
@@ -94,9 +94,9 @@ const confirmReservation = catchAsync(async (req: Request, res: Response) => {
 
 export const ReservationController = {
     createReservation,
-    barberReservation,
-    customerReservation,
-    reservationSummerForBarber,
+    sellerReservation,
+    buyerReservation,
+    reservationSummerForSeller,
     reservationDetails,
     respondedReservation,
     cancelReservation,

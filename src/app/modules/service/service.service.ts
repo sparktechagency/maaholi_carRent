@@ -885,21 +885,7 @@ const updateServiceMilesInDB = async (id: string, miles: number) => {
   }
 }
 
-// const deleteServiceFromDB = async (id: string): Promise<void> => {
-//   if (!Types.ObjectId.isValid(id)) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
-//   }
 
-//   const service = await ServiceModelInstance.findOneAndUpdate(
-//     { _id: id, isDeleted: false },
-//     { $set: { isDeleted: true } },
-//     { new: true }
-//   )
-
-//   if (!service) {
-//     throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
-//   }
-// }
 const deleteServiceFromDB = async (
   req: Request,
   serviceId: string
@@ -1090,6 +1076,15 @@ const deleteCarCompareFromDB = async (compareId:string,userId:string) => {
   return result
 }
 
+// get selfadded all services
+const getSelfAddedCarDetailsFromDB = async (user: JwtPayload) => {
+  const services = await ServiceModelInstance.find({ createdBy: user.id, isDeleted: false })
+    .populate('basicInformation.brand', 'brand logo')
+    .populate('basicInformation.model', 'model')
+    .lean();
+  return services;
+}
+
 const ServiceService = {
   createServiceToDB,
   getAllServicesFromDB,
@@ -1106,7 +1101,8 @@ const ServiceService = {
   compareTwoServicesFromDB,
   createCarCompareIntoDB,
   getCarCompareFromDB,
-  deleteCarCompareFromDB
+  deleteCarCompareFromDB,
+  getSelfAddedCarDetailsFromDB
 }
 
 export default ServiceService

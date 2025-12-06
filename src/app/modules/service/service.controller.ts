@@ -249,6 +249,18 @@ const deleteCarCompare = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSelfAddedCarDetails = catchAsync(async (req: Request, res: Response) => {  
+  const user = req.user;
+  const result = await ServiceService.getSelfAddedCarDetailsFromDB(user);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car details retrieved successfully",
+    data: result,
+  });
+});
+
 export const ServiceController = {
   createService,
   checkCanAddCar,
@@ -266,5 +278,6 @@ export const ServiceController = {
   compareTwoServices,
   createCarCompare,
   getCarCompare,
-  deleteCarCompare
+  deleteCarCompare,
+  getSelfAddedCarDetails
 }

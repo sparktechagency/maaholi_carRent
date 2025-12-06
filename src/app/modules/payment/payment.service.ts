@@ -40,7 +40,7 @@ const createPaymentCheckoutToStripe = async (user: JwtPayload, payload: any): Pr
             },
         ],
         customer_email: user?.email,
-        success_url: "https://www.admin.barbermeus.com/public/payment-success",
+        success_url: "http://10.10.7.47:3000/profile",
         cancel_url: "https://www.admin.barbermeus.com/public/payment-failed"
     };
 
@@ -89,7 +89,7 @@ const createAccountToStripe = async (user: JwtPayload) => {
     // // Create an account link for onboarding
     const accountLink = await stripe.accountLinks.create({
         account: account.id,
-        refresh_url: "https://www.admin.barbermeus.com/public/onboard-success",
+        refresh_url: "http://10.10.7.47:3000/profile",
         return_url: "https://www.admin.barbermeus.com/public/onboard-failed",
         type: 'account_onboarding',
     });
@@ -165,7 +165,7 @@ const createSubscriptionCheckoutToStripe = async (
             packageId: packageId,
             targetRole: packageData.targetRole,
         },
-        success_url: `${process.env.FRONTEND_URL}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${process.env.FRONTEND_URL}`, ///subscription/success?session_id={CHECKOUT_SESSION_ID}
         cancel_url: `${process.env.FRONTEND_URL}/subscription/cancel`,
         subscription_data: {
             metadata: {

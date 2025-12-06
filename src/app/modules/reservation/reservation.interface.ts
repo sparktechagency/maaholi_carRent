@@ -2,22 +2,16 @@ import { Model, Types } from "mongoose"
 
 export type IReservation = {
     seller: Types.ObjectId;
-    customer: Types.ObjectId;
-    service: Types.ObjectId;
-    status: "Upcoming" | "Accepted" | "Canceled" | "Completed";
+    buyer: Types.ObjectId;
+    dealer: Types.ObjectId;
+    car: Types.ObjectId;
+    status: "Upcoming" | "Accepted" | "Canceled" | "CONFIRMED" | "Completed";
     name?: string;
     email?: string;
     contactNumber: string;
-    // paymentStatus: "Pending" | "Paid" | "Refunded";
-    // travelFee: number;
-    appCharge: number;
-    // price: number;
-    txid: string;
     cancelByCustomer: boolean;
     isReported: boolean;
-    sessionId?: string;
-    // tips?: number;
-    transfer?: boolean;
+
 }
 
 export type ReservationModel = Model<IReservation, Record<string, unknown>>;
