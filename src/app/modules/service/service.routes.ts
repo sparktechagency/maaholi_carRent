@@ -24,10 +24,12 @@ router.get('/self-added',
 router.route('/compare/:id')
   .delete(
     auth(USER_ROLES.BUYER, USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
-    ServiceController.deleteCarCompare
+    ServiceController.
+    deleteCarCompare
   );
 router.get('/stats',
-   ServiceController.getServiceStats
+   ServiceController.
+   getServiceStats
   );
 
 router.post('/' ,
@@ -43,53 +45,57 @@ router.post('/' ,
 router.get(
   '/check-can-add',
   auth(USER_ROLES.SELLER),
-  ServiceController.checkCanAddCar
+  ServiceController.
+  checkCanAddCar
 );
 
 router.get(
   '/car-statistics',
   auth(USER_ROLES.SELLER),
-  ServiceController.getCarStatistics
+  ServiceController.
+  getCarStatistics
 );
 
 router.get('/',
-   ServiceController.getAllServices
+   ServiceController.
+   getAllServices
   );
 router.get('/filter',
-   ServiceController.getAllFilter
+   ServiceController.
+   getAllFilter
   );
 
 
-// Get single service
 router.get('/:id', 
-  ServiceController.getSingleService
+  ServiceController.
+  getSingleService
 );
 
-// Update service with file upload
 router.put(
   "/:id",
   fileUploadHandler(),
-  ServiceController.updateService
+  ServiceController.
+  updateService
 );
 
-// Update miles only
 router.patch('/:id/miles', 
-  ServiceController.updateServiceMiles
+  ServiceController.
+  updateServiceMiles
 );
 
-// Soft delete
 router.delete('/:id',
-   ServiceController.deleteService
+   ServiceController.
+   deleteService
   );
 
-// Permanent delete
 router.delete('/:id/permanent', 
-  ServiceController.permanentDeleteService
+  ServiceController.
+  permanentDeleteService
 );
 
-// Restore service
 router.patch('/:id/restore', 
-  ServiceController.restoreService
+  ServiceController.
+  restoreService
 )
 
 

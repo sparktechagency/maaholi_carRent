@@ -55,7 +55,7 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Services retrieved successfully',
+    message: 'car retrieved successfully',
     data: result.data,
   })
 })
@@ -173,19 +173,6 @@ const restoreService = catchAsync(async (req: Request, res: Response, next: Next
   })
 })
 
-const assignUsers = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params
-  const { userIds } = req.body
-
-  const result = await ServiceService.assignUsersToService(id, userIds)
-
-  sendResponse(res, {
-    success: true,
-    statusCode: StatusCodes.OK,
-    message: 'Users assigned successfully',
-    data: result
-  })
-})
 
 const getServiceStats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const result = await ServiceService.getServiceStatsFromDB()
@@ -272,7 +259,6 @@ export const ServiceController = {
   deleteService,
   permanentDeleteService,
   restoreService,
-  assignUsers,
   getServiceStats,
   getAllFilter,
   compareTwoServices,

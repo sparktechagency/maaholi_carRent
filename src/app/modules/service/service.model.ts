@@ -218,7 +218,6 @@ const careCompareSchema = new Schema<ICareCompare, CareCompareModel>(
 
 serviceSchema.pre('save', async function (this: HydratedDocument<IService>, next) {
   try {
-    // If it's a new document, initialize totalMiles to miles (if present)
     if (this.isNew) {
       this.totalMiles = this.miles ?? 0
       return next()
@@ -252,7 +251,6 @@ serviceSchema.pre('findOneAndUpdate', async function (this: any, next: (err?: an
 
     const newMiles = Number(set.miles ?? 0)
 
-    // load previous doc
     const query = this.getQuery()
     const prevDoc = await this.model.findOne(query).select('miles').lean()
     const prevMiles = (prevDoc?.miles ?? 0) as number

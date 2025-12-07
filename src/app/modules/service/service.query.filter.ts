@@ -47,7 +47,6 @@ export type ServiceFilterQuery = Partial<{
   city: string;
   country: string;
 
-  // Equipment (accept string "true"/"false" or boolean)
   ABS: string | boolean;
   Camera: string | boolean;
   AdaptiveCruiseControl: string | boolean;

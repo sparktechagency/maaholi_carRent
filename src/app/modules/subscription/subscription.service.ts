@@ -23,7 +23,6 @@ const subscriptionDetailsFromDB = async (
             subscription.subscriptionId
         );
 
-        // Check subscription status and update database accordingly
         if (subscriptionFromStripe?.status !== "active") {
             await Promise.all([
                 User.findByIdAndUpdate(
@@ -68,14 +67,12 @@ const subscriptionDetailsFromDB = async (
 const getAllSubscriptionsFromDB = async (query: any) => {
     const { status, search, page = 1, limit = 10, sortBy = 'createdAt', sortOrder = 'desc' } = query;
 
-    // Build filter
     const filter: any = {};
     
     if (status) {
         filter.status = status;
     }
 
-    // Search by user name or email
     if (search) {
         const users = await User.find({
             $or: [
@@ -88,12 +85,9 @@ const getAllSubscriptionsFromDB = async (query: any) => {
         filter.user = { $in: userIds };
     }
 
-    // Pagination
     const skip = (Number(page) - 1) * Number(limit);
     const sortOptions: any = {};
     sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
-
-    // Get subscriptions
     const subscriptions = await Subscription.find(filter)
         .populate("package", "title description price duration carLimit adHocPricePerCar feature targetRole allowCustomization")
         .populate("user", "name email profile role isSubscribed")
@@ -102,10 +96,8 @@ const getAllSubscriptionsFromDB = async (query: any) => {
         .limit(Number(limit))
         .lean();
 
-    // Get total count
     const total = await Subscription.countDocuments(filter);
 
-    // Calculate statistics with customization awareness
     const stats = {
         totalSubscriptions: total,
         activeSubscriptions: await Subscription.countDocuments({ status: 'active' }),
@@ -126,11 +118,10 @@ const getAllSubscriptionsFromDB = async (query: any) => {
         ),
     };
 
-    // Add computed fields to each subscription
     const enhancedSubscriptions = subscriptions.map((sub: any) => {
         const packageData = sub.package;
         const effectiveCarLimit = sub.customCarLimit ?? packageData?.carLimit;
-        const effectiveAdHocPrice = packageData?.adHocPricePerCar; // Always package price
+        const effectiveAdHocPrice = packageData?.adHocPricePerCar;
 
         return {
             ...sub,
@@ -217,7 +208,6 @@ const getSubscriptionHistoryFromDB = async (user: JwtPayload) => {
         totalSubscriptions: subscriptions.length,
         activeSubscription: subscriptions.find((sub: any) => sub.status === 'active'),
         totalSpent: subscriptions.reduce((sum: number, sub: any) => {
-            // Include base price (or customized price) + ad-hoc charges
             const basePrice = sub.totalMonthlyPrice || sub.price;
             return sum + basePrice + (sub.adHocCharges || 0);
         }, 0),
@@ -253,7 +243,6 @@ const getSubscriptionStatsFromDB = async (user: JwtPayload) => {
 
     const packageData: any = subscription.package;
     
-    // Get effective limits (considers customization)
     const effectiveCarLimit = (subscription as any).customCarLimit ?? packageData.carLimit;
     const effectiveAdHocPrice = (subscription as any).customAdHocPrice ?? packageData.adHocPricePerCar;
     const basePrice = (subscription as any).totalMonthlyPrice ?? subscription.price;
@@ -318,7 +307,6 @@ user: JwtPayload, customCarLimit: number,) => {
 
     const packageData: any = subscription.package;
 
-    // Check if customization is allowed
     if (!packageData.allowCustomization) {
         throw new ApiError(
             StatusCodes.FORBIDDEN,
@@ -326,7 +314,6 @@ user: JwtPayload, customCarLimit: number,) => {
         );
     }
 
-    // Validate custom limit
     if (customCarLimit < packageData.carLimit) {
         throw new ApiError(
             StatusCodes.BAD_REQUEST,
@@ -334,13 +321,11 @@ user: JwtPayload, customCarLimit: number,) => {
         );
     }
 
-    // Calculate pricing using package's ad-hoc price
     const additionalCars = customCarLimit - packageData.carLimit;
-    const pricePerCar = packageData.adHocPricePerCar; // Always use package price
+    const pricePerCar = packageData.adHocPricePerCar;
     const additionalCost = additionalCars * pricePerCar;
     const newTotalMonthlyPrice = packageData.price + additionalCost;
 
-    // Update subscription
     subscription.customCarLimit = customCarLimit;
     (subscription as any).totalMonthlyPrice = newTotalMonthlyPrice;
 

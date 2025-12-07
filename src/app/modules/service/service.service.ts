@@ -72,63 +72,6 @@ export const createServiceToDB = async (
 };
 
 
-// const getAllServicesFromDB = async (query: any) => {
-//   const {
-//     page = 1,
-//     limit = 10,
-//     sort = '-createdAt',
-//     search = '',
-//     status,
-//     userId,
-//     city,
-//     country
-//   } = query
-
-//   const pageNum = parseInt(page as string)
-//   const limitNum = parseInt(limit as string)
-//   const skip = (pageNum - 1) * limitNum
-
-//   // Build query
-//   const searchQuery: any = { isDeleted: false }
-//   if (search) {
-//     searchQuery.$or = [
-//       { 'basicInformation.make': { $regex: search, $options: 'i' } },
-//       { 'basicInformation.model': { $regex: search, $options: 'i' } },
-//       { 'basicInformation.vin': { $regex: search, $options: 'i' } },
-//       { 'basicInformation.tagNumber': { $regex: search, $options: 'i' } },
-//       { 'location.address': { $regex: search, $options: 'i' } }
-//     ]
-//   }
-
-//   if (status) searchQuery.status = status
-//   if (userId) searchQuery.user = new Types.ObjectId(userId as string)
-//   if (city) searchQuery['location.city'] = { $regex: city, $options: 'i' }
-//   if (country) searchQuery['location.country'] = { $regex: country, $options: 'i' }
-
-//   const [services, total] = await Promise.all([
-//     ServiceModelInstance
-//       .find(searchQuery)
-//       .populate('user', 'name email')
-//       .populate('basicInformation.brand', 'brand image')  
-//       .populate('basicInformation.model', 'model brand')
-//       .populate('createdBy', 'name email profile')
-//       .sort(sort as string)
-//       .skip(skip)
-//       .limit(limitNum)
-//       .lean(),
-//     ServiceModelInstance.countDocuments(searchQuery)
-//   ])
-
-//   return {
-//     data: services,
-//     meta: {
-//       total,
-//       page: pageNum,
-//       limit: limitNum,
-//       totalPages: Math.ceil(total / limitNum)
-//     }
-//   }
-// }
 const getAllServicesFromDB = async (query: any) => {
   const {
     page = 1,
@@ -176,14 +119,12 @@ const getAllServicesFromDB = async (query: any) => {
     ServiceModelInstance.countDocuments(searchQuery)
   ]);
 
-  // ✅ Transform data to include only first image
   const transformedServices = services.map((service: any) => {
     const productImages = service.basicInformation?.productImage || [];
     
     return {
       ...service,
       featuredImage: productImages.length > 0 ? productImages[0] : null,
-      // Or keep all images but in a cleaner format
       imageUrl: productImages.length > 0 ? productImages[0] : null,
       allImages: productImages
     };
@@ -206,13 +147,12 @@ const getAllFilterFromDB = async (requestData: any) => {
     sort = '-createdAt',
     search = '',
     filters = {},
-  } = requestData; // Changed from query to requestData
+  } = requestData; 
 
   const pageNum = parseInt(page as string, 10);
   const limitNum = parseInt(limit as string, 10);
   const skip = (pageNum - 1) * limitNum;
 
-  // Helper functions - defined at the top so they're accessible everywhere
   const ensureArray = (val: any) => Array.isArray(val) ? val : [val];
   
   const isValidObjectId = (id: string): boolean => {
@@ -221,7 +161,6 @@ const getAllFilterFromDB = async (requestData: any) => {
   
   const searchQuery: any = { isDeleted: false };
 
-  // Free-text search
   if (search && search.trim()) {
     searchQuery.$or = [
       { 'basicInformation.vehicleName': { $regex: search, $options: 'i' } },
@@ -230,7 +169,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     ];
   }
 
-  // Filter mapping
   if (filters && Object.keys(filters).length > 0) {
     const {
       condition,
@@ -256,7 +194,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       bodyType,
     } = filters;
 
-    // Basic Information Filters
     if (condition) {
       searchQuery['basicInformation.condition'] = { $in: ensureArray(condition) };
     }
@@ -295,7 +232,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       searchQuery['basicInformation.BodyType'] = { $in: ensureArray(bodyType) };
     }
 
-    // Price Range Filter
     if (priceRange && Array.isArray(priceRange) && priceRange.length === 2) {
       const [min, max] = priceRange;
       if (min != null && max != null) {
@@ -305,8 +241,6 @@ const getAllFilterFromDB = async (requestData: any) => {
         };
       }
     }
-
-    // Year Range Filter
     if (yearRange && Array.isArray(yearRange) && yearRange.length === 2) {
       const [min, max] = yearRange;
       if (min != null && max != null) {
@@ -317,7 +251,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       }
     }
 
-    // Mileage Range Filter
     if (mileageRange && Array.isArray(mileageRange) && mileageRange.length === 2) {
       const [min, max] = mileageRange;
       if (min != null && max != null) {
@@ -328,7 +261,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       }
     }
 
-    // Technical Information Filters
     if (fuelType) {
       searchQuery['technicalInformation.fuelType'] = { $in: ensureArray(fuelType) };
     }
@@ -345,7 +277,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       searchQuery['technicalInformation.cylinders'] = { $in: ensureArray(cylinders) };
     }
 
-    // Electric & Hybrid Filters
     if (towingCapacity && Array.isArray(towingCapacity) && towingCapacity.length === 2) {
       const [min, max] = towingCapacity;
       if (min != null && max != null) {
@@ -366,7 +297,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       }
     }
 
-    // Seats & Doors Filters
     if (numberOfSeats) {
       searchQuery['seatsAndDoors.seats'] = { $in: ensureArray(numberOfSeats).map(Number) };
     }
@@ -375,7 +305,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       searchQuery['seatsAndDoors.doors'] = { $in: ensureArray(numberOfDoors).map(Number) };
     }
 
-    // Energy & Environment Filters
     if (fuelConsumption) {
       searchQuery['energyAndEnvironment.fuelConsumption'] = { $regex: fuelConsumption, $options: 'i' };
     }
@@ -384,7 +313,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       searchQuery['energyAndEnvironment.energyEfficiencyClass'] = { $in: ensureArray(energyEfficiencyClass) };
     }
 
-    // Location Filters
     if (country) {
       searchQuery['location.country'] = { $regex: country, $options: 'i' };
     }
@@ -393,7 +321,6 @@ const getAllFilterFromDB = async (requestData: any) => {
       searchQuery['location.city'] = { $regex: city, $options: 'i' };
     }
 
-    // Equipment Filters - equipment is an object with boolean fields
     if (equipment && Array.isArray(equipment) && equipment.length > 0) {
       equipment.forEach((equipmentItem: string) => {
         searchQuery[`equipment.${equipmentItem}`] = true;
@@ -401,10 +328,8 @@ const getAllFilterFromDB = async (requestData: any) => {
     }
   }
 
-  // Log query for debugging
   console.log('MongoDB Query:', JSON.stringify(searchQuery, null, 2));
 
-  // Execute query
   const populateOptions: any = [
     { path: 'basicInformation.brand', select: 'brand' },
     { path: 'basicInformation.model', select: 'model' },
@@ -412,12 +337,12 @@ const getAllFilterFromDB = async (requestData: any) => {
     { path: 'createdBy', select: 'name email' }
   ];
 
-  // Add match conditions only if brandName or modelName filters exist
+
   if (filters?.brandName) {
-    populateOptions[0].match = { name: { $in: ensureArray(filters.brandName) } };
+    populateOptions[0].match = { brand: { $in: ensureArray(filters.brandName) } };
   }
   if (filters?.modelName) {
-    populateOptions[1].match = { name: { $in: ensureArray(filters.modelName) } };
+    populateOptions[1].match = { model: { $in: ensureArray(filters.modelName) } };
   }
 
   const [services, total] = await Promise.all([
@@ -431,7 +356,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     ServiceModelInstance.countDocuments(searchQuery),
   ]);
 
-  // Filter out documents where populated fields are null (only if name filters were applied)
   let filteredServices = services;
   if (filters?.brandName || filters?.modelName) {
     filteredServices = services.filter(service => {
@@ -459,7 +383,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     limit = 10,
     sortBy = 'createdAt',
     sortOrder = 'desc',
-    // Extract all filter params
     vehicleName,
     brand,
     model,
@@ -499,7 +422,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     city,
     country,
     status,
-    // Equipment booleans (sent as string "true"/"false" from frontend)
     ABS,
     Camera,
     AdaptiveCruiseControl,
@@ -525,10 +447,8 @@ const getAllFilterFromDB = async (requestData: any) => {
     SoundSystem,
   } = query;
 
-  // Build $and array to safely combine all conditions
   const andConditions: any[] = [{ isDeleted: false }];
 
-  // 1. Global Search Term
   if (searchTerm) {
     andConditions.push({
       $or: [
@@ -544,7 +464,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     });
   }
 
-  // 2. Price Range (matches RegularPrice OR OfferPrice)
   if (priceFrom || priceTo) {
     const priceCondition: any = {};
     if (priceFrom) priceCondition.$gte = Number(priceFrom);
@@ -558,7 +477,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     });
   }
 
-  // 3. Number Range Filters
   const ranges = [
     { from: yearFrom, to: yearTo, path: 'basicInformation.year' },
     { from: milesFrom, to: milesTo, path: 'basicInformation.miles' },
@@ -577,7 +495,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     }
   });
 
-  // 4. Exact or Regex Matches
   const fieldMap: Record<string, string> = {
     brand: 'basicInformation.brand',
     model: 'basicInformation.model',
@@ -610,7 +527,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     }
   });
 
-  // 5. Partial Text Matches
   const partialFields = {
     'basicInformation.vehicleName': vehicleName,
     'basicInformation.vinNo': vinNo,
@@ -626,7 +542,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     }
   });
 
-  // 6. Equipment Boolean Filters
   const equipmentKeys = [
     'ABS',
     'Camera',
@@ -663,10 +578,8 @@ const getAllFilterFromDB = async (requestData: any) => {
     }
   });
 
-  // Final MongoDB Query
   const mongoQuery = andConditions.length > 1 ? { $and: andConditions } : andConditions[0];
 
-  // Pagination & Sorting
   const pageNum = Math.max(1, Number(page) || 1);
   const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
   const skip = (pageNum - 1) * limitNum;
@@ -674,7 +587,6 @@ const getAllFilterFromDB = async (requestData: any) => {
   const sortOptions: any = {};
   sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
 
-  // Execute Queries
   const [data, total] = await Promise.all([
     ServiceModelInstance.find(mongoQuery)
       .populate('user', 'name email profile')
@@ -706,7 +618,6 @@ const getAllFilterFromDB = async (requestData: any) => {
     appliedFilters: query,
   };
 
-  // Caching (safe & efficient)
   try {
     const cacheKey = `${CACHE_PREFIXES.SERVICES}:filter:${JSON.stringify({
       ...query,
@@ -723,7 +634,6 @@ const getAllFilterFromDB = async (requestData: any) => {
   return result;
 };
 
-//compare
 const compareTwoServicesFromDB = async(id1: string, id2: string) => {
     const car1 = await ServiceModelInstance.findById(id1);
     const car2 = await ServiceModelInstance.findById(id2);
@@ -742,7 +652,6 @@ const compareTwoServicesFromDB = async(id1: string, id2: string) => {
       },
     };
   }
-// Optional: Get single service by ID
 export const getServiceByIdFromDB = async (id: string) => {
   const cacheKey = `${CACHE_PREFIXES.SERVICES}:id:${id}`;
   const cached = await RedisCacheService.get(cacheKey);
@@ -751,9 +660,8 @@ export const getServiceByIdFromDB = async (id: string) => {
 
   const service = await ServiceModelInstance.findById(id)
     .populate('user', 'name email profile')
-    .populate('basicInformation.brand', 'brand logo')  // <-- dot notation
+    .populate('basicInformation.brand', 'brand logo') 
     .populate('basicInformation.model', 'model')
-    // .populate('Category', 'name')
     .populate('createdBy', 'name email profile')
     .lean();
 
@@ -767,7 +675,6 @@ export const getServiceByIdFromDB = async (id: string) => {
 
 
 const getSingleServiceFromDB = async (id: string): Promise<IService> => {
-  // Validate ObjectId
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
   }
@@ -775,8 +682,7 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   const service = await ServiceModelInstance
     .findOne({ _id: id, isDeleted: false })
     .populate('user', 'name email')
-    // .populate('assignedUsers', 'name email')
-.populate('basicInformation.brand', 'brand logo')  // <-- dot notation
+.populate('basicInformation.brand', 'brand logo')
   .populate('basicInformation.model', 'model')
     .populate('createdBy', 'name email')
     .lean()
@@ -788,20 +694,6 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
   return service as IService
 }
 
-//helper color
-const removeConflictingMongoPaths = (data: any) => {
-  const keys = Object.keys(data);
-
-  for (let key of keys) {
-    for (let otherKey of keys) {
-      if (key !== otherKey && otherKey.startsWith(key + ".")) {
-        delete data[key];
-      }
-    }
-  }
-
-  return data;
-};
 
 const updateServiceInDB = async (
   id: string,
@@ -813,13 +705,11 @@ const updateServiceInDB = async (
 
   let parsedData = parseFormData(payload, files);
 
-  // Remove non-editable fields
   delete parsedData._id;
   delete parsedData.createdAt;
   delete parsedData.createdBy;
   delete parsedData.isDeleted;
 
-  // Convert brand/model to ObjectId if present
   if (parsedData.basicInformation?.brand) {
     parsedData.basicInformation.brand = new Types.ObjectId(parsedData.basicInformation.brand);
   }
@@ -830,7 +720,6 @@ const updateServiceInDB = async (
   const service = await ServiceModelInstance.findById(id);
   if (!service) throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found');
 
-  // Merge new files
   if (files) {
     Object.keys(files).forEach((field) => {
       const filePaths = files[field].map(f => `/uploads/${f.filename}`);
@@ -844,7 +733,6 @@ const updateServiceInDB = async (
     });
   }
 
-  // Merge other parsedData
   Object.assign(service, parsedData);
 
   await service.save();
@@ -970,34 +858,6 @@ const restoreServiceInDB = async (id: string): Promise<IService> => {
   return service
 }
 
-const assignUsersToService = async (id: string, userIds: string[]): Promise<IService> => {
-  if (!Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
-  }
-
-  if (!Array.isArray(userIds) || userIds.length === 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'userIds must be a non-empty array')
-  }
-
-  // Validate all user IDs
-  const validUserIds = userIds.filter(uid => Types.ObjectId.isValid(uid))
-  if (validUserIds.length !== userIds.length) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'One or more invalid user IDs')
-  }
-
-  const service = await ServiceModelInstance.findOneAndUpdate(
-    { _id: id, isDeleted: false },
-    { $addToSet: { assignedUsers: { $each: validUserIds } } },
-    { new: true }
-  ).populate('assignedUsers', 'name email')
-
-  if (!service) {
-    throw new ApiError(StatusCodes.NOT_FOUND, 'Service not found')
-  }
-
-  return service
-}
-
 const getServiceStatsFromDB = async () => {
   const stats = await ServiceModelInstance.aggregate([
     { $match: { isDeleted: false } },
@@ -1063,7 +923,6 @@ const getCarCompareFromDB = async (userId: string) => {
     })
     .lean();
 
-  // Return just the populated cars
   return result.map(item => item.car);
 };
 
@@ -1073,7 +932,6 @@ const deleteCarCompareFromDB = async (compareId:string,userId:string) => {
   return result
 }
 
-// get selfadded all services
 const getSelfAddedCarDetailsFromDB = async (user: JwtPayload) => {
   const services = await ServiceModelInstance.find({ createdBy: user.id, isDeleted: false })
     .populate('basicInformation.brand', 'brand logo')
@@ -1091,7 +949,6 @@ const ServiceService = {
   deleteServiceFromDB,
   permanentDeleteServiceFromDB,
   restoreServiceInDB,
-  assignUsersToService,
   getServiceStatsFromDB,
   getAllFilterFromDB,
   getAllServicesFromDBFilter,

@@ -1,7 +1,7 @@
 import { Model, Types } from "mongoose";
 import { IPackage } from "../package/package.interface";
 
-export interface ISubscription {
+ interface ISubscription {
     customerId: string;
     price: number;
     user: Types.ObjectId;
@@ -22,8 +22,7 @@ export interface ISubscription {
     updatedAt?: Date;
 }
 
-
-export interface ISubscriptionMethods {
+ interface ISubscriptionMethods {
     getCarLimit(): number;
     getAdHocPrice(): number;
     getTotalCost(): number;
@@ -35,7 +34,7 @@ export interface ISubscriptionMethods {
     };
 }
 
-export interface ISubscriptionModel extends Model<ISubscription, {}, ISubscriptionMethods> {
+ interface ISubscriptionModel extends Model<ISubscription, {}, ISubscriptionMethods> {
     findActiveForUser(userId: string): Promise<(ISubscription & ISubscriptionMethods) | null>;
     getStats(userId: string): Promise<{
         carLimit: number;
@@ -50,6 +49,11 @@ export interface ISubscriptionModel extends Model<ISubscription, {}, ISubscripti
     } | null>;
 }
 
-export type SubscriptionDocument = ISubscription & ISubscriptionMethods;
 
-export type SubscriptionModel = ISubscriptionModel;
+export {
+    ISubscription,
+    ISubscriptionMethods,
+    ISubscriptionModel,
+    // SubscriptionDocument,
+};
+export type SubscriptionDocument = ISubscription & ISubscriptionMethods;

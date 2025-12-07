@@ -2,7 +2,7 @@ import { Stripe } from 'stripe';
 import { Document, Model, Types } from 'mongoose'
 import { carStatus } from '../../../enums/car-status'
 
-export interface IBasicInformation {
+  interface IBasicInformation {
   price: any;
   vehicleName: string
   brand?: Types.ObjectId,
@@ -25,7 +25,7 @@ export interface IBasicInformation {
   insurancePolicyNumber?: string
 }
 
-export interface ITechnicalInformation {
+ interface ITechnicalInformation {
   engineType?: string
   transmission?: string
   fuelType?: string
@@ -35,7 +35,7 @@ export interface ITechnicalInformation {
   cylinders?: string
 }
 
-export interface IElectricHybrid {
+ interface IElectricHybrid {
   batteryCapacityKWh?: number
   chargingTimeHours?: number
   rangeKm?: number
@@ -44,7 +44,7 @@ export interface IElectricHybrid {
   curbWeight?: number
 }
 
-export interface IEquipment {
+ interface IEquipment {
 ABS: { type: Boolean, default: false },
   KeylessEntryStart: { type: Boolean, default: false },
   ParkingAssist: { type: Boolean, default: false },
@@ -119,7 +119,7 @@ ABS: { type: Boolean, default: false },
   HandsFree: { type: Boolean, default: false },
 }
 
-export interface IExtras {
+ interface IExtras {
  tuning?: string
  raceCar?: string
  handicapAccessible?: string
@@ -127,31 +127,31 @@ export interface IExtras {
  tires?: string
 }
 
-export interface IColour {
+ interface IColour {
   exterior?: string
   metallic?: string
   interior?: string
 }
 
-export interface ISeatsAndDoors {
+ interface ISeatsAndDoors {
   seats?: number
   doors?: number
 }
 
-export interface IEnergyAndEnvironment {
+ interface IEnergyAndEnvironment {
 fuelConsumption?: string
 coEmissions?: string
 energyEfficiencyClass?: string
 
 }
 
-export interface IEuroStandard {
+ interface IEuroStandard {
   fuelType?: string,
   transmission?: string,
 
 }
 
-export interface ILocation {
+ interface ILocation {
   address?: string
   city?: string
   country?: string
@@ -161,7 +161,7 @@ export interface ILocation {
   }
 }
 
-export interface IService extends Document {
+ interface IService extends Document {
   basicInformation: IBasicInformation
   technicalInformation?: ITechnicalInformation
   electricHybrid?: IElectricHybrid
@@ -190,7 +190,7 @@ export interface IService extends Document {
 }
 
 
-export interface GetServicesOptions {
+ interface GetServicesOptions {
   limit?: number;
   page?: number;
   sort?: string; 
@@ -198,13 +198,31 @@ export interface GetServicesOptions {
   search?: string;
 }
 
-export type ServiceModel = Model<IService, Record<string, unknown>>
+ type ServiceModel = Model<IService, Record<string, unknown>>
 
 
-export type ICareCompare = {
+ type ICareCompare = {
   user: Types.ObjectId;
   car: Types.ObjectId;
 }
 
 
+
+export {
+  IService,
+  ServiceModel,
+  GetServicesOptions,
+  IBasicInformation,
+  ITechnicalInformation,
+  IElectricHybrid,
+  IEquipment,
+  IExtras,
+  IColour,
+  ISeatsAndDoors,
+  IEnergyAndEnvironment,
+  IEuroStandard,
+  ILocation,
+  carStatus,
+  ICareCompare,
+}
 export type CareCompareModel = Model<ICareCompare, Record<string, unknown>>;
