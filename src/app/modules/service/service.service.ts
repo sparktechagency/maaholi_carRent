@@ -999,6 +999,35 @@ const getPriceRangeCounts = async () => {
 };
 
 
+const getYearlyCarModelStatsFromDB = async () => {
+  const currentYear = new Date().getFullYear();
+
+  const result = await ServiceModelInstance.aggregate([
+    {
+      $match: {
+        isDeleted: false,
+        'basicInformation.year': { $gte: 1900, $lte: currentYear },
+      },
+    },
+    {
+      $group: {
+        _id: '$basicInformation.year',
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  return {
+    count: result.length,
+    data: result.map(item => ({
+      year: item._id,
+      count: item.count,
+    })),
+    currentYear,
+  };
+};
+
 const ServiceService = {
   createServiceToDB,
   getAllServicesFromDB,
@@ -1018,6 +1047,7 @@ const ServiceService = {
   getSelfAddedCarDetailsFromDB,
   getcarBybrandIdFromDB,
   getPriceRangeCounts,
+  getYearlyCarModelStatsFromDB
 }
 
 export default ServiceService

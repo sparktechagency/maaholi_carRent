@@ -271,6 +271,17 @@ const getPriceRangeCounts = catchAsync(async (req: Request, res: Response) => {
   });
 })
 
+const getYearlyCarModelStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceService.getYearlyCarModelStatsFromDB();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: 'car statistics retrieved successfully',
+    data: result
+  })
+});
+
 export const ServiceController = {
   createService,
   checkCanAddCar,
@@ -291,4 +302,5 @@ export const ServiceController = {
   deleteCarCompare,
   getSelfAddedCarDetails,
   getPriceRangeCounts,
+  getYearlyCarModelStats
 }

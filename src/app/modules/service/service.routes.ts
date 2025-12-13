@@ -27,6 +27,10 @@ router.route('/compare/:id')
     ServiceController.
     deleteCarCompare
   );
+router.get('/yearly-stats',
+  ServiceController.
+  getYearlyCarModelStats
+);
 router.get('/stats',
    ServiceController.
    getServiceStats
@@ -107,6 +111,7 @@ router.get('/price-range/counts',
   ServiceController.
   getPriceRangeCounts
 );
+
 
 
 
