@@ -248,10 +248,34 @@ const getSelfAddedCarDetails = catchAsync(async (req: Request, res: Response) =>
   });
 });
 
+const getCarByBrandId = catchAsync(async (req: Request, res: Response) => {  
+  const { brandId } = req.params;
+  const result = await ServiceService.getcarBybrandIdFromDB(brandId);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Car details retrieved successfully",
+    data: result,
+  });
+});
+
+const getPriceRangeCounts = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceService.getPriceRangeCounts();
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: 'Price range counts retrieved successfully',
+    data: result,
+  });
+})
+
 export const ServiceController = {
   createService,
   checkCanAddCar,
   getCarStatistics,
+  getCarByBrandId,
   getAllServices,
   getSingleService,
   updateService,
@@ -265,5 +289,6 @@ export const ServiceController = {
   createCarCompare,
   getCarCompare,
   deleteCarCompare,
-  getSelfAddedCarDetails
+  getSelfAddedCarDetails,
+  getPriceRangeCounts,
 }

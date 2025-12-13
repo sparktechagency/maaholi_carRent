@@ -940,6 +940,65 @@ const getSelfAddedCarDetailsFromDB = async (user: JwtPayload) => {
   return services;
 }
 
+const getcarBybrandIdFromDB = async (brandId: string) => {
+  const result = await ServiceModelInstance.find({ 'basicInformation.brand': brandId, isDeleted: false })
+    .populate('basicInformation.brand', 'brand logo')
+    .populate('basicInformation.model', 'model')
+    // .populate('basicInformation', 'RegularPrice OfferPrice')
+    .lean();
+  return result;
+};
+// price range count minimum 0 to highest price
+
+const getPriceRangeCounts = async () => {
+  const result = await ServiceModelInstance.aggregate([
+    { $match: { isDeleted: false } },
+
+    {
+      $addFields: {
+        finalPrice: {
+          $ifNull: ['$basicInformation.OfferPrice', '$basicInformation.RegularPrice'],
+        },
+      },
+    },
+
+    {
+      $bucket: {
+        groupBy: '$finalPrice',
+        boundaries: [
+          0,
+          10000,
+          20000,
+          30000,
+          40000,
+          50000,
+          60000,
+          70000,
+          80000,
+          90000,
+          100000,
+          200000,
+          300000,
+          400000,
+          500000,
+          600000,
+          700000,
+          800000,
+          900000,
+          1000000
+        ],
+        default: '1000000+',
+        output: {
+          count: { $sum: 1 },
+        },
+      },
+    },
+  ]);
+
+  return result;
+};
+
+
 const ServiceService = {
   createServiceToDB,
   getAllServicesFromDB,
@@ -956,7 +1015,9 @@ const ServiceService = {
   createCarCompareIntoDB,
   getCarCompareFromDB,
   deleteCarCompareFromDB,
-  getSelfAddedCarDetailsFromDB
+  getSelfAddedCarDetailsFromDB,
+  getcarBybrandIdFromDB,
+  getPriceRangeCounts,
 }
 
 export default ServiceService

@@ -71,6 +71,11 @@ router.get('/:id',
   getSingleService
 );
 
+router.get('/by-brand/:brandId', 
+  ServiceController.
+  getCarByBrandId
+);
+
 router.put(
   "/:id",
   fileUploadHandler(),
@@ -96,7 +101,12 @@ router.delete('/:id/permanent',
 router.patch('/:id/restore', 
   ServiceController.
   restoreService
-)
+);
+
+router.get('/price-range/counts',
+  ServiceController.
+  getPriceRangeCounts
+);
 
 
 
