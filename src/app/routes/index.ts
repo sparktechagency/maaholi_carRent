@@ -23,6 +23,7 @@ import { SubscriptionRoutes } from '../modules/subscription/subscription.routes'
 import { DealerBulkRoutes } from '../modules/excel-car/excel.bulk.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
+import { ColorRoutes } from '../modules/color/color.route';
 const router = express.Router();
 
 const apiRoutes = [
@@ -48,6 +49,10 @@ const apiRoutes = [
     { path: "/payment", route: PaymentRoutes },
     { path: "/subscription", route: SubscriptionRoutes },
     { path: "/offer", route: OfferRoutes },
+    {
+        path:"/color",
+        route:ColorRoutes
+    },
     {
         path:"/contact",
         route:ContactRoutes
