@@ -277,7 +277,7 @@ const getYearlyCarModelStats = catchAsync(async (req: Request, res: Response) =>
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'car statistics retrieved successfully',
+    message: 'car model Year statistics retrieved successfully',
     data: result
   })
 });
