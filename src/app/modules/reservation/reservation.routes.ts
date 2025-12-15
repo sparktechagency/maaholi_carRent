@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.route("/")
     .post(
-        auth(USER_ROLES.BUYER),
+        auth(USER_ROLES.BUYER,USER_ROLES.SELLER,USER_ROLES.DELEAR,USER_ROLES.SUPER_ADMIN),
         async (req: Request, res: Response, next: NextFunction) => {
             try {
                 const { ...othersPayload } = req.body;
@@ -22,36 +22,36 @@ router.route("/")
         ReservationController.createReservation
     )
     .get(
-        auth(USER_ROLES.BUYER), 
+        auth(USER_ROLES.BUYER,USER_ROLES.SELLER,USER_ROLES.DELEAR,USER_ROLES.SUPER_ADMIN), 
         ReservationController.buyerReservation
     );
 
 router.get("/seller",
-    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
     ReservationController.sellerReservation
 );
 
 router.get("/seller-summery",
-    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR,USER_ROLES.SUPER_ADMIN),
     ReservationController.reservationSummerForSeller
 );
 
 router.patch("/confirm/:id",
-    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR),
+    auth(USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
     ReservationController.confirmReservation
 )
 
 router.route("/:id")
     .get(
-        auth(USER_ROLES.SELLER),
+        auth(USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
         ReservationController.reservationDetails
     )
     .patch(
-        auth(USER_ROLES.SELLER),
+        auth(USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
         ReservationController.respondedReservation
     )
     .delete(
-        auth(USER_ROLES.SELLER),
+        auth(USER_ROLES.SELLER, USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
         ReservationController.cancelReservation
     );
 

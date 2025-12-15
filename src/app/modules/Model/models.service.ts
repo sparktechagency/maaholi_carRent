@@ -52,6 +52,7 @@ const deleteModelToDB = async (id: string): Promise<ICarModel | null> => {
   }
   return deleteCategory
 }
+
 const bulkUpload = async (fileBuffer: Buffer) => {
   const workbook = XLSX.read(fileBuffer, { type: "buffer" });
   const sheetName = workbook.SheetNames[0];
