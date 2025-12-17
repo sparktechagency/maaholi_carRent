@@ -87,7 +87,7 @@ router.get(
 
 router.get(
   '/profile/:dealerId',
-  // auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
+  auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
   UserController.getDealerCompleteProfile
 );
 
