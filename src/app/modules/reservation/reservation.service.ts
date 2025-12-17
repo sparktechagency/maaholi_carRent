@@ -12,38 +12,35 @@ import { Review } from "../review/review.model";
 import { User } from "../user/user.model";
 import { ServiceModelInstance } from "../service/service.model";
 
-const createReservationToDB = async (payload: IReservation): Promise<IReservation> => {
-    if (!payload.car) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "Car ID is required");
-    }
+const createReservationToDB = async (payload: IReservation) => {
+  if (!payload.car) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Car ID is required");
+  }
 
-    const car = await ServiceModelInstance.findById(new Types.ObjectId(payload.car)).select('createdBy').lean();
+  const car = await ServiceModelInstance
+    .findById(payload.car)
+    .select('createdBy')
+    .lean();
 
-    if (!car) throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
+  if (!car) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Car not found");
+  }
 
-    payload.seller = car.createdBy; 
-    payload.dealer = car.createdBy; 
-    const isExistReservation = await Reservation.findOne({
-        car: new Types.ObjectId(payload.car),
-        status: { $in: ["Upcoming", "Confirmed"] }
-    });
+  payload.seller = car.createdBy;
+  payload.dealer = car.createdBy;
 
-    if (isExistReservation) {
-        throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You already have a booking for this car");
-    }
+  const isExistReservation = await Reservation.findOne({
+    car: payload.car,
+    status: { $in: ["Upcoming", "Confirmed"] }
+  });
 
-    const reservation = await Reservation.create(payload);
+  if (isExistReservation) {
+    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "You already have a booking for this car");
+  }
 
-    sendNotifications({
-        text: "You have a new reservation request",
-        receiver: payload.seller || payload.dealer,
-        referenceId: reservation._id,
-        screen: "RESERVATION"
-    });
-
-    return reservation;
+  const reservation = await Reservation.create(payload);
+  return reservation;
 };
-
 const sellerReservationFromDB = async (user: JwtPayload, query: Record<string, any>) => {
     const { page, limit, status } = query;
     const cars = await ServiceModelInstance.find({ createdBy: user.id }).select('_id').lean();
@@ -60,7 +57,6 @@ const sellerReservationFromDB = async (user: JwtPayload, query: Record<string, a
         .populate({
             path: 'car',
             select: 'basicInformation',
-            // strictPopulate: false,
             populate: [
                 { path: 'basicInformation.brand', model: 'BrandModel', select: 'brand image' },
                 { path: 'basicInformation.model', model: 'CarModel', select: 'model image' }
@@ -153,14 +149,12 @@ const reservationSummerForSellerFromDB = async (user: JwtPayload): Promise<{}> =
         }
     ]);
 
-    // total reservations today
     const todayReservations = await Reservation.countDocuments(
         {
             barber: user.id,
             createdAt: { $gte: new Date(today.getFullYear(), today.getMonth(), today.getDate()) }
         } as any);
 
-    // total reservations
     const totalReservations = await Reservation.countDocuments({ barber: user.id } as any);
 
     const data = {

@@ -4,15 +4,20 @@ import { ReservationService } from "./reservation.service";
 import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 
-const createReservation = catchAsync(async (req: Request, res: Response) => {
-    const reservation = await ReservationService.createReservationToDB(req.body);
-    sendResponse(res, {
-        statusCode: StatusCodes.OK,
-        success: true,
-        message: "car test drive booking successfully",
-        data: reservation
-    })
-}); 
+
+const createReservation = async (req: Request, res: Response) => {
+  const user = req.user;
+
+  const payload = {
+    ...req.body,
+    buyer: user.id,       
+    createdBy: user.id,    
+    email: user.email,
+  };
+
+  const result = await ReservationService.createReservationToDB(payload);
+  res.status(201).json(result);
+};
 
 const sellerReservation = catchAsync(async (req: Request, res: Response) => {
     const result = await ReservationService.sellerReservationFromDB(req.user, req.query);
