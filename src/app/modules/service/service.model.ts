@@ -134,7 +134,6 @@ equipment: {
   HandsFree: { type: Boolean, default: false },
 },
 
-    // Category: Extras
     extras: {
       tires:{ type: String, required: false},
       season:{ type: String, required: false},

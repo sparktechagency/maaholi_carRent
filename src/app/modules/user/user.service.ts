@@ -95,10 +95,6 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
     if (!isExistUser) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
     }
-
-    // const totalServiceCount = await Reservation.countDocuments({ customer: user.id, status: "Completed"});
-
-// response remove sallonphoto, proofOwnerId, tradeLicences
     delete isExistUser.sallonPhoto;
     delete isExistUser.proofOwnerId;
     delete isExistUser.password;
@@ -110,9 +106,6 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<Partial<IUser>> =
     const data = {
         ...isExistUser,
       
-        // totalServiceCount,
-        // hold: !!holderStatus,
-        // totalSpend: totalSpend[0]?.totalSpend || 0
     }
 
     return data;
@@ -156,76 +149,6 @@ const switchRoleService = async (userId: string) => {
     accessToken: newAccessToken,
   };
 };
-
-// const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
-//     const { id } = user;
-//     const isExistUser = await User.isExistUserById(id);
-//     if (!isExistUser) {
-//         throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-//     }
-
-//     //unlink file here
-//     if (payload.profile) {
-//         unlinkFile(isExistUser.profile);
-//     }
-//     if (payload.tradeLicences) {
-//         unlinkFile(isExistUser.tradeLicences);
-//     }
-//     delete isExistUser.sallonPhoto;
-//     delete isExistUser.proofOwnerId;
-//     delete isExistUser.password;
-//     delete isExistUser.authentication;
-
-//     const updateDoc = await User.findOneAndUpdate(
-//         { _id: id },
-//         payload,
-//         { new: true }
-//     );
-//     return updateDoc;
-// };
-
-
-// const updateProfileToDB = async (
-//   user: JwtPayload, 
-//   payload: Partial<IUser>
-// ): Promise<Partial<IUser | null>> => {
-//   const { id } = user;
-  
-//   // Check if user exists
-//   const existingUser = await User.isExistUserById(id);
-//   if (!existingUser) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
-//   }
-
-//   // Handle file cleanup for updated files
-//   const fileFields = ['profile', 'tradeLicences', 'sallonPhoto', 'proofOwnerId'];
-  
-//   for (const field of fileFields) {
-//     if (payload[field as keyof IUser] && existingUser[field as keyof IUser]) {
-//       // Unlink old file if new file is being uploaded
-//       try {
-//         unlinkFile(existingUser[field as keyof IUser] as string);
-//       } catch (error) {
-//         console.error(`Failed to unlink old ${field}:`, error);
-//         // Don't throw error, just log it as file might not exist
-//       }
-//     }
-//   }
-
-//   const userToUpdate = await User.findById(id);
-//   if (!userToUpdate) {
-//     throw new ApiError(StatusCodes.BAD_REQUEST, "User not found for update!");
-//   }
-
-//   Object.assign(userToUpdate, payload);
-  
-//   const updatedUser = await userToUpdate.save();
-  
-//   // Remove password from response
-//   const { password, ...userWithoutPassword } = updatedUser.toObject();
-
-//   return userWithoutPassword;
-// };
 
 const updateProfileToDB = async (user: JwtPayload, payload: Partial<IUser>): Promise<Partial<IUser | null>> => {
     const { id } = user;
@@ -304,13 +227,12 @@ const updateLocationToDB = async (user: JwtPayload, payload: { longitude: number
 
     return user;
 };
+
 const getDealerCompleteProfile = async (dealerId: string) => {
-  // Validate dealer ID
   if (!dealerId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Dealer ID is required');
   }
 
-  // Check cache first
   const cacheKey = `${CACHE_PREFIXES.USER_PROFILE}:dealer:${dealerId}`;
   const cached = await RedisCacheService.get<any>(cacheKey);
   
@@ -321,7 +243,6 @@ const getDealerCompleteProfile = async (dealerId: string) => {
 
   console.log('[Dealer Profile] Cache miss, querying database');
 
-  // Get dealer details
   const dealer = await User.findById(dealerId)
     .select('-password -authentication')
     .lean();
@@ -330,7 +251,6 @@ const getDealerCompleteProfile = async (dealerId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, 'Dealer not found');
   }
 
-  // Verify user is DEALER
   if (dealer.role !== USER_ROLES.DELEAR) {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
@@ -338,7 +258,6 @@ const getDealerCompleteProfile = async (dealerId: string) => {
     );
   }
 
-  // ========== GET SUBSCRIPTION DETAILS ==========
   let subscriptionDetails: any = null;
   let stripeSubscriptionDetails: any = null;
 
@@ -350,7 +269,6 @@ const getDealerCompleteProfile = async (dealerId: string) => {
   if (subscription) {
     subscriptionDetails = subscription;
 
-    // Get Stripe subscription details
     if (subscription.subscriptionId && subscription.subscriptionId !== 'pending') {
       try {
         const stripeSubscription = await stripe.subscriptions.retrieve(subscription.subscriptionId);
@@ -369,53 +287,42 @@ const getDealerCompleteProfile = async (dealerId: string) => {
     }
   }
 
-  // ========== GET ALL CARS CREATED BY DEALER ==========
   const cars = await ServiceModelInstance.find({ createdBy: dealerId, isDeleted: false })
-    .populate('brand', 'name logo')
-    .populate('model', 'name')
-    .populate('Category', 'name')
+    .populate('basicInformation.brand', 'name logo')
+    .populate('basicInformation.model', 'name')
     .sort({ createdAt: -1 })
     .lean();
 
-  // ========== CALCULATE STATISTICS ==========
   const totalCars = cars.length;
   
-  // Group by status
   const carsByStatus = cars.reduce((acc: any, car: any) => {
     acc[car.status] = (acc[car.status] || 0) + 1;
     return acc;
   }, {});
 
-  // Calculate total inventory value
   const totalInventoryValue = cars.reduce((sum: number, car: any) => 
     sum + (car.basicInformation?.OfferPrice || 0), 0
   );
 
-  // Group by condition
   const carsByCondition = cars.reduce((acc: any, car: any) => {
     const condition = car.basicInformation?.condition || 'Unknown';
     acc[condition] = (acc[condition] || 0) + 1;
     return acc;
   }, {});
-
-  // Group by fuel type
   const carsByFuelType = cars.reduce((acc: any, car: any) => {
     const fuelType = car.technicalInformation?.fuelType || 'Unknown';
     acc[fuelType] = (acc[fuelType] || 0) + 1;
     return acc;
   }, {});
 
-  // Group by body type
   const carsByBodyType = cars.reduce((acc: any, car: any) => {
     const bodyType = car.basicInformation?.BodyType || 'Unknown';
     acc[bodyType] = (acc[bodyType] || 0) + 1;
     return acc;
   }, {});
 
-  // Recent cars (last 10)
   const recentCars = cars.slice(0, 10);
 
-  // Most expensive cars (top 5)
   const mostExpensiveCars = [...cars]
     .sort((a: any, b: any) => 
       (b.basicInformation?.OfferPrice || 0) - (a.basicInformation?.OfferPrice || 0)
@@ -432,7 +339,6 @@ const getDealerCompleteProfile = async (dealerId: string) => {
       status: car.status
     }));
 
-  // ========== SUBSCRIPTION USAGE ANALYSIS ==========
   let subscriptionUsage: any = null;
 
   if (subscription) {
@@ -458,9 +364,7 @@ const getDealerCompleteProfile = async (dealerId: string) => {
     };
   }
 
-  // ========== BUILD COMPLETE RESPONSE ==========
   const result = {
-    // Dealer Profile Information
     profile: {
       _id: dealer._id,
       name: dealer.name,
@@ -473,16 +377,12 @@ const getDealerCompleteProfile = async (dealerId: string) => {
       location: dealer.address,
       verified: dealer.verified,
       isSubscribed: dealer.isSubscribed,
-      // tradeLicences: dealer.tradeLicences,
-      // proofOwnerId: dealer.proofOwnerId,
-      // sallonPhoto: dealer.sallonPhoto,
+
       isUpdate: dealer.isUpdate,
       accountInformation: dealer.accountInformation,
-      createdAt: dealer,
-      updatedAt: dealer,
+
     },
 
-    // Subscription Details
     subscription: subscriptionDetails ? {
       _id: subscriptionDetails._id,
       package: subscriptionDetails.package,
@@ -532,15 +432,12 @@ const getDealerCompleteProfile = async (dealerId: string) => {
     } : null
   };
 
-  // Cache the result
   await RedisCacheService.set(cacheKey, result, { ttl: CACHE_TTL.SHORT });
 
   return result;
 };
 
-/**
- * Get DEALER's car inventory summary
- */
+
 const getDealerCarInventory = async (dealerId: string, filters?: any) => {
   const { status, condition, fuelType, priceFrom, priceTo, page = 1, limit = 20 } = filters || {};
 
@@ -583,9 +480,8 @@ const getDealerCarInventory = async (dealerId: string, filters?: any) => {
   };
 };
 
-/**
- * Get DEALER's subscription history
- */
+
+
 const getDealerSubscriptionHistory = async (dealerId: string) => {
   const subscriptions = await Subscription.find({ user: dealerId })
     .populate('package', 'title price duration carLimit')
@@ -606,9 +502,7 @@ const getDealerSubscriptionHistory = async (dealerId: string) => {
   };
 };
 
-/**
- * Get DEALER dashboard overview
- */
+
 const getDealerDashboard = async (dealerId: string) => {
   const [profile, cars, subscription] = await Promise.all([
     User.findById(dealerId).select('name email profile isSubscribed').lean(),
@@ -646,6 +540,22 @@ const getDealerDashboard = async (dealerId: string) => {
   };
 };
 
+const getallDealerDB = async (): Promise<IUser[]> => {
+    const allDealers = await User.find({ role: USER_ROLES.DELEAR }).select('-password -authentication').lean();
+    return allDealers;
+};
+
+const getAllCarIdByDealerDB = async (dealerId: string) => {
+  const cars = await ServiceModelInstance
+    .find({ createdBy: dealerId, isDeleted: false })
+    .select(
+      'basicInformation technicalInformation equipment electricHybrid extras colour seatsAndDoors energyAndEnvironment euroStandard  location description status createdAt updatedAt'
+    )
+    .lean();
+
+  return cars;
+};
+
 export const UserService = {
     createUserToDB,
     getUserProfileFromDB,
@@ -657,6 +567,8 @@ export const UserService = {
     getDealerCarInventory,
     getDealerSubscriptionHistory,
     getDealerDashboard,
-    getDealerCompleteProfile
+    getDealerCompleteProfile,
+    getallDealerDB,
+    getAllCarIdByDealerDB
   
 };

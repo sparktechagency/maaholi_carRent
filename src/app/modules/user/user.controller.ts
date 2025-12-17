@@ -207,9 +207,7 @@ const getDealerCompleteProfile = catchAsync(async (req: Request, res: Response) 
   });
 });
 
-/**
- * Get DEALER's car inventory with filters
- */
+
 const getDealerCarInventory = catchAsync(async (req: Request, res: Response) => {
   const dealerId = req.params.dealerId || (req as any).user?.id;
 
@@ -223,9 +221,7 @@ const getDealerCarInventory = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
-/**
- * Get DEALER's subscription history
- */
+
 const getDealerSubscriptionHistory = catchAsync(async (req: Request, res: Response) => {
   const dealerId = req.params.dealerId || (req as any).user?.id;
 
@@ -239,9 +235,7 @@ const getDealerSubscriptionHistory = catchAsync(async (req: Request, res: Respon
   });
 });
 
-/**
- * Get DEALER dashboard overview (quick stats)
- */
+
 const getDealerDashboard = catchAsync(async (req: Request, res: Response) => {
   const dealerId = (req as any).user?.id;
 
@@ -255,9 +249,7 @@ const getDealerDashboard = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/**
- * Get own profile (for logged-in DEALER)
- */
+
 const getMyProfile = catchAsync(async (req: Request, res: Response) => {
   const dealerId = (req as any).user?.id;
 
@@ -272,6 +264,26 @@ const getMyProfile = catchAsync(async (req: Request, res: Response) => {
 });
 
 
+const getallDealer = catchAsync(async (req: Request, res: Response) => {
+    const result = await UserService.getallDealerDB();
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,  
+        message: 'All dealers retrieved successfully',
+        data: result
+    });
+});
+
+const getAllCarIdByDealer = catchAsync(async (req: Request, res: Response) => {
+    const dealerId = req.params.dealerId;
+    const result = await UserService.getAllCarIdByDealerDB(dealerId);
+    sendResponse(res, {
+        statusCode: StatusCodes.OK,
+        success: true,
+        message: 'Car retrieved successfully',
+        data: result
+    });
+});
 
 export const UserController = {
     createUser,
@@ -285,5 +297,7 @@ export const UserController = {
     getDealerCarInventory,
     getDealerSubscriptionHistory,
     getDealerDashboard,
-    getMyProfile
+    getMyProfile,
+    getallDealer,
+    getAllCarIdByDealer
 };
