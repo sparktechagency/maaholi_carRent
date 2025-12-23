@@ -118,44 +118,6 @@ const updateProfile = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-// const updateProfile = catchAsync(async (req: Request, res: Response) => {
-//     const user = req.user;
-
-//     let profile: string | undefined;
-//     let tradeLicences: string | undefined;
-//     if (req.files && "image" in req.files && Array.isArray(req.files.image) && req.files.image[0]) {
-//         profile = `/images/${req.files.image[0].filename}`;
-//     }
-//     if (req.files && "tradeLicences" in req.files && Array.isArray(req.files.tradeLicences) && req.files.tradeLicences[0]) {
-//         tradeLicences = `/tradeLicences/${req.files.tradeLicences[0].filename}`;
-//     }
-//     let parsedLocation = undefined;
-//     if (req.body.location) {
-//         try {
-//             parsedLocation = JSON.parse(req.body.location);
-//         } catch (e) {
-//             console.log("Invalid location JSON:", req.body.location);
-//         }
-//     }
-
-//     const data: any = {
-//         ...req.body,
-//         ...(profile && { profile }),     
-//         ...(tradeLicences && { tradeLicences }),
-//         ...(parsedLocation && { location: parsedLocation }),
-//     };
-
-//     delete data.image; 
-
-//     const result = await UserService.updateProfileToDB(user, data);
-
-//     sendResponse(res, {
-//         success: true,
-//         statusCode: StatusCodes.OK,
-//         message: "Profile updated successfully",
-//         data: result,
-//     });
-// });
 
 //update profile
 const updateLocation = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -280,7 +242,7 @@ const getAllCarIdByDealer = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: StatusCodes.OK,
         success: true,
-        message: 'Car retrieved successfully',
+        message: 'dealer information retrieved successfully',
         data: result
     });
 });

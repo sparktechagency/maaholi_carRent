@@ -545,21 +545,6 @@ const getallDealerDB = async (): Promise<IUser[]> => {
     return allDealers;
 };
 
-// const getAllCarIdByDealerDB = async (dealerId: string) => {
-//   const dealer = await User.findById(dealerId).lean();
-//   if (!dealer) {
-//     throw new ApiError(StatusCodes.NOT_FOUND, 'Dealer not found');
-//   }
-//   const cars = await ServiceModelInstance
-//     .find({ createdBy: dealerId, isDeleted: false })
-//     .select(
-//       'user basicInformation technicalInformation equipment electricHybrid extras colour seatsAndDoors energyAndEnvironment euroStandard  location description status createdAt updatedAt'
-//     )
-//     .lean();
-
-//   return dealer.role === USER_ROLES.DELEAR ? cars : cars.map(car => car._id);
-// };
-
 const getAllCarIdByDealerDB = async (dealerId: string) => {
   const dealerProfile = await User.findById(dealerId)
     .select('name email role phone address profile numberOfCars isSubscribed mobileNumber about address city zipCode country dateOfBirth')
