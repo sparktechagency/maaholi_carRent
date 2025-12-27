@@ -17,10 +17,12 @@ router.get(
     '/all-dealers',
     UserController.getallDealer
 );
+
 router.get(
     '/cars-by-dealer/:dealerId',
     UserController.getAllCarIdByDealer
 );
+
 router.patch('/update-location',
     auth(USER_ROLES.SELLER, USER_ROLES.BUYER),
     UserController.updateLocation
@@ -91,7 +93,6 @@ router.get(
   UserController.getDealerCompleteProfile
 );
 
-
 router.get(
   '/inventory/:dealerId',
   auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
@@ -103,4 +104,5 @@ router.get(
   auth(USER_ROLES.DELEAR, USER_ROLES.SUPER_ADMIN),
   UserController.getDealerSubscriptionHistory
 );
+
 export const UserRoutes = router;
