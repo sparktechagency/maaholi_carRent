@@ -6,7 +6,7 @@ const createPackageZodSchema = z.object({
         price: z.number({required_error: "Number is required"}),
         description: z.string({required_error: "Description is required"}),
         duration: z.string({required_error: "Duration is required"}),
-        feature: z.array(z.string(), {required_error: "Feature is required"})
+        // feature: z.array(z.string(), {required_error: "Feature is required"})
     })
 })
 
