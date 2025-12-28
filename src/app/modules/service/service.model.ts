@@ -49,7 +49,6 @@ const serviceSchema = new Schema<IService, ServiceModel>(
 
     },
 
-    // Category: Electric & Hybrid Specific
     electricHybrid: {
       batteryCapacityKWh: { type: Number, required: false },
       chargingTimeHours: { type: Number, required: false },
