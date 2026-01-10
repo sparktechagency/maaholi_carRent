@@ -60,23 +60,6 @@ const getAllServices = catchAsync(async (req: Request, res: Response, next: Next
   })
 })
 
-
-// const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-//   const requestData = req.body; // Changed from req.query to req.body
-//   const result = await ServiceService.getAllFilterFromDB(requestData);
-  
-//   sendResponse(res, {
-//     success: true,
-//     statusCode: StatusCodes.OK,
-//     message: result.data.length > 0 
-//       ? 'Services retrieved successfully' 
-//       : 'No services found matching the filters',
-//     data: result.data,
-//     // meta: result.meta,
-//   });
-// });
-
-
 const getAllFilter = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const requestData = req.query; 
   const result = await ServiceService.getAllServicesFromDBFilter(requestData);
