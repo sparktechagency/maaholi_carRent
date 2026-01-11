@@ -23,4 +23,4 @@ jobs:
             cd /var/www/carplace24/maaholi_carRent
             git pull
             npm install
-            pm2 restart myapp
+            pm2 restart maaholi-backend
