@@ -36,7 +36,6 @@ const checkCarLimitAndAddCar = async (
         );
     }
 
-    // Get subscription details with package info
     const subscription = await Subscription.findOne({
         user: user.id,
         status: "active"
