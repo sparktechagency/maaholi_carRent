@@ -108,8 +108,6 @@ const createAccountToStripe = async (user: JwtPayload) => {
     return accountLink?.url;
 }
 
-
-
 const createSubscriptionCheckoutToStripe = async (
     user: JwtPayload,
     packageId: string
@@ -208,8 +206,7 @@ const createSubscriptionCheckoutToStripe = async (
 };
 /**
  * Cancel user's subscription
- */
-const cancelSubscriptionFromStripe = async (user: JwtPayload) => {
+ */const cancelSubscriptionFromStripe = async (user: JwtPayload) => {
     const subscription = await Subscription.findOne({
         user: user.id,
         status: "active"

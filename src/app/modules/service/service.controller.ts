@@ -87,7 +87,6 @@ const getSingleService = catchAsync(async (req: Request, res: Response, next: Ne
   })
 })
 
-
 const updateService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params
   const files = req.files as { [fieldname: string]: Express.Multer.File[] }
