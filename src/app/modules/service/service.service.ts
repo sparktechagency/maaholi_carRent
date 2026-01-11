@@ -948,7 +948,6 @@ const getcarBybrandIdFromDB = async (brandId: string) => {
     .lean();
   return result;
 };
-// price range count minimum 0 to highest price
 
 const getPriceRangeCounts = async () => {
   const result = await ServiceModelInstance.aggregate([
