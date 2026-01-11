@@ -944,7 +944,6 @@ const getcarBybrandIdFromDB = async (brandId: string) => {
   const result = await ServiceModelInstance.find({ 'basicInformation.brand': brandId, isDeleted: false })
     .populate('basicInformation.brand', 'brand logo')
     .populate('basicInformation.model', 'model')
-    // .populate('basicInformation', 'RegularPrice OfferPrice')
     .lean();
   return result;
 };
