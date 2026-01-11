@@ -20,7 +20,7 @@ jobs:
           username: ubuntu
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/yourrepo
+            cd /var/www/carplace24/maaholi_carRent
             git pull
             npm install
             pm2 restart myapp
