@@ -29,7 +29,6 @@ const checkCarLimitAndAddCar = async (
         );
     }
 
-    // Check if user has an active subscription
     if (!userData.isSubscribed) {
         throw new ApiError(
             StatusCodes.BAD_REQUEST,
