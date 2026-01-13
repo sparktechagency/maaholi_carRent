@@ -24,3 +24,4 @@ jobs:
             git pull
             npm install
             sudo pm2 restart maaholi-backend
+

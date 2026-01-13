@@ -14,8 +14,8 @@ app.use(
   cors({
     origin: function (origin, callback) {
       const allowedOrigins = [
-        "http://10.10.7.47:3000",
-        "http://10.10.7.72:3000",
+        "http://83.228.197.97:3000",
+        "http://83.228.197.97:5001",
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://31.97.114.108:5173",
