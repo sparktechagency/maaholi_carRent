@@ -126,7 +126,7 @@ const deleteService = catchAsync(async (req: Request, res: Response, next: NextF
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Service deleted successfully'
+    message: 'Car deleted successfully'
   })
 })
 
@@ -138,7 +138,7 @@ const permanentDeleteService = catchAsync(async (req: Request, res: Response, ne
   sendResponse(res, {
     success: true,
     statusCode: StatusCodes.OK,
-    message: 'Service permanently deleted'
+    message: 'Car permanently deleted'
   })
 })
 
