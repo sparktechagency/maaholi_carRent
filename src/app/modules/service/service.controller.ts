@@ -117,7 +117,6 @@ const updateServiceMiles = catchAsync(async (req: Request, res: Response, next: 
   })
 })
 
-
 const deleteService = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params
 
