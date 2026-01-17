@@ -97,7 +97,8 @@ router.delete('/:id',
    deleteService
   );
 
-router.delete('/:id/permanent', 
+router.delete('/permanent/:id', 
+  auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.SELLER),
   ServiceController.
   permanentDeleteService
 );
