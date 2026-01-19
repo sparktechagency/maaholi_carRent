@@ -102,7 +102,7 @@ const bulkUpload = async (fileBuffer: Buffer, file: Express.Multer.File) => {
     }
 
     const createdBrand = await BrandModel.create({ brand: brandValue.toLowerCase(),
-      image: image ? `/images/${image}` : undefined
+      image: image ? `${image}` : undefined
      });
     createdBrands.push(createdBrand);
   }
