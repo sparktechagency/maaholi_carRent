@@ -11,7 +11,6 @@ import mongoose from "mongoose";
 import { sendNotifications } from "../../../helpers/notificationsHelper";
 import { Package } from "../package/package.model";
 import { Subscription } from "../subscription/subscription.model";
-
 const createPaymentCheckoutToStripe = async (user: JwtPayload, payload: any): Promise<string | null> => {
     const { price, service_name, id, tips } = payload;
 
@@ -115,7 +114,8 @@ const createSubscriptionCheckoutToStripe = async (
     if (!mongoose.Types.ObjectId.isValid(packageId)) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid Package ID");
     }
-
+//@ts-ignore
+    const socketIo = global.io;
     const packageData = await Package.findById(packageId);
     if (!packageData) {
         throw new ApiError(StatusCodes.NOT_FOUND, "Package not found");
@@ -176,6 +176,18 @@ const createSubscriptionCheckoutToStripe = async (
 
     console.log('✅ [Checkout Session Created]:', session.id);
     console.log('🎯 [Target Role]:', packageData.targetRole);
+
+    // notification socket
+    const notificationData = {
+        text: `Subscription process started for the ${packageData.title} package.`,
+        receiver: user.id,
+        sender: user.id,
+        type: "subscription",
+        targetRole: packageData.targetRole,
+    };
+    socketIo.emit("notification", notificationData);
+    sendNotifications(notificationData);
+
 
     // ✅ CRITICAL FIX: Save with status "pending" and correct trxId
     const newSubscription = await Subscription.create({
