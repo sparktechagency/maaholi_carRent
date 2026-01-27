@@ -14,7 +14,6 @@ router
         PackageController.createPackage
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.BUYER, USER_ROLES.SELLER), 
         PackageController.getAllPackages
     )
 
