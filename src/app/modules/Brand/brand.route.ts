@@ -13,7 +13,6 @@ router.route("/")
         BrandController.createBrand
     )
     .get(
-        auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.SELLER, USER_ROLES.BUYER),
         BrandController.getBrand
     );
 
