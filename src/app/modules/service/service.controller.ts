@@ -25,6 +25,7 @@ const createService = catchAsync(async(req: Request, res: Response) => {
   })
 })
 
+
 const checkCanAddCar = catchAsync(async (req: Request, res: Response) => {
   const result = await ServiceHelpers.checkCarAddPermission(req);
 
