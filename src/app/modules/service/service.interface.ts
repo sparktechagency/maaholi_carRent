@@ -17,6 +17,7 @@ import { carStatus } from '../../../enums/car-status'
   OfferPrice?: number
   leasingRate?: string
   condition?: string
+  aboutCar?: string
   miles?:number
   MfkWarranty?: string
   AccidentVehicle?: string

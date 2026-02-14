@@ -29,6 +29,7 @@ const serviceSchema = new Schema<IService, ServiceModel>(
       OfferPrice: { type: Number, required: false},
       leasingRate: {type: String, required: false},
       condition: { type: String, required: false },
+      aboutCar: { type: String, required: false },
       miles: { type: Number, default: 0 },
       MfkWarranty: { type: String, required:false},
       AccidentVehicle: {type: String, required: false},
