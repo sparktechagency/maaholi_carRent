@@ -11,6 +11,7 @@ import mongoose from "mongoose";
 import { sendNotifications } from "../../../helpers/notificationsHelper";
 import { Package } from "../package/package.model";
 import { Subscription } from "../subscription/subscription.model";
+import { socketHelper } from "../../../helpers/socketHelper";
 const createPaymentCheckoutToStripe = async (user: JwtPayload, payload: any): Promise<string | null> => {
     const { price, service_name, id, tips } = payload;
 
@@ -182,10 +183,11 @@ const createSubscriptionCheckoutToStripe = async (
         text: `Subscription process started for the ${packageData.title} package.`,
         receiver: user.id,
         sender: user.id,
-        type: "subscription",
+        type: "SUBSCRIPTION",
         targetRole: packageData.targetRole,
     };
-    socketIo.emit("notification", notificationData);
+   const io = socketHelper.getIO();
+    io.emit("notification", notificationData);
     sendNotifications(notificationData);
 
 

@@ -27,7 +27,7 @@ const notificationSchema = new Schema<INotification, NotificationModel>(
         },
         type: {
             type: String,
-            enum: ['ADMIN'],
+            enum: ['ADMIN', 'SELLER', 'BUYER', 'DELEAR', 'SUBSCRIPTION'],
             required: false
         }
     },

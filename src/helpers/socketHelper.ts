@@ -1,21 +1,32 @@
-import colors from "colors";
 import { Server } from "socket.io";
-import { logger } from "../shared/logger";
 
-const socket = (io: Server)=>{
-    io.on('connection', socket=>{
-        logger.info(colors.blue('A User connected'));
+let ioInstance: Server;
 
-        socket.on("track", (data:any)=>{
-            const {id, location} = data;
-            socket.emit(`track::${id}`, location);
-        })
+const socket = (io: Server) => {
+  ioInstance = io; 
 
-        // disconnect
-        socket.on("disconnect", ()=>{
-            logger.info(colors.red('A user disconnect'));
-        })
-    })
-}
+  io.on("connection", socket => {
+    console.log("User connected");
 
-export const socketHelper = { socket }
+    socket.on("track", (data: any) => {
+      const { id, location } = data;
+      socket.emit(`track::${id}`, location);
+    });
+
+    socket.on("disconnect", () => {
+      console.log("User disconnected");
+    });
+  });
+};
+
+const getIO = (): Server => {
+  if (!ioInstance) {
+    throw new Error("Socket.io not initialized");
+  }
+  return ioInstance;
+};
+
+export const socketHelper = {
+  socket,
+  getIO,
+};

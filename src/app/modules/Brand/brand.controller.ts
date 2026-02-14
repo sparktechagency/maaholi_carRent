@@ -59,6 +59,7 @@ const deleteBrand = catchAsync(async (req: Request, res: Response) => {
         data: result
     })
 })
+
 //getbrandIdByAllmodel
 const getBrandIdByAllmodel = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id

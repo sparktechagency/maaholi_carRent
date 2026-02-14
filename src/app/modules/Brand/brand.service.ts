@@ -5,8 +5,6 @@ import { BrandModel } from './brand.model'
 import unlinkFile from '../../../shared/unlinkFile'
 import { CarModel } from '../Model/models.model'
 import * as XLSX from "xlsx";
-import mongoose from "mongoose";
-import { model } from 'mongoose';
 type CreateBrandDto = Omit<IBrand, '_id' | 'createdAt' | 'updatedAt'> 
 
 const createBrandToDB = async (payload: CreateBrandDto) => {
