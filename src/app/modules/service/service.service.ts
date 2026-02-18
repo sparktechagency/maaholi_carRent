@@ -18,7 +18,7 @@ import { JwtPayload } from 'jsonwebtoken';
 
 export const createServiceToDB = async (
   req: Request,
-  payload: any,
+  payload: IService,
   files?: { [fieldname: string]: Express.Multer.File[] }
 ): Promise<IService> => {
   const parsedData = parseFormData(payload, files);
@@ -684,7 +684,7 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
     .populate('user', 'name email')
 .populate('basicInformation.brand', 'brand logo')
   .populate('basicInformation.model', 'model')
-    .populate('createdBy', 'name email')
+    .populate('createdBy', 'name email profile location address')
     .lean()
 
   if (!service) {
