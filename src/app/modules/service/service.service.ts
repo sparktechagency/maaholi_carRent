@@ -62,7 +62,7 @@ export const createServiceToDB = async (
   await service.populate([
     { path: 'basicInformation.brand', select: 'brand image' },
     { path: 'basicInformation.model', select: 'model brand' },
-    { path: 'createdBy', select: 'name email location address' }
+    { path: 'createdBy', select: 'name email latitude longitude address' }
   ]);
 
   // Clear cache
@@ -111,7 +111,7 @@ const getAllServicesFromDB = async (query: any) => {
       .populate('user', 'name email')
       .populate('basicInformation.brand', 'brand image')  
       .populate('basicInformation.model', 'model brand')
-      .populate('createdBy', 'name email profile')
+      .populate('createdBy', 'name email profile latitude longitude')
       .sort(sort as string)
       .skip(skip)
       .limit(limitNum)
@@ -684,7 +684,7 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
     .populate('user', 'name email')
 .populate('basicInformation.brand', 'brand logo')
   .populate('basicInformation.model', 'model')
-    .populate('createdBy', 'name email profile location address')
+    .populate('createdBy', 'name email profile latitude longitude address')
     .lean()
 
   if (!service) {

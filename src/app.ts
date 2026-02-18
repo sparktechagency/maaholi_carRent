@@ -23,6 +23,7 @@ app.use(
         "https://carplace24.ch",
         "https://admin.carplace24.ch",
         // "http://31.97.114.108:3000",
+        "http://localhost:3000",
         // "http://10.10.7.47:3003",
         "http://31.97.114.108:4174",
       ];
