@@ -12,7 +12,7 @@ const createBanner = catchAsync(async (req: Request, res: Response) => {
   
   let images = "";
   if (req.files && "image" in req.files && req.files.image[0]) {
-    images = `/uploads/images/${req.files.image[0].filename}`;
+    images = `/images/${req.files.image[0].filename}`;
   }
 
     const data = {
