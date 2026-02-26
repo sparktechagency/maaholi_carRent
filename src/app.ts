@@ -26,6 +26,7 @@ app.use(
         "http://localhost:3000",
         // "http://10.10.7.47:3003",
         "http://31.97.114.108:4174",
+        'https://sabbir3000.naimulhassan.me'
       ];
       
       if (!origin) return callback(null, true);

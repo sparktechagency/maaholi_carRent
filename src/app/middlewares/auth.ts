@@ -5,6 +5,14 @@ import config from '../../config';
 import { jwtHelper } from '../../helpers/jwtHelper';
 import ApiError from '../../errors/ApiError';
 
+declare global {
+  namespace Express {
+    interface Request {
+      user: any;
+    }
+  }
+}
+
 const auth = (...roles: string[]) => async (req: Request, res: Response, next: NextFunction) => {
   try {
     const tokenWithBearer = req.headers.authorization;

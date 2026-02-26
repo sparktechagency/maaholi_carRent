@@ -71,7 +71,6 @@ export const createServiceToDB = async (
   return service;
 };
 
-
 const getAllServicesFromDB = async (query: any) => {
   const {
     page = 1,
@@ -140,6 +139,7 @@ const getAllServicesFromDB = async (query: any) => {
     }
   };
 };
+
 const getAllFilterFromDB = async (requestData: any) => {
   const {
     page = 1,
@@ -376,6 +376,109 @@ const getAllFilterFromDB = async (requestData: any) => {
   };
 };
 
+// const getAllServicesFromDBFilter = async (query: ServiceFilterQuery) => {
+//   const {
+//     searchTerm,
+//     page = 1,
+//     limit = 10,
+//     sortBy = 'createdAt',
+//     sortOrder = 'desc',
+//   } = query;
+
+//   const andConditions: any[] = [{ isDeleted: false }];
+
+//   if (searchTerm) {
+//     andConditions.push({
+//       $or: [
+//         { 'basicInformation.vehicleName': { $regex: searchTerm, $options: 'i' } },
+//         { 'location.city': { $regex: searchTerm, $options: 'i' } },
+//         { 'location.country': { $regex: searchTerm, $options: 'i' } },
+//         { description: { $regex: searchTerm, $options: 'i' } },
+//       ],
+//     });
+//   }
+
+//   const mongoMatch =
+//     andConditions.length > 1 ? { $and: andConditions } : andConditions[0];
+
+//   const pageNum = Math.max(1, Number(page) || 1);
+//   const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
+//   const skip = (pageNum - 1) * limitNum;
+
+
+//   let sortStage: any = {};
+
+//   if (sortBy === 'price') {
+//     sortStage = {
+//       effectivePrice: sortOrder === 'asc' ? 1 : -1,
+//     };
+//   } else if (sortBy === 'year') {
+//     sortStage = {
+//       'basicInformation.year': sortOrder === 'asc' ? 1 : -1,
+//     };
+//   } else {
+//     sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;
+//   }
+
+//   const pipeline: any[] = [
+//     { $match: mongoMatch },
+
+//     {
+//       $addFields: {
+//         effectivePrice: {
+//           $cond: [
+//             { $gt: ['$basicInformation.OfferPrice', 0] },
+//             '$basicInformation.OfferPrice',
+//             '$basicInformation.RegularPrice',
+//           ],
+//         },
+//       },
+//     },
+
+//     { $sort: sortStage },
+
+//     {
+//       $facet: {
+//         data: [
+//           { $skip: skip },
+//           { $limit: limitNum },
+//           {
+//             $lookup: {
+//               from: 'users',
+//               localField: 'user',
+//               foreignField: '_id',
+//               as: 'user',
+//             },
+//           },
+//           { $unwind: { path: '$user', preserveNullAndEmptyArrays: true } },
+//         ],
+//         totalCount: [{ $count: 'count' }],
+//       },
+//     },
+//   ];
+
+//   const resultAgg = await ServiceModelInstance.aggregate(pipeline);
+
+//   const data = resultAgg[0].data;
+//   const total = resultAgg[0].totalCount[0]?.count || 0;
+//   const totalPages = Math.ceil(total / limitNum);
+
+//   return {
+//     success: true,
+//     message: 'Services fetched successfully',
+//     data,
+//     meta: {
+//       page: pageNum,
+//       limit: limitNum,
+//       total,
+//       totalPages,
+//       hasNextPage: pageNum < totalPages,
+//       hasPrevPage: pageNum > 1,
+//     },
+//   };
+// };
+
+
  const getAllServicesFromDBFilter = async (query: ServiceFilterQuery) => {
   const {
     searchTerm,
@@ -529,11 +632,16 @@ const getAllFilterFromDB = async (requestData: any) => {
 
   const partialFields = {
     'basicInformation.vehicleName': vehicleName,
+    'basicInformation.brand': brand,
+    'basicInformation.model': model,
+    'basicInformation.condition': condition,
+    // 'basicInformation.year': year,
     'basicInformation.vinNo': vinNo,
     'colour.exterior': exterior,
     'colour.interior': interior,
     'technicalInformation.engineType': engineType,
     'technicalInformation.performance': performance,
+    
   };
 
   Object.entries(partialFields).forEach(([path, value]) => {
@@ -652,6 +760,7 @@ const compareTwoServicesFromDB = async(id1: string, id2: string) => {
       },
     };
   }
+
 export const getServiceByIdFromDB = async (id: string) => {
   const cacheKey = `${CACHE_PREFIXES.SERVICES}:id:${id}`;
   const cached = await RedisCacheService.get(cacheKey);
@@ -693,7 +802,6 @@ const getSingleServiceFromDB = async (id: string): Promise<IService> => {
 
   return service as IService
 }
-
 
 const updateServiceInDB = async (
   id: string,
@@ -745,6 +853,7 @@ const updateServiceInDB = async (
 
   return service;
 };
+
 const updateServiceMilesInDB = async (id: string, miles: number) => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
@@ -769,7 +878,6 @@ const updateServiceMilesInDB = async (id: string, miles: number) => {
     totalMiles: service.totalMiles
   }
 }
-
 
 const deleteServiceFromDB = async (
   req: Request,
@@ -828,6 +936,7 @@ const deleteServiceFromDB = async (
 
   return deletedService;
 };
+
 const permanentDeleteServiceFromDB = async (id: string): Promise<void> => {
   if (!Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid service ID')
@@ -910,7 +1019,6 @@ const createCarCompareIntoDB = async (carId: string,user:JwtPayload) => {
   const result = await CareCompareModelInstance.create({user:user.id,car:carId});
   return result
 }
-
 
 const getCarCompareFromDB = async (userId: string) => {
   const result = await CareCompareModelInstance.find({ user: userId })

@@ -24,6 +24,7 @@ import { DealerBulkRoutes } from '../modules/excel-car/excel.bulk.route';
 import { ContactRoutes } from '../modules/contact/contact.route';
 import { BlogRoutes } from '../modules/blog/blog.route';
 import { ColorRoutes } from '../modules/color/color.route';
+import { BannerRoutes } from '../modules/banner/banner.routes';
 const router = express.Router();
 
 const apiRoutes = [
@@ -38,6 +39,7 @@ const apiRoutes = [
     { path: "/chat", route: ChatRoutes },
     { path: "/message", route: MessageRoutes },
     { path: "/notification", route: NotificationRoutes },
+    { path: "/banner", route: BannerRoutes },
     { path: "/package", route: PackageRoutes },
     { path: "/review", route: ReviewRoutes },
     { path: "/car", route: ServiceRoutes },
