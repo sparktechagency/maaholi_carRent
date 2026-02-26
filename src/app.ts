@@ -16,6 +16,7 @@ app.use(
       const allowedOrigins = [
         "http://83.228.197.97:3000",
         "http://10.10.7.47:3000",
+        "http://10.10.7.47:3001",
         "http://83.228.197.97:5001",
         "http://10.10.7.47:3003",
         "https://admin.carplace24.ch/",
