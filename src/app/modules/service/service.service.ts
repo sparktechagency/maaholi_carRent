@@ -616,18 +616,18 @@ const getAllFilterFromDB = async (requestData: any) => {
   }
 
 
-  if (priceFrom || priceTo) {
-    const priceCondition: any = {};
-    if (priceFrom) priceCondition.$gte = Number(priceFrom);
-    if (priceTo) priceCondition.$lte = Number(priceTo);
+  // if (priceFrom || priceTo) {
+  //   const priceCondition: any = {};
+  //   if (priceFrom) priceCondition.$gte = Number(priceFrom);
+  //   if (priceTo) priceCondition.$lte = Number(priceTo);
 
-    andConditions.push({
-      $or: [
-        { 'basicInformation.RegularPrice': priceCondition },
-        { 'basicInformation.OfferPrice': priceCondition },
-      ],
-    });
-  }
+  //   andConditions.push({
+  //     $or: [
+  //       { 'basicInformation.RegularPrice': priceCondition },
+  //       { 'basicInformation.OfferPrice': priceCondition },
+  //     ],
+  //   });
+  // }
 
   if (priceFrom || priceTo) {
     const priceCondition: any = {};
@@ -754,8 +754,14 @@ const getAllFilterFromDB = async (requestData: any) => {
   const limitNum = Math.min(100, Math.max(1, Number(limit) || 10));
   const skip = (pageNum - 1) * limitNum;
 
-  const sortOptions: any = {};
-  sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+const sortOptions: any = {};
+const isUserDefinedSort = query.sortBy !== undefined;
+
+  if (isUserDefinedSort) {
+    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
+  } else {
+    sortOptions['basicInformation.RegularPrice'] = 1; 
+  }
 
   const [data, total] = await Promise.all([
     ServiceModelInstance.find(mongoQuery)
