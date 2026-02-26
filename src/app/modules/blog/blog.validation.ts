@@ -14,7 +14,7 @@ const createBlogZodSchema = z.object({
         image: z.any({
             required_error: "Image is required"
         }),
-        'tags[]': z.array(z.string(), {
+        tags: z.array(z.string(), {
             required_error: "Tags are required"
         })
     })
