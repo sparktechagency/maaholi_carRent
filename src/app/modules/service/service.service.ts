@@ -566,6 +566,68 @@ const getAllFilterFromDB = async (requestData: any) => {
       ],
     });
   }
+  if (brand && mongoose.Types.ObjectId.isValid(brand)) {
+    andConditions.push({
+      'basicInformation.brand': new mongoose.Types.ObjectId(brand),
+    });
+  }
+
+  if (model && mongoose.Types.ObjectId.isValid(model)) {
+    andConditions.push({
+      'basicInformation.model': new mongoose.Types.ObjectId(model),
+    });
+  }
+
+  if (Category && mongoose.Types.ObjectId.isValid(Category)) {
+    andConditions.push({
+      'basicInformation.Category': new mongoose.Types.ObjectId(Category),
+    });
+  }
+
+
+  if (vehicleName) {
+    andConditions.push({
+      'basicInformation.vehicleName': { $regex: vehicleName, $options: 'i' },
+    });
+  }
+
+  if (vinNo) {
+    andConditions.push({
+      'basicInformation.vinNo': { $regex: vinNo, $options: 'i' },
+    });
+  }
+
+  if (condition) {
+    andConditions.push({
+      'basicInformation.condition': { $regex: condition, $options: 'i' },
+    });
+  }
+
+  if (city) {
+    andConditions.push({
+      'location.city': { $regex: city, $options: 'i' },
+    });
+  }
+
+  if (country) {
+    andConditions.push({
+      'location.country': { $regex: country, $options: 'i' },
+    });
+  }
+
+
+  if (priceFrom || priceTo) {
+    const priceCondition: any = {};
+    if (priceFrom) priceCondition.$gte = Number(priceFrom);
+    if (priceTo) priceCondition.$lte = Number(priceTo);
+
+    andConditions.push({
+      $or: [
+        { 'basicInformation.RegularPrice': priceCondition },
+        { 'basicInformation.OfferPrice': priceCondition },
+      ],
+    });
+  }
 
   if (priceFrom || priceTo) {
     const priceCondition: any = {};
@@ -632,8 +694,8 @@ const getAllFilterFromDB = async (requestData: any) => {
 
   const partialFields = {
     'basicInformation.vehicleName': vehicleName,
-    'basicInformation.brand': brand,
-    'basicInformation.model': model,
+    // 'basicInformation.brand': brand,
+    // 'basicInformation.model': model,
     'basicInformation.condition': condition,
     // 'basicInformation.year': year,
     'basicInformation.vinNo': vinNo,
