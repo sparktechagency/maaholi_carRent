@@ -5,7 +5,7 @@ const bannerSchema = new Schema<IBanner, BannerModel>(
     {
         name: {
             type: String,
-            required: true
+            required: false
         },
      image: {
          type: String,

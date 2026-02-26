@@ -1,7 +1,7 @@
 import { Model } from "mongoose";
 
 export type IBanner = {
-    name: string;
+    name?: string;
     image: string;
 }
 
