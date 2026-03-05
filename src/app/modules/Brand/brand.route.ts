@@ -28,7 +28,6 @@ router.route("/:id")
     );
 router.get(
     '/models-by-brand/:id',
-    // auth(USER_ROLES.SUPER_ADMIN, USER_ROLES.DELEAR, USER_ROLES.SELLER, USER_ROLES.BUYER),
     BrandController.getBrandIdByAllmodel
 );
 router.post(
