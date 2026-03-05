@@ -28,7 +28,7 @@ app.use(
         // "http://10.10.7.47:3003",
         "http://31.97.114.108:4174",
         'https://sabbir3000.naimulhassan.me',
-        "https://admin.carplace24.ch",
+        "https://admin.carplace24.ch.",
       ];
       
       if (!origin) return callback(null, true);
