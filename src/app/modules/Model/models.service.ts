@@ -6,21 +6,30 @@ import * as XLSX from "xlsx";
 import mongoose from "mongoose";
 import { BrandModel } from '../Brand/brand.model';
 
+// const createModelTDB = async (payload: ICarModel) => {
+//   const { model } = payload;
+//   const isExistName = await CarModel.findOne({ model: model })
+
+//   if (isExistName) {
+//     throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This carModels Name Already Exist");
+//   }
+
+//   const createCategory: any = await CarModel.create(payload)
+//   if (!createCategory) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create carModels')
+//   }
+
+//   return createCategory
+// }
 const createModelTDB = async (payload: ICarModel) => {
-  const { model } = payload;
-  const isExistName = await CarModel.findOne({ model: model })
+const createCategory = await CarModel.create(payload);
 
-  if (isExistName) {
-    throw new ApiError(StatusCodes.NOT_ACCEPTABLE, "This carModels Name Already Exist");
-  }
-
-  const createCategory: any = await CarModel.create(payload)
-  if (!createCategory) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create carModels')
-  }
-
-  return createCategory
+if (!createCategory) {
+  throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create car model');
 }
+return createCategory;
+ 
+};
 
 const getmodelFromDb = async (): Promise<ICarModel[]> => {
   const result = await CarModel.find({})

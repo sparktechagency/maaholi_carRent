@@ -7,29 +7,39 @@ import { CarModel } from '../Model/models.model'
 import * as XLSX from "xlsx";
 type CreateBrandDto = Omit<IBrand, '_id' | 'createdAt' | 'updatedAt'> 
 
+// const createBrandToDB = async (payload: CreateBrandDto) => {
+//   const name = payload.brand?.toString().trim().toLowerCase() 
+//   if (!name) {
+//     throw new ApiError(StatusCodes.BAD_REQUEST, 'Brand name is required')
+//   }
+
+//   // check existence (case-normalised)
+//   const exists = await BrandModel.findOne({ brand: name }).lean()
+//   if (exists) {
+//     throw new ApiError(StatusCodes.CONFLICT, 'This Brand already exists')
+//   }
+
+//   try {
+//     const created = await BrandModel.create({ ...payload, brand: name })
+//     return created
+//   } catch (err: any) {
+//     // duplicate key check
+//     if (err && (err.code === 11000 || err.code === 11001)) {
+//       throw new ApiError(StatusCodes.CONFLICT, 'This Brand already exists')
+//     }
+//     throw err
+//   }
+// }
+
 const createBrandToDB = async (payload: CreateBrandDto) => {
-  const name = payload.brand?.toString().trim().toLowerCase() 
-  if (!name) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, 'Brand name is required')
+  const result = await BrandModel.create(payload);
+
+  if (!result) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, 'Failed to create brand');
   }
 
-  // check existence (case-normalised)
-  const exists = await BrandModel.findOne({ brand: name }).lean()
-  if (exists) {
-    throw new ApiError(StatusCodes.CONFLICT, 'This Brand already exists')
-  }
-
-  try {
-    const created = await BrandModel.create({ ...payload, brand: name })
-    return created
-  } catch (err: any) {
-    // duplicate key check
-    if (err && (err.code === 11000 || err.code === 11001)) {
-      throw new ApiError(StatusCodes.CONFLICT, 'This Brand already exists')
-    }
-    throw err
-  }
-}
+  return result;
+};
 
 const getBrandsFromDB = async (): Promise<IBrand[]> => {
   // return populated category fields
