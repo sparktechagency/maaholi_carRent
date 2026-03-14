@@ -57,7 +57,7 @@ const updateBrandToDB = async (id: string, payload: Partial<CreateBrandDto>) => 
         unlinkFile(existing.image) // delete old image file;
     }
   if (payload.brand) {
-    payload.brand = payload.brand.toString().trim().toLowerCase()
+    payload.brand = payload.brand
     const conflict = await BrandModel.findOne({ brand: payload.brand, _id: { $ne: id } }).lean()
     if (conflict) {
       throw new ApiError(StatusCodes.CONFLICT, 'Another brand with this name already exists')
