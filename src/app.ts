@@ -26,6 +26,8 @@ app.use(
         "http://www.admin.autoplaza.ch/",
         "http://admin.autoplaza.ch/",
         "http://autoplaza.ch/",
+        "https://autoplaza.ch/",
+        "http://www.autoplaza.ch/",
         "http://localhost:3000",
         "http://31.97.114.108:4174",
         'https://sabbir3000.naimulhassan.me',
