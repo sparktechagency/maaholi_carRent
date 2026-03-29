@@ -19,7 +19,7 @@ app.use(
         "http://10.10.7.47:3001",
         "http://83.228.197.97:5001",
         "http://10.10.7.47:3003",
-        "https://admin.carplace24.ch/",
+        "https://admin.autoplaza.ch/",
         "http://127.0.0.1:3000",
         "https://carplace24.ch",
         "https://admin.carplace24.ch",
