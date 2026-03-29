@@ -24,6 +24,7 @@ app.use(
         "https://carplace24.ch",
         "https://admin.carplace24.ch",
         "http://www.admin.autoplaza.ch/",
+        "http://admin.autoplaza.ch/",
         "http://autoplaza.ch/",
         "http://localhost:3000",
         "http://31.97.114.108:4174",
