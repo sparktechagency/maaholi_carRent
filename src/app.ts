@@ -31,13 +31,18 @@ app.use(
         'https://sabbir3000.naimulhassan.me',
         "https://admin.carplace24.ch.",
       ];
+
+      const normalizeOrigin = (value: string) => value.replace(/\/+$/, '').toLowerCase();
+      const normalizedAllowedOrigins = new Set(allowedOrigins.map(normalizeOrigin));
       
       if (!origin) return callback(null, true);
+
+      const normalizedOrigin = normalizeOrigin(origin);
       
-      if (allowedOrigins.includes(origin)) {
+      if (normalizedAllowedOrigins.has(normalizedOrigin)) {
         callback(null, true);
       } else {
-        logger.warn(`Blocked by CORS: ${origin}`);
+        logger.warn(`Blocked by CORS: ${origin} (normalized: ${normalizedOrigin})`);
         callback(null, false);
       }
     },
