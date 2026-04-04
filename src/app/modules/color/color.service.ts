@@ -1,10 +1,4 @@
-
-//create, get, update, delete
-import { Request, Response } from 'express';
-import { NextFunction } from 'express';
 import { StatusCodes } from 'http-status-codes';
-import catchAsync from '../../../shared/catchAsync';
-import sendResponse from '../../../shared/sendResponse';
 import { IColor } from './color.interface';
 import { ColorModel } from './color.model';
 import ApiError from '../../../errors/ApiError';

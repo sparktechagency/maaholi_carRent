@@ -22,5 +22,4 @@ const contactSchema = new Schema<IContact,ContactModel>({
     timestamps: true
 })
 
-
 export const Contact =  model<IContact,ContactModel>("Contact", contactSchema);

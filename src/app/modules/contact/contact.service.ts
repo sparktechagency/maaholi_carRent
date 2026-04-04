@@ -21,9 +21,7 @@ const getAllContacts = async (query: Record<string, any>)=> {
         data: contacts,
         pagination
     }
-
 }
-
 
 const deleteContact = async (id: string): Promise<IContact | null> => {
     const result = await Contact.findByIdAndDelete(id);
